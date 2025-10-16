@@ -1,0 +1,1 @@
+self.addEventListener('install',(e)=>{e.waitUntil(self.skipWaiting())});self.addEventListener('activate',(e)=>{e.waitUntil(self.clients.claim())});self.addEventListener('fetch',(event)=>{event.respondWith(caches.open('airdrop-cache').then(cache=>fetch(event.request).then(resp=>{cache.put(event.request, resp.clone()); return resp}).catch(()=>caches.match(event.request))))});
