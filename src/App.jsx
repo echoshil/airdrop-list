@@ -6,7 +6,7 @@ import { Moon, Sun, Trash2, CheckCircle, RefreshCcw, Edit, Bell } from "lucide-r
 const SHEET_ID = import.meta.env.VITE_GOOGLE_SHEET_ID || "";
 const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY || "";
 const SHEET_NAME = "airdrop_tracker";
-const GOOGLE_APPS_SCRIPT_PROXY = "https://script.google.com/macros/s/AKfycbxfYatkSZcXubxD8XuK5dKnu1rBKQqKUuzSdiN1rromvaQCE3lIJ1EiX5hlLYhLtGOE/exec"; // 🔧 Ganti ini dengan URL Apps Script kamu
+const GOOGLE_APPS_SCRIPT_PROXY = "https://script.google.com/macros/s/AKfycbxguz0fmTSjiZ-HfL078I_2xxyP5bPFglNCPYp9FmLYRVZzCJyXyDMhCkCF9fXGaO2h/exec"; // 🔧 Ganti ini dengan URL Apps Script kamu
 
 function todayStr() {
   return new Date().toDateString();
