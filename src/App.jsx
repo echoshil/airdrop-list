@@ -4,152 +4,184 @@ import "./App.css";
 
 function App() {
   const [projects, setProjects] = useState([]);
-  const [newProject, setNewProject] = useState("");
+  const [form, setForm] = useState({
+    name: "",
+    twitter: "",
+    discord: "",
+    telegram: "",
+    wallet: "",
+    email: "",
+    website: "",
+  });
   const [theme, setTheme] = useState("dark");
-  const [progress, setProgress] = useState({ done: 0, total: 0 });
 
-  // Load projects from Google Sheets
+  // 🔹 Toggle dark/light mode
+  const toggleTheme = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    document.documentElement.classList.toggle("dark", next === "dark");
+  };
+
+  // 🔹 Load data dari Google Sheets
   const loadProjects = async () => {
     try {
       const sheetId = import.meta.env.VITE_GOOGLE_SHEET_ID;
       const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
       const range = "airdrop_tracker!A2:G1000";
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
-      const res = await axios.get(url);
 
+      const res = await axios.get(url);
       const data = res.data.values || [];
-      const loaded = data.map((row) => ({
-        name: row[0],
-        twitter: row[1],
-        discord: row[2],
-        telegram: row[3],
-        wallet: row[4],
-        email: row[5],
-        website: row[6],
-        daily: row[7] === "1",
-        done: row[8] === "1",
+      const mapped = data.map((r) => ({
+        name: r[0] || "",
+        twitter: r[1] || "",
+        discord: r[2] || "",
+        telegram: r[3] || "",
+        wallet: r[4] || "",
+        email: r[5] || "",
+        website: r[6] || "",
       }));
 
-      setProjects(loaded);
+      setProjects(mapped);
     } catch (err) {
-      console.error("Gagal load dari Google Sheets:", err);
-      alert("Gagal load dari Google Sheets. Pastikan Sheet public & API key benar.");
+      console.error("❌ Gagal load data:", err);
+      alert("Tidak bisa mengambil data dari Google Sheets. Pastikan Sheet kamu public & API key benar.");
     }
   };
 
-  // Add new project (save to Sheets via proxy)
+  // 🔹 Tambah project baru ke sheet
   const addProject = async () => {
-    if (!newProject.trim()) return alert("Masukkan nama project dulu!");
-
-    const newItem = {
-      name: newProject,
-      twitter: "",
-      discord: "",
-      telegram: "",
-      wallet: "",
-      email: "",
-      website: "",
-      daily: false,
-      done: false,
-    };
-
-    setProjects([...projects, newItem]);
-    setNewProject("");
-
+    if (!form.name.trim()) return alert("Nama project wajib diisi!");
     try {
-      const res = await axios.post("/api/sheets-proxy", newItem);
-      console.log("Proxy result:", res.data);
+      // Tambah ke local UI
+      setProjects([...projects, form]);
+
+      // Tambah ke Google Sheets (via Apps Script URL di env)
+      const scriptUrl = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
+      await axios.post(scriptUrl, form);
+
+      // Reset form
+      setForm({
+        name: "",
+        twitter: "",
+        discord: "",
+        telegram: "",
+        wallet: "",
+        email: "",
+        website: "",
+      });
+      alert("✅ Project berhasil ditambahkan!");
     } catch (err) {
-      console.error("Proxy append error:", err);
+      console.error("❌ Gagal menambah project:", err);
+      alert("Gagal menambah project ke Google Sheets. Periksa URL Apps Script kamu.");
     }
   };
 
-  // Toggle theme (dark/light)
-  const toggleTheme = () => {
-    const newTheme = theme === "dark" ? "light" : "dark";
-    setTheme(newTheme);
-    document.documentElement.classList.toggle("dark", newTheme === "dark");
-  };
-
-  // Calculate progress
-  useEffect(() => {
-    const doneCount = projects.filter((p) => p.done).length;
-    setProgress({ done: doneCount, total: projects.length });
-  }, [projects]);
-
-  // Load projects on start
   useEffect(() => {
     loadProjects();
   }, []);
 
   return (
-    <div className={`min-h-screen ${theme === "dark" ? "bg-gray-900 text-white" : "bg-gray-100 text-black"} transition`}>
+    <div className={`min-h-screen ${theme === "dark" ? "bg-gray-900 text-white" : "bg-gray-100 text-black"}`}>
+      {/* 🔹 Header */}
       <header className="flex justify-between items-center p-4 border-b border-gray-600">
         <h1 className="text-2xl font-bold">💰 Airdrop Tracker</h1>
-        <button onClick={toggleTheme} className="px-3 py-2 rounded bg-gray-700 hover:bg-gray-600">
-          {theme === "dark" ? "☀️ Light" : "🌙 Dark"}
+        <button
+          onClick={toggleTheme}
+          className="px-3 py-2 rounded bg-gray-700 hover:bg-gray-600 transition"
+        >
+          {theme === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode"}
         </button>
       </header>
 
+      {/* 🔹 Form Input */}
       <main className="p-6 max-w-3xl mx-auto">
-        <div className="mb-4 flex items-center gap-2">
+        <h2 className="text-lg font-semibold mb-4">Tambah Project Baru</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
           <input
             type="text"
-            value={newProject}
-            onChange={(e) => setNewProject(e.target.value)}
-            placeholder="Tambah project baru..."
-            className="border rounded p-2 flex-1 bg-transparent"
+            placeholder="Nama Project"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            className="border p-2 rounded bg-transparent"
           />
-          <button onClick={addProject} className="bg-green-600 hover:bg-green-500 text-white px-3 py-2 rounded">
-            Tambah
+          <input
+            type="text"
+            placeholder="🐦 Twitter"
+            value={form.twitter}
+            onChange={(e) => setForm({ ...form, twitter: e.target.value })}
+            className="border p-2 rounded bg-transparent"
+          />
+          <input
+            type="text"
+            placeholder="💬 Discord"
+            value={form.discord}
+            onChange={(e) => setForm({ ...form, discord: e.target.value })}
+            className="border p-2 rounded bg-transparent"
+          />
+          <input
+            type="text"
+            placeholder="📱 Telegram"
+            value={form.telegram}
+            onChange={(e) => setForm({ ...form, telegram: e.target.value })}
+            className="border p-2 rounded bg-transparent"
+          />
+          <input
+            type="text"
+            placeholder="💰 Wallet Address"
+            value={form.wallet}
+            onChange={(e) => setForm({ ...form, wallet: e.target.value })}
+            className="border p-2 rounded bg-transparent"
+          />
+          <input
+            type="email"
+            placeholder="📧 Email"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            className="border p-2 rounded bg-transparent"
+          />
+          <input
+            type="text"
+            placeholder="🌐 Website (optional)"
+            value={form.website}
+            onChange={(e) => setForm({ ...form, website: e.target.value })}
+            className="border p-2 rounded bg-transparent"
+          />
+        </div>
+
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={addProject}
+            className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded"
+          >
+            ➕ Tambah Project
           </button>
-          <button onClick={loadProjects} className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded">
-            Sync
+          <button
+            onClick={loadProjects}
+            className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded"
+          >
+            🔄 Refresh Data
           </button>
         </div>
 
-        <div className="mb-3">
-          <p>
-            Progress: {progress.done}/{progress.total} selesai
-          </p>
-          <div className="h-2 bg-gray-400 rounded mt-1">
-            <div
-              className="h-2 bg-green-500 rounded"
-              style={{ width: `${(progress.done / (progress.total || 1)) * 100}%` }}
-            ></div>
-          </div>
-        </div>
-
+        {/* 🔹 Daftar Project */}
+        <h2 className="text-lg font-semibold mb-2">Daftar Project</h2>
         <ul className="space-y-3">
+          {projects.length === 0 && <p className="opacity-70">Belum ada project...</p>}
           {projects.map((p, i) => (
             <li
               key={i}
-              className="p-3 rounded border border-gray-500 flex justify-between items-center hover:bg-gray-800"
+              className="p-4 rounded border border-gray-600 hover:bg-gray-800 transition"
             >
-              <div>
-                <a
-                  href={p.website || "#"}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="font-semibold hover:underline"
-                >
-                  {p.name}
-                </a>
-                <p className="text-sm opacity-75">
-                  {p.twitter && <span>🐦 {p.twitter} </span>}
-                  {p.discord && <span>💬 {p.discord} </span>}
-                  {p.telegram && <span>📱 {p.telegram} </span>}
-                </p>
+              <strong className="text-lg">{p.name}</strong>
+              <div className="text-sm mt-1 space-y-1">
+                {p.twitter && <p>🐦 <a href={p.twitter} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline">{p.twitter}</a></p>}
+                {p.discord && <p>💬 {p.discord}</p>}
+                {p.telegram && <p>📱 {p.telegram}</p>}
+                {p.wallet && <p>💰 {p.wallet}</p>}
+                {p.email && <p>📧 {p.email}</p>}
+                {p.website && <p>🌐 <a href={p.website} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline">{p.website}</a></p>}
               </div>
-              <input
-                type="checkbox"
-                checked={p.done}
-                onChange={() =>
-                  setProjects(
-                    projects.map((proj, idx) => (idx === i ? { ...proj, done: !proj.done } : proj))
-                  )
-                }
-              />
             </li>
           ))}
         </ul>
