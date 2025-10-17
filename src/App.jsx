@@ -15,14 +15,14 @@ function App() {
   });
   const [theme, setTheme] = useState("dark");
 
-  // 🔹 Toggle dark/light mode
+  // 🌓 Toggle dark/light mode
   const toggleTheme = () => {
     const next = theme === "dark" ? "light" : "dark";
     setTheme(next);
     document.documentElement.classList.toggle("dark", next === "dark");
   };
 
-  // 🔹 Load data dari Google Sheets
+  // 🔹 Load data dari Google Sheets (via API key)
   const loadProjects = async () => {
     try {
       const sheetId = import.meta.env.VITE_GOOGLE_SHEET_ID;
@@ -49,31 +49,34 @@ function App() {
     }
   };
 
-  // 🔹 Tambah project baru ke sheet
+  // 🔹 Tambah project baru ke Google Sheets via Apps Script
   const addProject = async () => {
     if (!form.name.trim()) return alert("Nama project wajib diisi!");
     try {
-      // Tambah ke local UI
+      // Tambah ke UI lokal dulu
       setProjects([...projects, form]);
 
-      // Tambah ke Google Sheets (via Apps Script URL di env)
+      // Kirim ke Google Sheets lewat Apps Script
       const scriptUrl = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
-      await axios.post(scriptUrl, form);
+      const res = await axios.post(scriptUrl, form);
 
-      // Reset form
-      setForm({
-        name: "",
-        twitter: "",
-        discord: "",
-        telegram: "",
-        wallet: "",
-        email: "",
-        website: "",
-      });
-      alert("✅ Project berhasil ditambahkan!");
+      if (res.status === 200) {
+        alert("✅ Project berhasil ditambahkan ke Google Sheets!");
+        setForm({
+          name: "",
+          twitter: "",
+          discord: "",
+          telegram: "",
+          wallet: "",
+          email: "",
+          website: "",
+        });
+      } else {
+        alert("⚠️ Gagal menambahkan ke Google Sheets");
+      }
     } catch (err) {
       console.error("❌ Gagal menambah project:", err);
-      alert("Gagal menambah project ke Google Sheets. Periksa URL Apps Script kamu.");
+      alert("Tidak bisa menambah data. Cek URL Apps Script kamu di .env");
     }
   };
 
@@ -97,6 +100,7 @@ function App() {
       {/* 🔹 Form Input */}
       <main className="p-6 max-w-3xl mx-auto">
         <h2 className="text-lg font-semibold mb-4">Tambah Project Baru</h2>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
           <input
             type="text"
@@ -142,7 +146,7 @@ function App() {
           />
           <input
             type="text"
-            placeholder="🌐 Website (optional)"
+            placeholder="🌐 Website"
             value={form.website}
             onChange={(e) => setForm({ ...form, website: e.target.value })}
             className="border p-2 rounded bg-transparent"
@@ -175,12 +179,26 @@ function App() {
             >
               <strong className="text-lg">{p.name}</strong>
               <div className="text-sm mt-1 space-y-1">
-                {p.twitter && <p>🐦 <a href={p.twitter} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline">{p.twitter}</a></p>}
+                {p.twitter && (
+                  <p>
+                    🐦{" "}
+                    <a href={p.twitter} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline">
+                      {p.twitter}
+                    </a>
+                  </p>
+                )}
                 {p.discord && <p>💬 {p.discord}</p>}
                 {p.telegram && <p>📱 {p.telegram}</p>}
                 {p.wallet && <p>💰 {p.wallet}</p>}
                 {p.email && <p>📧 {p.email}</p>}
-                {p.website && <p>🌐 <a href={p.website} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline">{p.website}</a></p>}
+                {p.website && (
+                  <p>
+                    🌐{" "}
+                    <a href={p.website} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline">
+                      {p.website}
+                    </a>
+                  </p>
+                )}
               </div>
             </li>
           ))}
