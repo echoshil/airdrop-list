@@ -70,21 +70,22 @@ function App() {
       const text = await res.text();
       console.log("Respon:", text);
 
-      if (text.includes("OK")) {
-        alert("✅ Project berhasil ditambahkan!");
-        fetchProjects();
-        setFormData({
-          name: "",
-          twitter: "",
-          discord: "",
-          telegram: "",
-          wallet: "",
-          email: "",
-          website: "",
-        });
-      } else {
-        alert("⚠️ Tidak bisa menambah data. Cek URL Apps Script kamu di .env");
-      }
+    if (text.toLowerCase().includes("ok")) {
+      alert("✅ Project berhasil ditambahkan!");
+      fetchProjects();
+      setFormData({
+        name: "",
+        twitter: "",
+        discord: "",
+        telegram: "",
+        wallet: "",
+        email: "",
+        website: "",
+      });
+    } else {
+      console.warn("Respon Apps Script:", text);
+      alert("⚠️ Data sudah terkirim, tapi format respon tidak sesuai. Cek Apps Script.");
+    }
     } catch (error) {
       console.error("Gagal kirim data:", error);
       alert("❌ Gagal mengirim data ke Google Script!");
