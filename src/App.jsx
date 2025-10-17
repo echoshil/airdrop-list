@@ -19,9 +19,14 @@ function App() {
 
   // Ambil data dari Google Sheets
   const fetchProjects = async () => {
+    if (!GOOGLE_SCRIPT_URL) {
+      alert("❌ URL Google Script belum diset di .env!");
+      return;
+    }
+
     try {
       setLoading(true);
-      const res = await fetch(GOOGLE_SCRIPT_URL);
+      const res = await fetch(GOOGLE_SCRIPT_URL + "?action=read");
       const data = await res.json();
       if (Array.isArray(data)) {
         setProjects(data);
@@ -30,7 +35,7 @@ function App() {
       }
     } catch (err) {
       console.error("Gagal ambil data:", err);
-      alert("Gagal load data dari Google Sheets. Pastikan URL Script benar.");
+      alert("⚠️ Gagal load data dari Google Sheets. Pastikan URL Script benar.");
     } finally {
       setLoading(false);
     }
@@ -47,14 +52,23 @@ function App() {
       return;
     }
 
+    if (!GOOGLE_SCRIPT_URL) {
+      alert("❌ URL Google Script belum diset di .env!");
+      return;
+    }
+
     try {
+      setLoading(true);
+
       const res = await fetch(GOOGLE_SCRIPT_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        mode: "cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" }, // biar gak kena preflight CORS
         body: JSON.stringify(formData),
       });
 
       const text = await res.text();
+      console.log("Respon:", text);
 
       if (text.includes("OK")) {
         alert("✅ Project berhasil ditambahkan!");
@@ -69,12 +83,13 @@ function App() {
           website: "",
         });
       } else {
-        console.error("Respon tidak sesuai:", text);
-        alert("Tidak bisa menambah data. Cek URL Apps Script kamu di .env");
+        alert("⚠️ Tidak bisa menambah data. Cek URL Apps Script kamu di .env");
       }
     } catch (error) {
       console.error("Gagal kirim data:", error);
-      alert("Gagal mengirim data ke Google Script!");
+      alert("❌ Gagal mengirim data ke Google Script!");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -85,33 +100,38 @@ function App() {
       <div className="bg-gray-800 p-4 rounded-lg mb-6">
         <h2 className="text-xl font-semibold mb-3">Tambah Project Baru</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {["name", "twitter", "discord", "telegram", "wallet", "email", "website"].map((field) => (
-            <input
-              key={field}
-              type="text"
-              placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
-              value={formData[field]}
-              onChange={(e) =>
-                setFormData({ ...formData, [field]: e.target.value })
-              }
-              className="p-2 rounded bg-gray-700 text-white w-full"
-            />
-          ))}
+          {["name", "twitter", "discord", "telegram", "wallet", "email", "website"].map(
+            (field) => (
+              <input
+                key={field}
+                type="text"
+                placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+                value={formData[field]}
+                onChange={(e) =>
+                  setFormData({ ...formData, [field]: e.target.value })
+                }
+                className="p-2 rounded bg-gray-700 text-white w-full"
+              />
+            )
+          )}
         </div>
 
         <div className="mt-4 flex gap-3">
           <button
             onClick={addProject}
-            className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded"
+            disabled={loading}
+            className={`${
+              loading ? "bg-gray-600" : "bg-green-600 hover:bg-green-700"
+            } px-4 py-2 rounded`}
           >
-            + Tambah Project
+            {loading ? "Loading..." : "+ Tambah Project"}
           </button>
           <button
             onClick={fetchProjects}
             disabled={loading}
             className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded"
           >
-            {loading ? "Loading..." : "Refresh Data"}
+            Refresh Data
           </button>
         </div>
       </div>
