@@ -24,7 +24,7 @@ function App() {
     website: "",
   });
 
-  // 🌙 Dark mode toggle
+  // 🌙 Toggle dark/light mode
   const toggleDarkMode = () => {
     const newTheme = !darkMode;
     setDarkMode(newTheme);
@@ -32,7 +32,7 @@ function App() {
     localStorage.setItem("theme", newTheme ? "dark" : "light");
   };
 
-  // 🔄 Fetch Google Sheets data
+  // 🔄 Fetch projects
   const fetchProjects = async () => {
     try {
       setLoading(true);
@@ -43,8 +43,8 @@ function App() {
         setFiltered(data);
         setLastUpdate(new Date().toLocaleString());
       }
-    } catch (err) {
-      alert("⚠️ Gagal load data dari Google Sheets. Cek URL Script.");
+    } catch {
+      alert("⚠️ Gagal memuat data dari Google Sheets. Cek URL Script.");
     } finally {
       setLoading(false);
     }
@@ -81,8 +81,11 @@ function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...formData, action: "add" }),
       });
-      const text = await res.text();
-      if (text.includes("OK")) {
+
+      const result = await res.json();
+
+      if (result.status === "OK") {
+        alert("✅ Project berhasil ditambahkan!");
         fetchProjects();
         setFormData({
           name: "",
@@ -94,10 +97,11 @@ function App() {
           website: "",
         });
       } else {
-        alert("⚠️ Data terkirim, tapi respon tidak sesuai. Cek Apps Script.");
+        alert("⚠️ Gagal menambah data: " + (result.message || "Unknown error"));
       }
-    } catch {
-      alert("Gagal kirim ke Google Script!");
+    } catch (err) {
+      console.error(err);
+      alert("❌ Gagal kirim ke Google Script!");
     }
   };
 
@@ -110,8 +114,13 @@ function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, action: "delete" }),
       });
-      const text = await res.text();
-      if (text.includes("OK")) fetchProjects();
+      const result = await res.json();
+      if (result.status === "OK") {
+        alert("🗑️ Project dihapus!");
+        fetchProjects();
+      } else {
+        alert("⚠️ Gagal hapus project!");
+      }
     } catch {
       alert("Gagal hapus project!");
     }
@@ -125,7 +134,7 @@ function App() {
           : "bg-gradient-to-br from-gray-100 via-white to-gray-200 text-gray-900"
       }`}
     >
-      <NeonParticles /> {/* 🌌 Neon background */}
+      <NeonParticles />
 
       <div className="relative z-10 p-6 max-w-6xl mx-auto">
         {/* Header */}
@@ -148,12 +157,8 @@ function App() {
           </motion.button>
         </div>
 
-        {/* Search & counter */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4"
-        >
+        {/* Search bar + total */}
+        <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
           <div className="text-lg font-semibold">
             🧮 Total Project:{" "}
             <span className="text-cyan-400 font-bold">{filtered.length}</span>
@@ -174,9 +179,9 @@ function App() {
               {loading ? "Loading..." : "Refresh"}
             </button>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Add project form */}
+        {/* Form tambah */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
@@ -217,13 +222,13 @@ function App() {
           </motion.button>
         </motion.div>
 
-        {/* Last Update */}
+        {/* Info update */}
         <div className="text-sm text-gray-400 mb-6">
           🕒 Terakhir diperbarui:{" "}
           <span className="text-cyan-400">{lastUpdate || "Belum ada"}</span>
         </div>
 
-        {/* Projects List */}
+        {/* Daftar Project */}
         {filtered.length === 0 ? (
           <p className="text-gray-400 text-center">Belum ada project.</p>
         ) : (
