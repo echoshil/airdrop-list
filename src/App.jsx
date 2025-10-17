@@ -70,36 +70,43 @@ function App() {
   }, [search, projects]);
 
   // ➕ Add project
-  const addProject = async () => {
-    if (!formData.name) {
-      alert("Nama project wajib diisi!");
-      return;
-    }
-    try {
-      const res = await fetch(GOOGLE_SCRIPT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, action: "add" }),
+const addProject = async () => {
+  if (!formData.name) {
+    alert("Nama project wajib diisi!");
+    return;
+  }
+
+  try {
+    const res = await fetch(GOOGLE_SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
+    });
+
+    const result = await res.json();
+    console.log("Respon Google Script:", result);
+
+    if (result.status === "OK") {
+      alert("✅ Project berhasil ditambahkan!");
+      fetchProjects();
+      setFormData({
+        name: "",
+        twitter: "",
+        discord: "",
+        telegram: "",
+        wallet: "",
+        email: "",
+        website: "",
       });
-      const text = await res.text();
-      if (text.includes("OK")) {
-        fetchProjects();
-        setFormData({
-          name: "",
-          twitter: "",
-          discord: "",
-          telegram: "",
-          wallet: "",
-          email: "",
-          website: "",
-        });
-      } else {
-        alert("⚠️ Data terkirim, tapi respon tidak sesuai. Cek Apps Script.");
-      }
-    } catch {
-      alert("Gagal kirim ke Google Script!");
+    } else {
+      console.error("Format respon tidak sesuai:", result);
+      alert("⚠️ Data sudah terkirim, tapi format respon tidak sesuai. Cek Apps Script kamu.");
     }
-  };
+  } catch (error) {
+    console.error("Gagal kirim data:", error);
+    alert("❌ Gagal kirim ke Google Script!");
+  }
+};
 
   // ❌ Delete project
   const deleteProject = async (name) => {
