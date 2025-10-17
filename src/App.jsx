@@ -27,6 +27,14 @@ function App() {
     dailyStatus: "❌",
   });
 
+  useEffect(() => {
+  if (darkMode) {
+    document.documentElement.classList.add("dark");
+  } else {
+    document.documentElement.classList.remove("dark");
+  }
+}, [darkMode]);
+
   // 🌙 Toggle Dark Mode
   const toggleDarkMode = () => {
     const newTheme = !darkMode;
