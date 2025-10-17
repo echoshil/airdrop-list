@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import React, { useEffect, useState } from "react";
 import "./App.css";
+
+// Ambil URL Google Apps Script dari .env
+const GOOGLE_SCRIPT_URL = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
 
 function App() {
   const [projects, setProjects] = useState([]);
-  const [form, setForm] = useState({
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
     name: "",
     twitter: "",
     discord: "",
@@ -13,56 +16,50 @@ function App() {
     email: "",
     website: "",
   });
-  const [theme, setTheme] = useState("dark");
 
-  // 🌓 Toggle dark/light mode
-  const toggleTheme = () => {
-    const next = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    document.documentElement.classList.toggle("dark", next === "dark");
-  };
-
-  // 🔹 Load data dari Google Sheets (via API key)
-  const loadProjects = async () => {
+  // Ambil data dari Google Sheets
+  const fetchProjects = async () => {
     try {
-      const sheetId = import.meta.env.VITE_GOOGLE_SHEET_ID;
-      const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
-      const range = "airdrop_tracker!A2:G1000";
-      const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
-
-      const res = await axios.get(url);
-      const data = res.data.values || [];
-      const mapped = data.map((r) => ({
-        name: r[0] || "",
-        twitter: r[1] || "",
-        discord: r[2] || "",
-        telegram: r[3] || "",
-        wallet: r[4] || "",
-        email: r[5] || "",
-        website: r[6] || "",
-      }));
-
-      setProjects(mapped);
+      setLoading(true);
+      const res = await fetch(GOOGLE_SCRIPT_URL);
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setProjects(data);
+      } else {
+        console.error("Format data salah:", data);
+      }
     } catch (err) {
-      console.error("❌ Gagal load data:", err);
-      alert("Tidak bisa mengambil data dari Google Sheets. Pastikan Sheet kamu public & API key benar.");
+      console.error("Gagal ambil data:", err);
+      alert("Gagal load data dari Google Sheets. Pastikan URL Script benar.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // 🔹 Tambah project baru ke Google Sheets via Apps Script
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  // Tambah project ke Google Sheet
   const addProject = async () => {
-    if (!form.name.trim()) return alert("Nama project wajib diisi!");
+    if (!formData.name) {
+      alert("Nama project wajib diisi!");
+      return;
+    }
+
     try {
-      // Tambah ke UI lokal dulu
-      setProjects([...projects, form]);
+      const res = await fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
 
-      // Kirim ke Google Sheets lewat Apps Script
-      const scriptUrl = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
-      const res = await axios.post(scriptUrl, form);
+      const text = await res.text();
 
-      if (res.status === 200) {
-        alert("✅ Project berhasil ditambahkan ke Google Sheets!");
-        setForm({
+      if (text.includes("OK")) {
+        alert("✅ Project berhasil ditambahkan!");
+        fetchProjects();
+        setFormData({
           name: "",
           twitter: "",
           discord: "",
@@ -72,138 +69,87 @@ function App() {
           website: "",
         });
       } else {
-        alert("⚠️ Gagal menambahkan ke Google Sheets");
+        console.error("Respon tidak sesuai:", text);
+        alert("Tidak bisa menambah data. Cek URL Apps Script kamu di .env");
       }
-    } catch (err) {
-      console.error("❌ Gagal menambah project:", err);
-      alert("Tidak bisa menambah data. Cek URL Apps Script kamu di .env");
+    } catch (error) {
+      console.error("Gagal kirim data:", error);
+      alert("Gagal mengirim data ke Google Script!");
     }
   };
 
-  useEffect(() => {
-    loadProjects();
-  }, []);
-
   return (
-    <div className={`min-h-screen ${theme === "dark" ? "bg-gray-900 text-white" : "bg-gray-100 text-black"}`}>
-      {/* 🔹 Header */}
-      <header className="flex justify-between items-center p-4 border-b border-gray-600">
-        <h1 className="text-2xl font-bold">💰 Airdrop Tracker</h1>
-        <button
-          onClick={toggleTheme}
-          className="px-3 py-2 rounded bg-gray-700 hover:bg-gray-600 transition"
-        >
-          {theme === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode"}
-        </button>
-      </header>
+    <div className="min-h-screen bg-gray-900 text-white p-6">
+      <h1 className="text-3xl font-bold mb-6 text-center">🚀 Airdrop Tracker</h1>
 
-      {/* 🔹 Form Input */}
-      <main className="p-6 max-w-3xl mx-auto">
-        <h2 className="text-lg font-semibold mb-4">Tambah Project Baru</h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-          <input
-            type="text"
-            placeholder="Nama Project"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="border p-2 rounded bg-transparent"
-          />
-          <input
-            type="text"
-            placeholder="🐦 Twitter"
-            value={form.twitter}
-            onChange={(e) => setForm({ ...form, twitter: e.target.value })}
-            className="border p-2 rounded bg-transparent"
-          />
-          <input
-            type="text"
-            placeholder="💬 Discord"
-            value={form.discord}
-            onChange={(e) => setForm({ ...form, discord: e.target.value })}
-            className="border p-2 rounded bg-transparent"
-          />
-          <input
-            type="text"
-            placeholder="📱 Telegram"
-            value={form.telegram}
-            onChange={(e) => setForm({ ...form, telegram: e.target.value })}
-            className="border p-2 rounded bg-transparent"
-          />
-          <input
-            type="text"
-            placeholder="💰 Wallet Address"
-            value={form.wallet}
-            onChange={(e) => setForm({ ...form, wallet: e.target.value })}
-            className="border p-2 rounded bg-transparent"
-          />
-          <input
-            type="email"
-            placeholder="📧 Email"
-            value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
-            className="border p-2 rounded bg-transparent"
-          />
-          <input
-            type="text"
-            placeholder="🌐 Website"
-            value={form.website}
-            onChange={(e) => setForm({ ...form, website: e.target.value })}
-            className="border p-2 rounded bg-transparent"
-          />
+      <div className="bg-gray-800 p-4 rounded-lg mb-6">
+        <h2 className="text-xl font-semibold mb-3">Tambah Project Baru</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {["name", "twitter", "discord", "telegram", "wallet", "email", "website"].map((field) => (
+            <input
+              key={field}
+              type="text"
+              placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+              value={formData[field]}
+              onChange={(e) =>
+                setFormData({ ...formData, [field]: e.target.value })
+              }
+              className="p-2 rounded bg-gray-700 text-white w-full"
+            />
+          ))}
         </div>
 
-        <div className="flex gap-2 mb-6">
+        <div className="mt-4 flex gap-3">
           <button
             onClick={addProject}
-            className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded"
+            className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded"
           >
-            ➕ Tambah Project
+            + Tambah Project
           </button>
           <button
-            onClick={loadProjects}
-            className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded"
+            onClick={fetchProjects}
+            disabled={loading}
+            className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded"
           >
-            🔄 Refresh Data
+            {loading ? "Loading..." : "Refresh Data"}
           </button>
         </div>
+      </div>
 
-        {/* 🔹 Daftar Project */}
-        <h2 className="text-lg font-semibold mb-2">Daftar Project</h2>
-        <ul className="space-y-3">
-          {projects.length === 0 && <p className="opacity-70">Belum ada project...</p>}
+      <h2 className="text-2xl font-semibold mb-4">📋 Daftar Project</h2>
+
+      {projects.length === 0 ? (
+        <p className="text-gray-400">Belum ada data project.</p>
+      ) : (
+        <div className="grid gap-3">
           {projects.map((p, i) => (
-            <li
+            <div
               key={i}
-              className="p-4 rounded border border-gray-600 hover:bg-gray-800 transition"
+              className="bg-gray-800 p-4 rounded-lg shadow flex flex-col gap-1"
             >
-              <strong className="text-lg">{p.name}</strong>
-              <div className="text-sm mt-1 space-y-1">
-                {p.twitter && (
-                  <p>
-                    🐦{" "}
-                    <a href={p.twitter} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline">
-                      {p.twitter}
-                    </a>
-                  </p>
-                )}
-                {p.discord && <p>💬 {p.discord}</p>}
-                {p.telegram && <p>📱 {p.telegram}</p>}
-                {p.wallet && <p>💰 {p.wallet}</p>}
-                {p.email && <p>📧 {p.email}</p>}
-                {p.website && (
-                  <p>
-                    🌐{" "}
-                    <a href={p.website} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline">
-                      {p.website}
-                    </a>
-                  </p>
-                )}
-              </div>
-            </li>
+              <h3 className="text-lg font-bold text-green-400">{p.name}</h3>
+              {p.twitter && <p>🐦 Twitter: {p.twitter}</p>}
+              {p.discord && <p>💬 Discord: {p.discord}</p>}
+              {p.telegram && <p>📢 Telegram: {p.telegram}</p>}
+              {p.wallet && <p>💰 Wallet: {p.wallet}</p>}
+              {p.email && <p>📧 Email: {p.email}</p>}
+              {p.website && (
+                <p>
+                  🌐 Website:{" "}
+                  <a
+                    href={p.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-400 underline"
+                  >
+                    {p.website}
+                  </a>
+                </p>
+              )}
+            </div>
           ))}
-        </ul>
-      </main>
+        </div>
+      )}
     </div>
   );
 }
