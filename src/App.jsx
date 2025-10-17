@@ -70,7 +70,7 @@ function App() {
       const text = await res.text();
       console.log("Respon:", text);
 
-      if (text.includes("OK")) {
+      if (text.toLowerCase().includes("ok")) {
         alert("✅ Project berhasil ditambahkan!");
         fetchProjects();
         setFormData({
@@ -83,7 +83,8 @@ function App() {
           website: "",
         });
       } else {
-        alert("⚠️ Tidak bisa menambah data. Cek URL Apps Script kamu di .env");
+        console.warn("Respon Apps Script:", text);
+        alert("⚠️ Data sudah terkirim, tapi format respon tidak sesuai. Cek Apps Script.");
       }
     } catch (error) {
       console.error("Gagal kirim data:", error);
