@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import NeonParticles from "./NeonParticles";
 import { motion } from "framer-motion";
+import NeonParticles from "./NeonParticles.jsx";
 import "./App.css";
 
 const GOOGLE_SCRIPT_URL = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
