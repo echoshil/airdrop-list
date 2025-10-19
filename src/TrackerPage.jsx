@@ -20,13 +20,23 @@ export default function TrackerPage() {
   const [hidden, setHidden] = useState(true);
   const [search, setSearch] = useState("");
 
-  // 🔄 Ambil data dari Google Sheet
+  // Ambil data dari Google Sheet
   const fetchProjects = async () => {
     try {
       setLoading(true);
       const res = await fetch(GOOGLE_SCRIPT_URL + "?action=read");
       const data = await res.json();
-      if (Array.isArray(data)) setProjects(data);
+
+      // 🔤 Normalisasi key agar tidak case-sensitive
+      const normalized = data.map((item) => {
+        const obj = {};
+        for (const key in item) {
+          obj[key.toLowerCase()] = item[key];
+        }
+        return obj;
+      });
+
+      if (Array.isArray(normalized)) setProjects(normalized);
     } catch (err) {
       console.error("Gagal load data:", err);
       alert("⚠️ Gagal memuat data dari Google Sheets. Cek URL Script.");
@@ -39,7 +49,7 @@ export default function TrackerPage() {
     fetchProjects();
   }, []);
 
-  // ➕ Tambah project
+  // Tambah project
   const addProject = async () => {
     if (!formData.name) {
       alert("Nama project wajib diisi!");
@@ -48,11 +58,10 @@ export default function TrackerPage() {
 
     try {
       setLoading(true);
-
       const res = await fetch(GOOGLE_SCRIPT_URL, {
         method: "POST",
         mode: "cors",
-        headers: { "Content-Type": "text/plain;charset=utf-8" }, // ✅ anti-CORS preflight
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(formData),
       });
 
@@ -83,10 +92,9 @@ export default function TrackerPage() {
     }
   };
 
-  // 👁️ Toggle global hide/unhide
   const toggleHidden = () => setHidden(!hidden);
 
-  // 🔍 Filter pencarian
+  // Filter pencarian
   const filtered = projects.filter((p) =>
     p.name?.toLowerCase().includes(search.toLowerCase())
   );
@@ -95,7 +103,6 @@ export default function TrackerPage() {
     <div className="relative min-h-screen bg-gray-900 text-white overflow-hidden">
       <NeonParticles />
 
-      {/* Header */}
       <div className="relative z-10 max-w-6xl mx-auto p-6">
         <h1 className="text-3xl font-bold text-center mb-4 bg-gradient-to-r from-cyan-400 to-purple-500 text-transparent bg-clip-text">
           🚀 Airdrop Tracker
@@ -191,32 +198,21 @@ export default function TrackerPage() {
                 </h3>
                 <div className="text-sm space-y-1 break-words">
                   {p.twitter && (
-                    <p>
-                      🐦 Twitter:{" "}
-                      {hidden ? "****" : <span>{p.twitter}</span>}
-                    </p>
+                    <p>🐦 Twitter: {hidden ? "****" : p.twitter}</p>
                   )}
                   {p.discord && (
-                    <p>
-                      💬 Discord:{" "}
-                      {hidden ? "****" : <span>{p.discord}</span>}
-                    </p>
+                    <p>💬 Discord: {hidden ? "****" : p.discord}</p>
                   )}
                   {p.telegram && (
-                    <p>
-                      📢 Telegram:{" "}
-                      {hidden ? "****" : <span>{p.telegram}</span>}
-                    </p>
+                    <p>📢 Telegram: {hidden ? "****" : p.telegram}</p>
                   )}
                   {p.wallet && (
                     <p className="truncate">
-                      💰 Wallet: {hidden ? "****" : <span>{p.wallet}</span>}
+                      💰 Wallet: {hidden ? "****" : p.wallet}
                     </p>
                   )}
                   {p.email && (
-                    <p>
-                      📧 Email: {hidden ? "****" : <span>{p.email}</span>}
-                    </p>
+                    <p>📧 Email: {hidden ? "****" : p.email}</p>
                   )}
                   {p.github && (
                     <p className="flex items-center gap-1">
@@ -225,7 +221,11 @@ export default function TrackerPage() {
                         "****"
                       ) : (
                         <a
-                          href={p.github}
+                          href={
+                            p.github.startsWith("http")
+                              ? p.github
+                              : `https://github.com/${p.github}`
+                          }
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-400 underline break-all"
