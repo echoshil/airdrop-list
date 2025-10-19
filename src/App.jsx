@@ -11,7 +11,7 @@ import {
   Github,
 } from "lucide-react";
 import "./App.css";
-import NeonParticles from "./NeonParticles"; // ✅ tambahkan kembali efek neon
+import NeonParticles from "./NeonParticles";
 
 const GOOGLE_SCRIPT_URL = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
 
@@ -112,10 +112,10 @@ function App() {
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 text-white overflow-hidden">
-      {/* 🌌 Efek Partikel Neon */}
+      {/* 🌌 Efek Partikel */}
       <NeonParticles />
 
-      {/* Konten utama */}
+      {/* Konten Utama */}
       <div className="relative z-10 p-6 max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold mb-6 text-center text-cyan-400 drop-shadow-[0_0_5px_#00ffff]">
           🚀 Airdrop Tracker Pro
@@ -123,7 +123,9 @@ function App() {
 
         {/* Form Tambah Project */}
         <div className="bg-gray-800/70 backdrop-blur-sm p-4 rounded-lg mb-6 shadow-md border border-cyan-500/20">
-          <h2 className="text-xl font-semibold mb-3 text-cyan-300">Tambah Project Baru</h2>
+          <h2 className="text-xl font-semibold mb-3 text-cyan-300">
+            Tambah Project Baru
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {[
               "name",
@@ -184,7 +186,9 @@ function App() {
         </div>
 
         {/* Daftar Project */}
-        <h2 className="text-2xl font-semibold mb-4 text-cyan-300">📋 Daftar Project</h2>
+        <h2 className="text-2xl font-semibold mb-4 text-cyan-300">
+          📋 Daftar Project
+        </h2>
 
         {filteredProjects.length === 0 ? (
           <p className="text-gray-400 text-center">Belum ada data project.</p>
@@ -193,7 +197,7 @@ function App() {
             {filteredProjects.map((p, i) => (
               <div
                 key={i}
-                className="bg-gray-800/70 backdrop-blur-md p-4 rounded-xl shadow-md border border-gray-700 hover:border-cyan-400/40 transition-all"
+                className="relative bg-gray-800/70 backdrop-blur-md p-4 rounded-xl shadow-md border border-gray-700 hover:border-cyan-400/40 transition-all"
               >
                 {/* Tombol Hide */}
                 <button
@@ -210,13 +214,13 @@ function App() {
                 {p.twitter && (
                   <p className="flex items-center gap-2 break-all text-sm">
                     <Twitter size={14} className="text-sky-400" />
-                    {p.twitter}
+                    {hidden ? "••••••••••" : p.twitter}
                   </p>
                 )}
                 {p.discord && (
                   <p className="flex items-center gap-2 break-all text-sm">
                     <MessageSquare size={14} className="text-indigo-400" />
-                    {p.discord}
+                    {hidden ? "••••••••••" : p.discord}
                   </p>
                 )}
                 {p.telegram && (
