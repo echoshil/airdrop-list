@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, Github } from "lucide-react";
+import { Eye, EyeOff, Github, CheckCircle, Circle } from "lucide-react";
 import "./App.css";
 
 const GOOGLE_SCRIPT_URL = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
@@ -10,6 +10,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [visible, setVisible] = useState({});
+  const [dailyStatus, setDailyStatus] = useState({});
   const [formData, setFormData] = useState({
     name: "",
     twitter: "",
@@ -22,15 +23,16 @@ function App() {
   });
   const [lastUpdate, setLastUpdate] = useState(null);
 
-  // Fungsi untuk masking (hide)
   const mask = (value) => (value ? "•".repeat(Math.min(value.length, 10)) : "");
 
-  // Toggle visibilitas per project
   const toggleVisibility = (index) => {
     setVisible((prev) => ({ ...prev, [index]: !prev[index] }));
   };
 
-  // Ambil data dari Google Sheets
+  const toggleDaily = (index) => {
+    setDailyStatus((prev) => ({ ...prev, [index]: !prev[index] }));
+  };
+
   const fetchProjects = async () => {
     if (!GOOGLE_SCRIPT_URL) {
       alert("❌ URL Google Script belum diset di .env!");
@@ -59,7 +61,6 @@ function App() {
     fetchProjects();
   }, []);
 
-  // Tambah project ke Google Sheet
   const addProject = async () => {
     if (!formData.name) {
       alert("Nama project wajib diisi!");
@@ -109,7 +110,6 @@ function App() {
     }
   };
 
-  // Filter berdasarkan pencarian
   const filteredProjects = projects.filter((p) =>
     p.name?.toLowerCase().includes(search.toLowerCase())
   );
@@ -202,7 +202,7 @@ function App() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.05 }}
-              className="bg-gray-800 p-4 rounded-lg shadow-lg border border-gray-700 relative hover:border-cyan-400 transition-all"
+              className="relative bg-gray-800 p-4 rounded-lg shadow-lg border border-gray-700 hover:border-cyan-400 transition-all"
             >
               <h3 className="text-lg font-bold text-green-400">{p.name}</h3>
 
@@ -215,9 +215,7 @@ function App() {
 
               {p.twitter && <p>🐦 {visible[i] ? p.twitter : mask(p.twitter)}</p>}
               {p.discord && <p>💬 {visible[i] ? p.discord : mask(p.discord)}</p>}
-              {p.telegram && (
-                <p>📢 {visible[i] ? p.telegram : mask(p.telegram)}</p>
-              )}
+              {p.telegram && <p>📢 {visible[i] ? p.telegram : mask(p.telegram)}</p>}
               {p.wallet && <p>💰 {visible[i] ? p.wallet : mask(p.wallet)}</p>}
               {p.email && <p>📧 {visible[i] ? p.email : mask(p.email)}</p>}
               {p.github && (
@@ -239,6 +237,19 @@ function App() {
                   </a>
                 </p>
               )}
+
+              {/* ✅ Daily Check toggle */}
+              <button
+                onClick={() => toggleDaily(i)}
+                className="absolute bottom-3 right-3 text-cyan-400 hover:scale-110 transition-transform"
+                title="Tandai Daily"
+              >
+                {dailyStatus[i] ? (
+                  <CheckCircle size={22} className="text-green-400" />
+                ) : (
+                  <Circle size={22} className="text-gray-500" />
+                )}
+              </button>
             </motion.div>
           ))}
         </div>
