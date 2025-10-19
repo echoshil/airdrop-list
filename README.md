@@ -4,12 +4,19 @@
 Didesain dengan efek neon, animasi halus, dan sistem penyimpanan real-time via Google Sheets API.
 
 ✨ Fitur Utama :
+
 🧩 Tambah project airdrop (Twitter, Discord, Telegram, Wallet, Email, GitHub, Website)
+
 🔍 Search bar — cari project dengan cepat
+
 ⚙️ Auto-refresh + Last Update info
+
 🕶️ Global Hide/Unhide — sembunyikan data sensitif (wallet, email, dsb)
+
 🌐 Website link aktif
+
 💡 Efek Neon Web3 (via NeonParticles.jsx)
+
 📱 UI Responsif (desktop & mobile friendly)
 
 🧠 Teknologi yang Digunakan :
