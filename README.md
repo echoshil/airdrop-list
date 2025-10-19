@@ -20,12 +20,19 @@ Didesain dengan efek neon, animasi halus, dan sistem penyimpanan real-time via G
 📱 UI Responsif (desktop & mobile friendly)
 
 🧠 Teknologi yang Digunakan :
+
 Stack	Deskripsi
+
 ⚛️ React + Vite	Frontend cepat & modern
+
 🎨 TailwindCSS	Styling responsif dan ringan
+
 💫 Framer Motion	Animasi UI Web3 halus
+
 🔗 Google Apps Script	Backend API untuk menyimpan ke Google Sheets
+
 ☁️ Vercel	Hosting & deploy otomatis
+
 🧰 lucide-react	Icon pack modern bergaya Web3
 
 ⚙️ Setup Lokal
