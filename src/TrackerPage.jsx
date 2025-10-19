@@ -116,7 +116,7 @@ const TrackerPage = ({ onLogout }) => {
       {/* HEADER */}
       <div className="relative z-10 p-6 text-center">
         <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
-          🚀 Airdrop Tracker Pro
+          🚀 List Airdrop Tracker By Ikiw97
         </h1>
         <p className="text-gray-400 text-sm">
           Pantau & tambahkan project airdrop kamu dengan mudah
