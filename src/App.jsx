@@ -148,7 +148,7 @@ function App() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 text-white p-6">
       <h1 className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 text-transparent bg-clip-text">
-        🚀 Airdrop Tracker Pro
+        🚀 Airdrop Tracker by Ikiw97
       </h1>
 
       {/* ➕ Form Tambah Project */}
