@@ -13,6 +13,7 @@ import {
   LogOut,
   ArrowUpDown,
   Clock,
+  Search,
 } from "lucide-react";
 import {
   LineChart,
@@ -33,7 +34,9 @@ function TrackerPage({ onLogout }) {
   const [sortOrder, setSortOrder] = useState("asc");
   const [coins, setCoins] = useState([]);
   const [lastUpdate, setLastUpdate] = useState(null);
-  const [showAll, setShowAll] = useState(false); // 🆕 untuk "Read More"
+  const [showAll, setShowAll] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(""); // 🔍 Search state
+
   const [formData, setFormData] = useState({
     name: "",
     twitter: "",
@@ -45,6 +48,7 @@ function TrackerPage({ onLogout }) {
     website: "",
   });
 
+  // 🔹 Ambil data project
   const fetchProjects = async () => {
     try {
       setLoading(true);
@@ -54,7 +58,7 @@ function TrackerPage({ onLogout }) {
         setProjects(data);
         setLastUpdate(new Date().toLocaleString());
       }
-    } catch (err) {
+    } catch {
       alert("⚠️ Gagal load data dari Google Sheets.");
     } finally {
       setLoading(false);
@@ -65,6 +69,7 @@ function TrackerPage({ onLogout }) {
     fetchProjects();
   }, []);
 
+  // 🔹 Tambah project
   const addProject = async () => {
     if (!formData.name) return alert("Nama project wajib diisi!");
     try {
@@ -96,15 +101,22 @@ function TrackerPage({ onLogout }) {
     }
   };
 
+  // 🔹 Sorting A-Z / Z-A
   const sortedProjects = [...projects].sort((a, b) => {
     const A = (a.name || "").toLowerCase();
     const B = (b.name || "").toLowerCase();
     return sortOrder === "asc" ? A.localeCompare(B) : B.localeCompare(A);
   });
 
-  // tampilkan hanya 9 pertama jika belum "Read More"
-  const visibleProjects = showAll ? sortedProjects : sortedProjects.slice(0, 9);
+  // 🔍 Filter project by search
+  const filteredProjects = sortedProjects.filter((p) =>
+    (p.name || "").toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
+  // 🔹 Tampilkan 9 dulu
+  const visibleProjects = showAll ? filteredProjects : filteredProjects.slice(0, 9);
+
+  // 🔹 Fetch Market Data
   const fetchMarket = async () => {
     try {
       const res = await fetch(
@@ -167,12 +179,25 @@ function TrackerPage({ onLogout }) {
         </div>
       </div>
 
-      {/* LAST UPDATE */}
-      <div className="text-center text-gray-400 mb-6 flex items-center justify-center gap-2">
-        <Clock size={16} />
-        <span>
-          Terakhir diperbarui: {lastUpdate ? lastUpdate : "Memuat..."}
-        </span>
+      {/* LAST UPDATE + SEARCH */}
+      <div className="text-center text-gray-400 mb-6 flex flex-col md:flex-row items-center justify-center gap-3 px-6">
+        <div className="flex items-center gap-2">
+          <Clock size={16} />
+          <span>Terakhir diperbarui: {lastUpdate ? lastUpdate : "Memuat..."}</span>
+        </div>
+        <div className="relative w-full max-w-md">
+          <Search
+            size={18}
+            className="absolute left-3 top-2.5 text-gray-400"
+          />
+          <input
+            type="text"
+            placeholder="Cari project..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 pr-4 py-2 w-full rounded-lg bg-gray-800 border border-gray-700 text-white focus:border-cyan-400 outline-none"
+          />
+        </div>
       </div>
 
       {/* FORM INPUT */}
@@ -195,10 +220,11 @@ function TrackerPage({ onLogout }) {
         <button
           onClick={addProject}
           disabled={loading}
-          className={`mt-4 px-6 py-2 rounded-lg shadow-md transition-all ${loading
-            ? "bg-gray-600 cursor-not-allowed"
-            : "bg-green-600 hover:bg-green-700"
-            }`}
+          className={`mt-4 px-6 py-2 rounded-lg shadow-md transition-all ${
+            loading
+              ? "bg-gray-600 cursor-not-allowed"
+              : "bg-green-600 hover:bg-green-700"
+          }`}
         >
           {loading ? "Loading..." : "+ Tambah Project"}
         </button>
@@ -229,11 +255,14 @@ function TrackerPage({ onLogout }) {
         ))}
       </div>
 
-      {/* READ MORE BUTTON */}
-      {projects.length > 9 && (
+      {/* READ MORE */}
+      {filteredProjects.length > 9 && (
         <div className="text-center mt-6 mb-10">
           <button
-            onClick={() => setShowAll(!showAll)}
+            onClick={() => {
+              setShowAll(!showAll);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
             className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg text-white font-semibold shadow-md"
           >
             {showAll ? "Show Less" : "Read More"}
@@ -248,23 +277,48 @@ function TrackerPage({ onLogout }) {
         </h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {coins.map((coin) => (
-            <div key={coin.id} className="bg-gray-900/70 p-4 rounded-xl border border-gray-700 hover:border-cyan-400/60 shadow-lg">
+            <div
+              key={coin.id}
+              className="bg-gray-900/70 p-4 rounded-xl border border-gray-700 hover:border-cyan-400/60 shadow-lg"
+            >
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-3">
                   <img src={coin.image} alt={coin.name} className="w-6 h-6" />
                   <span className="font-semibold">{coin.name}</span>
                 </div>
-                <span className={`text-sm font-bold ${coin.price_change_percentage_24h >= 0 ? "text-green-400" : "text-red-400"}`}>
+                <span
+                  className={`text-sm font-bold ${
+                    coin.price_change_percentage_24h >= 0
+                      ? "text-green-400"
+                      : "text-red-400"
+                  }`}
+                >
                   {coin.price_change_percentage_24h.toFixed(2)}%
                 </span>
               </div>
-              <p className="text-gray-300 mb-2 text-sm">${coin.current_price.toLocaleString()}</p>
+              <p className="text-gray-300 mb-2 text-sm">
+                ${coin.current_price.toLocaleString()}
+              </p>
               <ResponsiveContainer width="100%" height={60}>
-                <LineChart data={coin.sparkline_in_7d.price.map((p, i) => ({ i, p }))}>
-                  <Line type="monotone" dataKey="p" stroke={coin.price_change_percentage_24h >= 0 ? "#22c55e" : "#ef4444"} dot={false} strokeWidth={2} />
+                <LineChart
+                  data={coin.sparkline_in_7d.price.map((p, i) => ({ i, p }))}
+                >
+                  <Line
+                    type="monotone"
+                    dataKey="p"
+                    stroke={
+                      coin.price_change_percentage_24h >= 0
+                        ? "#22c55e"
+                        : "#ef4444"
+                    }
+                    dot={false}
+                    strokeWidth={2}
+                  />
                   <XAxis hide />
                   <YAxis hide domain={["auto", "auto"]} />
-                  <Tooltip contentStyle={{ background: "#111", border: "none" }} />
+                  <Tooltip
+                    contentStyle={{ background: "#111", border: "none" }}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </div>
