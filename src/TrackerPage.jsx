@@ -33,6 +33,7 @@ function TrackerPage({ onLogout }) {
   const [sortOrder, setSortOrder] = useState("asc");
   const [coins, setCoins] = useState([]);
   const [lastUpdate, setLastUpdate] = useState(null);
+  const [showAll, setShowAll] = useState(false); // 🆕 untuk "Read More"
   const [formData, setFormData] = useState({
     name: "",
     twitter: "",
@@ -101,7 +102,9 @@ function TrackerPage({ onLogout }) {
     return sortOrder === "asc" ? A.localeCompare(B) : B.localeCompare(A);
   });
 
-  // ✅ Fetch market
+  // tampilkan hanya 9 pertama jika belum "Read More"
+  const visibleProjects = showAll ? sortedProjects : sortedProjects.slice(0, 9);
+
   const fetchMarket = async () => {
     try {
       const res = await fetch(
@@ -168,8 +171,7 @@ function TrackerPage({ onLogout }) {
       <div className="text-center text-gray-400 mb-6 flex items-center justify-center gap-2">
         <Clock size={16} />
         <span>
-          Terakhir diperbarui:{" "}
-          {lastUpdate ? lastUpdate : "Memuat..."}
+          Terakhir diperbarui: {lastUpdate ? lastUpdate : "Memuat..."}
         </span>
       </div>
 
@@ -204,65 +206,19 @@ function TrackerPage({ onLogout }) {
 
       {/* PROJECT LIST */}
       <div className="relative z-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 px-6">
-        {sortedProjects.map((p, i) => (
+        {visibleProjects.map((p, i) => (
           <div
             key={i}
             className="bg-gray-900/70 backdrop-blur-md p-5 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all shadow-lg"
           >
             <h3 className="text-lg font-bold text-cyan-400 mb-3">{p.name}</h3>
-            {p.twitter && (
-              <p className="flex items-center gap-2 text-blue-400">
-                <Twitter size={18} />
-                <span>{hideData ? "••••••••" : p.twitter}</span>
-              </p>
-            )}
-            {p.discord && (
-              <p className="flex items-center gap-2 text-indigo-400">
-                <MessageCircle size={18} />
-                <span>{hideData ? "••••••••" : p.discord}</span>
-              </p>
-            )}
-            {p.telegram && (
-              <p className="flex items-center gap-2 text-sky-400">
-                <Send size={18} />
-                <span>{hideData ? "••••••••" : p.telegram}</span>
-              </p>
-            )}
-            {p.wallet && (
-              <p className="flex items-center gap-2 text-yellow-400">
-                <Wallet size={18} />
-                <span className="break-all">
-                  {hideData ? "••••••••" : p.wallet}
-                </span>
-              </p>
-            )}
-            {p.email && (
-              <p className="flex items-center gap-2 text-pink-400">
-                <Mail size={18} />
-                <span>{hideData ? "••••••••" : p.email}</span>
-              </p>
-            )}
-            {p.github && (
-              <p className="flex items-center gap-2 text-gray-300">
-                <Github size={18} />
-                <span>{hideData ? "••••••••" : p.github}</span>
-              </p>
-            )}
-            {p.website && (
-              <p className="flex items-center gap-2 text-blue-400">
-                <Globe size={18} />
-                <a
-                  href={p.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline hover:text-blue-300"
-                >
-                  {p.website}
-                </a>
-              </p>
-            )}
-
-            {/* ⏰ LAST UPDATE per project */}
+            {p.twitter && <p className="flex items-center gap-2 text-blue-400"><Twitter size={18}/><span>{hideData?"••••••••":p.twitter}</span></p>}
+            {p.discord && <p className="flex items-center gap-2 text-indigo-400"><MessageCircle size={18}/><span>{hideData?"••••••••":p.discord}</span></p>}
+            {p.telegram && <p className="flex items-center gap-2 text-sky-400"><Send size={18}/><span>{hideData?"••••••••":p.telegram}</span></p>}
+            {p.wallet && <p className="flex items-center gap-2 text-yellow-400"><Wallet size={18}/><span className="break-all">{hideData?"••••••••":p.wallet}</span></p>}
+            {p.email && <p className="flex items-center gap-2 text-pink-400"><Mail size={18}/><span>{hideData?"••••••••":p.email}</span></p>}
+            {p.github && <p className="flex items-center gap-2 text-gray-300"><Github size={18}/><span>{hideData?"••••••••":p.github}</span></p>}
+            {p.website && <p className="flex items-center gap-2 text-blue-400"><Globe size={18}/><a href={p.website} target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-300">{p.website}</a></p>}
             {p.lastUpdate && (
               <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
                 <Clock size={12} /> Last update:{" "}
@@ -273,55 +229,42 @@ function TrackerPage({ onLogout }) {
         ))}
       </div>
 
+      {/* READ MORE BUTTON */}
+      {projects.length > 9 && (
+        <div className="text-center mt-6 mb-10">
+          <button
+            onClick={() => setShowAll(!showAll)}
+            className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg text-white font-semibold shadow-md"
+          >
+            {showAll ? "Show Less" : "Read More"}
+          </button>
+        </div>
+      )}
+
       {/* 📊 LIVE CHART */}
-      <div className="relative z-10 mt-16 px-6 pb-10">
+      <div className="relative z-10 mt-10 px-6 pb-10">
         <h2 className="text-2xl font-bold mb-6 text-center bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
           📈 Live Crypto Market
         </h2>
-
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {coins.map((coin) => (
-            <div
-              key={coin.id}
-              className="bg-gray-900/70 p-4 rounded-xl border border-gray-700 hover:border-cyan-400/60 shadow-lg"
-            >
+            <div key={coin.id} className="bg-gray-900/70 p-4 rounded-xl border border-gray-700 hover:border-cyan-400/60 shadow-lg">
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-3">
                   <img src={coin.image} alt={coin.name} className="w-6 h-6" />
                   <span className="font-semibold">{coin.name}</span>
                 </div>
-                <span
-                  className={`text-sm font-bold ${coin.price_change_percentage_24h >= 0
-                      ? "text-green-400"
-                      : "text-red-400"
-                    }`}
-                >
+                <span className={`text-sm font-bold ${coin.price_change_percentage_24h >= 0 ? "text-green-400" : "text-red-400"}`}>
                   {coin.price_change_percentage_24h.toFixed(2)}%
                 </span>
               </div>
-              <p className="text-gray-300 mb-2 text-sm">
-                ${coin.current_price.toLocaleString()}
-              </p>
+              <p className="text-gray-300 mb-2 text-sm">${coin.current_price.toLocaleString()}</p>
               <ResponsiveContainer width="100%" height={60}>
-                <LineChart
-                  data={coin.sparkline_in_7d.price.map((p, i) => ({ i, p }))}
-                >
-                  <Line
-                    type="monotone"
-                    dataKey="p"
-                    stroke={
-                      coin.price_change_percentage_24h >= 0
-                        ? "#22c55e"
-                        : "#ef4444"
-                    }
-                    dot={false}
-                    strokeWidth={2}
-                  />
+                <LineChart data={coin.sparkline_in_7d.price.map((p, i) => ({ i, p }))}>
+                  <Line type="monotone" dataKey="p" stroke={coin.price_change_percentage_24h >= 0 ? "#22c55e" : "#ef4444"} dot={false} strokeWidth={2} />
                   <XAxis hide />
                   <YAxis hide domain={["auto", "auto"]} />
-                  <Tooltip
-                    contentStyle={{ background: "#111", border: "none" }}
-                  />
+                  <Tooltip contentStyle={{ background: "#111", border: "none" }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
