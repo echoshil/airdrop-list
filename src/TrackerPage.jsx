@@ -35,7 +35,7 @@ function TrackerPage({ onLogout }) {
   const [coins, setCoins] = useState([]);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [showAll, setShowAll] = useState(false);
-  const [searchQuery, setSearchQuery] = useState(""); // 🔍 Search state
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -113,8 +113,8 @@ function TrackerPage({ onLogout }) {
     (p.name || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // 🔹 Tampilkan 9 dulu
-  const visibleProjects = showAll ? filteredProjects : filteredProjects.slice(0, 9);
+  // 🔹 Tampilkan 6 dulu (3x2 grid)
+  const visibleProjects = showAll ? filteredProjects : filteredProjects.slice(0, 6);
 
   // 🔹 Fetch Market Data
   const fetchMarket = async () => {
@@ -245,18 +245,12 @@ function TrackerPage({ onLogout }) {
             {p.email && <p className="flex items-center gap-2 text-pink-400"><Mail size={18}/><span>{hideData?"••••••••":p.email}</span></p>}
             {p.github && <p className="flex items-center gap-2 text-gray-300"><Github size={18}/><span>{hideData?"••••••••":p.github}</span></p>}
             {p.website && <p className="flex items-center gap-2 text-blue-400"><Globe size={18}/><a href={p.website} target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-300">{p.website}</a></p>}
-            {p.lastUpdate && (
-              <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
-                <Clock size={12} /> Last update:{" "}
-                {new Date(p.lastUpdate).toLocaleString()}
-              </p>
-            )}
           </div>
         ))}
       </div>
 
       {/* READ MORE */}
-      {filteredProjects.length > 9 && (
+      {filteredProjects.length > 6 && (
         <div className="text-center mt-6 mb-10">
           <button
             onClick={() => {
