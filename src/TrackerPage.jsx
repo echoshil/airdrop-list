@@ -48,7 +48,7 @@ function TrackerPage({ onLogout }) {
     website: "",
   });
 
-  // 🔹 Ambil data project
+  // 🔹 Fetch project list
   const fetchProjects = async () => {
     try {
       setLoading(true);
@@ -69,7 +69,7 @@ function TrackerPage({ onLogout }) {
     fetchProjects();
   }, []);
 
-  // 🔹 Tambah project
+  // 🔹 Add new project
   const addProject = async () => {
     if (!formData.name) return alert("Nama project wajib diisi!");
     try {
@@ -101,22 +101,22 @@ function TrackerPage({ onLogout }) {
     }
   };
 
-  // 🔹 Sorting A-Z / Z-A
+  // 🔹 Sorting
   const sortedProjects = [...projects].sort((a, b) => {
     const A = (a.name || "").toLowerCase();
     const B = (b.name || "").toLowerCase();
     return sortOrder === "asc" ? A.localeCompare(B) : B.localeCompare(A);
   });
 
-  // 🔍 Filter project by search
+  // 🔍 Search filter
   const filteredProjects = sortedProjects.filter((p) =>
     (p.name || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // 🔹 Tampilkan 6 dulu (3x2 grid)
-  const visibleProjects = showAll ? filteredProjects : filteredProjects.slice(0, 6);
+  // 🔹 Show only 3 cards by default (1 row × 3 columns)
+  const visibleProjects = showAll ? filteredProjects : filteredProjects.slice(0, 3);
 
-  // 🔹 Fetch Market Data
+  // 🔹 Fetch market data
   const fetchMarket = async () => {
     try {
       const res = await fetch(
@@ -186,10 +186,7 @@ function TrackerPage({ onLogout }) {
           <span>Terakhir diperbarui: {lastUpdate ? lastUpdate : "Memuat..."}</span>
         </div>
         <div className="relative w-full max-w-md">
-          <Search
-            size={18}
-            className="absolute left-3 top-2.5 text-gray-400"
-          />
+          <Search size={18} className="absolute left-3 top-2.5 text-gray-400" />
           <input
             type="text"
             placeholder="Cari project..."
@@ -206,16 +203,18 @@ function TrackerPage({ onLogout }) {
           ➕ Tambah Project Baru
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {["name", "twitter", "discord", "telegram", "wallet", "email", "github", "website"].map((field) => (
-            <input
-              key={field}
-              type="text"
-              placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
-              value={formData[field]}
-              onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
-              className="p-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white w-full"
-            />
-          ))}
+          {["name", "twitter", "discord", "telegram", "wallet", "email", "github", "website"].map(
+            (field) => (
+              <input
+                key={field}
+                type="text"
+                placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+                value={formData[field]}
+                onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
+                className="p-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white w-full"
+              />
+            )
+          )}
         </div>
         <button
           onClick={addProject}
@@ -230,7 +229,7 @@ function TrackerPage({ onLogout }) {
         </button>
       </div>
 
-      {/* PROJECT LIST */}
+      {/* PROJECT LIST - hanya 3 card awal */}
       <div className="relative z-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 px-6">
         {visibleProjects.map((p, i) => (
           <div
@@ -238,19 +237,61 @@ function TrackerPage({ onLogout }) {
             className="bg-gray-900/70 backdrop-blur-md p-5 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all shadow-lg"
           >
             <h3 className="text-lg font-bold text-cyan-400 mb-3">{p.name}</h3>
-            {p.twitter && <p className="flex items-center gap-2 text-blue-400"><Twitter size={18}/><span>{hideData?"••••••••":p.twitter}</span></p>}
-            {p.discord && <p className="flex items-center gap-2 text-indigo-400"><MessageCircle size={18}/><span>{hideData?"••••••••":p.discord}</span></p>}
-            {p.telegram && <p className="flex items-center gap-2 text-sky-400"><Send size={18}/><span>{hideData?"••••••••":p.telegram}</span></p>}
-            {p.wallet && <p className="flex items-center gap-2 text-yellow-400"><Wallet size={18}/><span className="break-all">{hideData?"••••••••":p.wallet}</span></p>}
-            {p.email && <p className="flex items-center gap-2 text-pink-400"><Mail size={18}/><span>{hideData?"••••••••":p.email}</span></p>}
-            {p.github && <p className="flex items-center gap-2 text-gray-300"><Github size={18}/><span>{hideData?"••••••••":p.github}</span></p>}
-            {p.website && <p className="flex items-center gap-2 text-blue-400"><Globe size={18}/><a href={p.website} target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-300">{p.website}</a></p>}
+            {p.twitter && (
+              <p className="flex items-center gap-2 text-blue-400">
+                <Twitter size={18} />
+                <span>{hideData ? "••••••••" : p.twitter}</span>
+              </p>
+            )}
+            {p.discord && (
+              <p className="flex items-center gap-2 text-indigo-400">
+                <MessageCircle size={18} />
+                <span>{hideData ? "••••••••" : p.discord}</span>
+              </p>
+            )}
+            {p.telegram && (
+              <p className="flex items-center gap-2 text-sky-400">
+                <Send size={18} />
+                <span>{hideData ? "••••••••" : p.telegram}</span>
+              </p>
+            )}
+            {p.wallet && (
+              <p className="flex items-center gap-2 text-yellow-400">
+                <Wallet size={18} />
+                <span className="break-all">{hideData ? "••••••••" : p.wallet}</span>
+              </p>
+            )}
+            {p.email && (
+              <p className="flex items-center gap-2 text-pink-400">
+                <Mail size={18} />
+                <span>{hideData ? "••••••••" : p.email}</span>
+              </p>
+            )}
+            {p.github && (
+              <p className="flex items-center gap-2 text-gray-300">
+                <Github size={18} />
+                <span>{hideData ? "••••••••" : p.github}</span>
+              </p>
+            )}
+            {p.website && (
+              <p className="flex items-center gap-2 text-blue-400">
+                <Globe size={18} />
+                <a
+                  href={p.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-blue-300"
+                >
+                  {p.website}
+                </a>
+              </p>
+            )}
           </div>
         ))}
       </div>
 
       {/* READ MORE */}
-      {filteredProjects.length > 6 && (
+      {filteredProjects.length > 3 && (
         <div className="text-center mt-6 mb-10">
           <button
             onClick={() => {
