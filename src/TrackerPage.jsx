@@ -14,6 +14,14 @@ import {
   CheckSquare,
   Square,
 } from "lucide-react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 import NeonParticles from "./NeonParticles";
 
 const GOOGLE_SCRIPT_URL = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
@@ -25,6 +33,7 @@ function TrackerPage({ onLogout }) {
   const [sortOrder, setSortOrder] = useState("asc");
   const [searchTerm, setSearchTerm] = useState("");
   const [showAll, setShowAll] = useState(false);
+  const [coins, setCoins] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
     twitter: "",
@@ -103,7 +112,50 @@ function TrackerPage({ onLogout }) {
     }
   };
 
-  // === SORTING & FILTER ===
+  // === FETCH COIN MARKET DATA ===
+  const fetchMarket = async () => {
+    try {
+      const res = await fetch(
+        "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=6&page=1&sparkline=true"
+      );
+      const data = await res.json();
+      setCoins(data);
+    } catch (err) {
+      console.warn("⚠️ Gagal ambil data market, gunakan dummy.");
+      setCoins([
+        {
+          id: "bitcoin",
+          name: "Bitcoin",
+          current_price: 68000,
+          price_change_percentage_24h: 1.2,
+          image:
+            "https://assets.coingecko.com/coins/images/1/large/bitcoin.png",
+          sparkline_in_7d: {
+            price: Array.from({ length: 30 }, (_, i) => 67000 + i * 10),
+          },
+        },
+        {
+          id: "ethereum",
+          name: "Ethereum",
+          current_price: 2500,
+          price_change_percentage_24h: -0.5,
+          image:
+            "https://assets.coingecko.com/coins/images/279/large/ethereum.png",
+          sparkline_in_7d: {
+            price: Array.from({ length: 30 }, (_, i) => 2400 + i * 5),
+          },
+        },
+      ]);
+    }
+  };
+
+  useEffect(() => {
+    fetchMarket();
+    const interval = setInterval(fetchMarket, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // === FILTER & SORT ===
   const filteredProjects = projects
     .filter((p) =>
       (p.name || "").toLowerCase().includes(searchTerm.toLowerCase())
@@ -114,26 +166,27 @@ function TrackerPage({ onLogout }) {
       return sortOrder === "asc" ? A.localeCompare(B) : B.localeCompare(A);
     });
 
-  // === LIMIT DISPLAY ===
-  const displayedProjects = showAll ? filteredProjects : filteredProjects.slice(0, 3);
+  const displayedProjects = showAll
+    ? filteredProjects
+    : filteredProjects.slice(0, 3);
 
   return (
     <div className="min-h-screen bg-gray-950 text-white relative overflow-hidden">
       <NeonParticles />
 
       {/* HEADER */}
-      <div className="relative z-10 p-6 flex flex-col md:flex-row justify-between items-center">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+      <div className="relative z-10 p-6 flex flex-col md:flex-row justify-between items-center gap-4">
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent text-center md:text-left">
           🚀 Airdrop Tracker
         </h1>
 
-        <div className="flex items-center gap-3 mt-3 md:mt-0">
+        <div className="flex flex-wrap justify-center md:justify-end items-center gap-3">
           <input
             type="text"
             placeholder="🔍 Cari project..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400"
+            className="px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 w-48 sm:w-60"
           />
           <button
             onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
@@ -158,26 +211,33 @@ function TrackerPage({ onLogout }) {
         </div>
       </div>
 
-      {/* FORM */}
-      <div className="relative z-10 bg-gray-900/60 p-6 rounded-2xl max-w-5xl mx-auto mb-8 shadow-lg">
-        <h2 className="text-xl font-semibold mb-4 text-cyan-300">
+      {/* FORM INPUT */}
+      <div className="relative z-10 bg-gray-900/60 p-6 rounded-2xl max-w-5xl mx-auto mb-8 shadow-lg w-[90%] md:w-auto">
+        <h2 className="text-xl font-semibold mb-4 text-cyan-300 text-center md:text-left">
           ➕ Tambah Project Baru
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {["name", "twitter", "discord", "telegram", "wallet", "email", "github", "website"].map(
-            (field) => (
-              <input
-                key={field}
-                type="text"
-                placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
-                value={formData[field]}
-                onChange={(e) =>
-                  setFormData({ ...formData, [field]: e.target.value })
-                }
-                className="p-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white w-full"
-              />
-            )
-          )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          {[
+            "name",
+            "twitter",
+            "discord",
+            "telegram",
+            "wallet",
+            "email",
+            "github",
+            "website",
+          ].map((field) => (
+            <input
+              key={field}
+              type="text"
+              placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+              value={formData[field]}
+              onChange={(e) =>
+                setFormData({ ...formData, [field]: e.target.value })
+              }
+              className="p-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white w-full"
+            />
+          ))}
         </div>
         <button
           onClick={addProject}
@@ -199,7 +259,6 @@ function TrackerPage({ onLogout }) {
             key={i}
             className="relative bg-gray-900/70 backdrop-blur-md p-5 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all shadow-lg"
           >
-            {/* DAILY */}
             <button
               onClick={() => toggleDaily(p.name, p.daily)}
               className="absolute top-3 right-3 text-cyan-400 hover:scale-110 transition"
@@ -272,7 +331,7 @@ function TrackerPage({ onLogout }) {
         ))}
       </div>
 
-      {/* READ MORE / LESS BUTTON */}
+      {/* READ MORE / LESS */}
       {filteredProjects.length > 3 && (
         <div className="text-center mt-8 mb-12">
           <button
@@ -283,6 +342,70 @@ function TrackerPage({ onLogout }) {
           </button>
         </div>
       )}
+
+      {/* LIVE CHART */}
+      <div className="relative z-10 mt-16 px-6 pb-10">
+        <h2 className="text-2xl font-bold mb-6 text-center bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
+          📈 Live Crypto Market
+        </h2>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {coins.map((coin) => (
+            <div
+              key={coin.id}
+              className="bg-gray-900/70 p-4 rounded-xl border border-gray-700 hover:border-cyan-400/60 shadow-lg"
+            >
+              <div className="flex justify-between items-center mb-2">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={coin.image}
+                    alt={coin.name}
+                    className="w-6 h-6 rounded-full"
+                  />
+                  <span className="font-semibold">{coin.name}</span>
+                </div>
+                <span
+                  className={`text-sm font-bold ${
+                    coin.price_change_percentage_24h >= 0
+                      ? "text-green-400"
+                      : "text-red-400"
+                  }`}
+                >
+                  {coin.price_change_percentage_24h.toFixed(2)}%
+                </span>
+              </div>
+              <p className="text-gray-300 mb-2 text-sm">
+                ${coin.current_price.toLocaleString()}
+              </p>
+              <ResponsiveContainer width="100%" height={60}>
+                <LineChart
+                  data={coin.sparkline_in_7d.price.map((p, i) => ({ i, p }))}
+                >
+                  <Line
+                    type="monotone"
+                    dataKey="p"
+                    stroke={
+                      coin.price_change_percentage_24h >= 0
+                        ? "#22c55e"
+                        : "#ef4444"
+                    }
+                    dot={false}
+                    strokeWidth={2}
+                  />
+                  <XAxis hide />
+                  <YAxis hide domain={["auto", "auto"]} />
+                  <Tooltip
+                    contentStyle={{
+                      background: "#111",
+                      border: "none",
+                      color: "#fff",
+                    }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
