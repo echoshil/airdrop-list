@@ -34,6 +34,8 @@ function TrackerPage({ onLogout }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [showAll, setShowAll] = useState(false);
   const [coins, setCoins] = useState([]);
+  const [timer, setTimer] = useState(60);
+  const [progress, setProgress] = useState(100);
   const [formData, setFormData] = useState({
     name: "",
     twitter: "",
@@ -112,7 +114,7 @@ function TrackerPage({ onLogout }) {
     }
   };
 
-  // === FETCH COIN MARKET DATA ===
+  // === FETCH COIN MARKET ===
   const fetchMarket = async () => {
     try {
       const res = await fetch(
@@ -149,11 +151,29 @@ function TrackerPage({ onLogout }) {
     }
   };
 
+  // === AUTO REFRESH TIMER + PROGRESS BAR ===
   useEffect(() => {
     fetchMarket();
-    const interval = setInterval(fetchMarket, 60000);
-    return () => clearInterval(interval);
+    const refreshInterval = setInterval(() => {
+      fetchMarket();
+      setTimer(60);
+      setProgress(100);
+    }, 60000);
+
+    const countdown = setInterval(() => {
+      setTimer((prev) => (prev > 0 ? prev - 1 : 60));
+      setProgress((prev) => (prev > 0 ? prev - 100 / 60 : 100));
+    }, 1000);
+
+    return () => {
+      clearInterval(refreshInterval);
+      clearInterval(countdown);
+    };
   }, []);
+
+  // === PROGRESS BAR COLOR GRADIENT ===
+  const progressColor =
+    timer > 40 ? "#22c55e" : timer > 20 ? "#facc15" : "#ef4444";
 
   // === FILTER & SORT ===
   const filteredProjects = projects
@@ -343,11 +363,29 @@ function TrackerPage({ onLogout }) {
         </div>
       )}
 
-      {/* LIVE CHART */}
+      {/* LIVE CHART + TIMER */}
       <div className="relative z-10 mt-16 px-6 pb-10">
-        <h2 className="text-2xl font-bold mb-6 text-center bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
+        <h2 className="text-2xl font-bold mb-2 text-center bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
           📈 Live Crypto Market
         </h2>
+
+        {/* TIMER & PROGRESS */}
+        <div className="text-center mb-4">
+          <p className="text-gray-400 text-sm mb-2">
+            ⏱️ Auto-refresh in{" "}
+            <span className="text-cyan-400 font-semibold">{timer}s</span>
+          </p>
+          <div className="w-64 mx-auto h-2 bg-gray-800 rounded-full overflow-hidden">
+            <div
+              className="h-full transition-all duration-1000 ease-linear"
+              style={{
+                width: `${progress}%`,
+                backgroundColor: progressColor,
+              }}
+            ></div>
+          </div>
+        </div>
+
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {coins.map((coin) => (
             <div
