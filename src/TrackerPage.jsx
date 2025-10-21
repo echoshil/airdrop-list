@@ -12,7 +12,8 @@ import {
   LogOut,
   ArrowUpDown,
   Star,
-  CheckSquare,
+  CheckCircle,
+  Clock,
 } from "lucide-react";
 import {
   LineChart,
@@ -32,6 +33,7 @@ function TrackerPage({ onLogout }) {
   const [hideData, setHideData] = useState(false);
   const [sortOrder, setSortOrder] = useState("asc");
   const [coins, setCoins] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     twitter: "",
@@ -43,35 +45,24 @@ function TrackerPage({ onLogout }) {
     website: "",
   });
 
-  // 🔄 Ambil data dari Google Sheet
+  // Ambil data project dari Sheet
   const fetchProjects = async () => {
     try {
-      setLoading(true);
       const res = await fetch(GOOGLE_SCRIPT_URL + "?action=read");
       const data = await res.json();
-
-      if (Array.isArray(data)) {
-        // Konversi TRUE/FALSE ke boolean
-        const normalized = data.map((p) => ({
-          ...p,
-          favorite: p.favorite === "TRUE" || p.favorite === true,
-          daily: p.daily === "TRUE" || p.daily === true,
-        }));
-        setProjects(normalized);
-      }
-    } catch (err) {
-      console.error(err);
-      alert("⚠️ Gagal load data dari Google Sheets.");
-    } finally {
-      setLoading(false);
+      if (Array.isArray(data)) setProjects(data);
+    } catch {
+      alert("⚠️ Gagal memuat data dari Google Sheets");
     }
   };
 
   useEffect(() => {
     fetchProjects();
+    const interval = setInterval(fetchProjects, 60000);
+    return () => clearInterval(interval);
   }, []);
 
-  // ➕ Tambah project
+  // Tambah Project
   const addProject = async () => {
     if (!formData.name) return alert("Nama project wajib diisi!");
     try {
@@ -103,34 +94,56 @@ function TrackerPage({ onLogout }) {
     }
   };
 
-  // ⭐ Toggle Favorite
-  const toggleFavorite = async (name) => {
-    await fetch(GOOGLE_SCRIPT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "updateFavorite", name }),
-    });
-    fetchProjects();
+  // Toggle Favorite (sync ke sheet)
+  const toggleFavorite = async (name, current) => {
+    try {
+      await fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        mode: "cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "updateFavorite",
+          name,
+          value: current === "TRUE" ? "FALSE" : "TRUE",
+        }),
+      });
+      fetchProjects();
+    } catch (err) {
+      console.error("Gagal update favorite:", err);
+    }
   };
 
-  // ✅ Toggle Daily
-  const toggleDaily = async (name) => {
-    await fetch(GOOGLE_SCRIPT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "updateDaily", name }),
-    });
-    fetchProjects();
+  // Update Daily status
+  const toggleDaily = async (name, current) => {
+    const next =
+      current === "DONE" ? "PENDING" : current === "PENDING" ? "SKIPPED" : "DONE";
+    try {
+      await fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        mode: "cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "updateDaily",
+          name,
+          value: next,
+        }),
+      });
+      fetchProjects();
+    } catch (err) {
+      console.error("Gagal update daily:", err);
+    }
   };
 
-  // 🔤 Sorting
-  const sortedProjects = [...projects].sort((a, b) => {
-    const A = (a.name || "").toLowerCase();
-    const B = (b.name || "").toLowerCase();
-    return sortOrder === "asc" ? A.localeCompare(B) : B.localeCompare(A);
-  });
+  // Sorting dan Search
+  const filteredProjects = projects
+    .filter((p) => (p.name || "").toLowerCase().includes(searchTerm.toLowerCase()))
+    .sort((a, b) => {
+      const A = (a.name || "").toLowerCase();
+      const B = (b.name || "").toLowerCase();
+      return sortOrder === "asc" ? A.localeCompare(B) : B.localeCompare(A);
+    });
 
-  // 📈 Fetch Market
+  // Fetch market data
   const fetchMarket = async () => {
     try {
       const res = await fetch(
@@ -138,15 +151,13 @@ function TrackerPage({ onLogout }) {
       );
       const data = await res.json();
       setCoins(data);
-    } catch {
+    } catch (err) {
       console.warn("Gagal ambil data market.");
     }
   };
 
   useEffect(() => {
     fetchMarket();
-    const interval = setInterval(fetchMarket, 60000);
-    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -160,6 +171,13 @@ function TrackerPage({ onLogout }) {
         </h1>
 
         <div className="flex items-center gap-3 mt-3 md:mt-0">
+          <input
+            type="text"
+            placeholder="🔍 Cari project..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400"
+          />
           <button
             onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
             className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg"
@@ -183,7 +201,7 @@ function TrackerPage({ onLogout }) {
         </div>
       </div>
 
-      {/* FORM INPUT */}
+      {/* FORM */}
       <div className="relative z-10 bg-gray-900/60 p-6 rounded-2xl max-w-5xl mx-auto mb-8 shadow-lg">
         <h2 className="text-xl font-semibold mb-4 text-cyan-300">
           ➕ Tambah Project Baru
@@ -203,138 +221,78 @@ function TrackerPage({ onLogout }) {
         <button
           onClick={addProject}
           disabled={loading}
-          className={`mt-4 px-6 py-2 rounded-lg shadow-md transition-all ${
-            loading ? "bg-gray-600 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
-          }`}
+          className={`mt-4 px-6 py-2 rounded-lg shadow-md transition-all ${loading ? "bg-gray-600 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"}`}
         >
           {loading ? "Loading..." : "+ Tambah Project"}
         </button>
       </div>
 
       {/* PROJECT LIST */}
-      <div className="relative z-10 grid gap-6 sm:grid-cols-3 lg:grid-cols-3 px-6">
-        {sortedProjects.map((p, i) => (
-          <div
-            key={i}
-            className="bg-gray-900/70 backdrop-blur-md p-5 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all shadow-lg relative"
-          >
-            {/* ⭐ & ✅ tombol pojok kanan atas */}
-            <div className="absolute top-3 right-3 flex gap-2">
-              <button
-                onClick={() => toggleFavorite(p.name)}
-                className={`transition text-xl ${p.favorite ? "text-yellow-400" : "text-gray-500"}`}
-              >
-                {p.favorite ? "⭐" : "☆"}
-              </button>
-              <button
-                onClick={() => toggleDaily(p.name)}
-                className={`transition text-xl ${p.daily ? "text-green-400" : "text-gray-500"}`}
-              >
-                {p.daily ? "✅" : "☑️"}
-              </button>
-            </div>
+      <div className="relative z-10 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 px-6">
+        {filteredProjects.map((p, i) => (
+          <div key={i} className="relative bg-gray-900/70 backdrop-blur-md p-5 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all shadow-lg">
+            {/* ⭐ FAVORITE */}
+            <button
+              onClick={() => toggleFavorite(p.name, p.favorite)}
+              className="absolute top-3 left-3 text-yellow-400 hover:scale-110 transition"
+            >
+              <Star fill={p.favorite === "TRUE" ? "yellow" : "none"} size={20} />
+            </button>
 
-            <h3 className="text-lg font-bold text-cyan-400 mb-3">{p.name}</h3>
-            {p.twitter && (
-              <p className="flex items-center gap-2 text-blue-400">
-                <Twitter size={18} />
-                <span>{hideData ? "••••••••" : p.twitter}</span>
-              </p>
-            )}
-            {p.discord && (
-              <p className="flex items-center gap-2 text-indigo-400">
-                <MessageCircle size={18} />
-                <span>{hideData ? "••••••••" : p.discord}</span>
-              </p>
-            )}
-            {p.telegram && (
-              <p className="flex items-center gap-2 text-sky-400">
-                <Send size={18} />
-                <span>{hideData ? "••••••••" : p.telegram}</span>
-              </p>
-            )}
-            {p.wallet && (
-              <p className="flex items-center gap-2 text-yellow-400 overflow-hidden text-ellipsis whitespace-nowrap">
-                <Wallet size={18} />
-                <span>{hideData ? "••••••••" : p.wallet}</span>
-              </p>
-            )}
-            {p.email && (
-              <p className="flex items-center gap-2 text-pink-400">
-                <Mail size={18} />
-                <span>{hideData ? "••••••••" : p.email}</span>
-              </p>
-            )}
-            {p.github && (
-              <p className="flex items-center gap-2 text-gray-300">
-                <Github size={18} />
-                <span>{hideData ? "••••••••" : p.github}</span>
-              </p>
-            )}
+            {/* 📅 DAILY */}
+            <button
+              onClick={() => toggleDaily(p.name, p.daily)}
+              className="absolute top-3 right-3 text-cyan-400 hover:scale-110 transition"
+            >
+              {p.daily === "DONE" ? <CheckCircle size={20} /> : <Clock size={20} />}
+            </button>
+
+            <h3 className="text-lg font-bold text-cyan-400 mb-3 mt-4">{p.name}</h3>
+            {p.twitter && <p className="flex items-center gap-2 text-blue-400"><Twitter size={18} /><span>{hideData ? "••••" : p.twitter}</span></p>}
+            {p.discord && <p className="flex items-center gap-2 text-indigo-400"><MessageCircle size={18} /><span>{hideData ? "••••" : p.discord}</span></p>}
+            {p.telegram && <p className="flex items-center gap-2 text-sky-400"><Send size={18} /><span>{hideData ? "••••" : p.telegram}</span></p>}
+            {p.wallet && <p className="flex items-center gap-2 text-yellow-400"><Wallet size={18} /><span>{hideData ? "••••" : p.wallet}</span></p>}
+            {p.email && <p className="flex items-center gap-2 text-pink-400"><Mail size={18} /><span>{hideData ? "••••" : p.email}</span></p>}
+            {p.github && <p className="flex items-center gap-2 text-gray-300"><Github size={18} /><span>{hideData ? "••••" : p.github}</span></p>}
             {p.website && (
               <p className="flex items-center gap-2 text-blue-400">
                 <Globe size={18} />
-                <a
-                  href={p.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline hover:text-blue-300"
-                >
-                  {p.website}
-                </a>
+                <a href={p.website} target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-300">{p.website}</a>
+              </p>
+            )}
+            {p.lastupdate && (
+              <p className="text-xs text-gray-400 mt-2 italic">
+                Last update: {new Date(p.lastupdate).toLocaleString()}
               </p>
             )}
           </div>
         ))}
       </div>
 
-      {/* 📊 LIVE CHART */}
+      {/* 📊 LIVE MARKET */}
       <div className="relative z-10 mt-16 px-6 pb-10">
         <h2 className="text-2xl font-bold mb-6 text-center bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
           📈 Live Crypto Market
         </h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {coins.map((coin) => (
-            <div
-              key={coin.id}
-              className="bg-gray-900/70 p-4 rounded-xl border border-gray-700 hover:border-cyan-400/60 shadow-lg"
-            >
+            <div key={coin.id} className="bg-gray-900/70 p-4 rounded-xl border border-gray-700 hover:border-cyan-400/60 shadow-lg">
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-3">
                   <img src={coin.image} alt={coin.name} className="w-6 h-6" />
                   <span className="font-semibold">{coin.name}</span>
                 </div>
-                <span
-                  className={`text-sm font-bold ${
-                    coin.price_change_percentage_24h >= 0
-                      ? "text-green-400"
-                      : "text-red-400"
-                  }`}
-                >
+                <span className={`text-sm font-bold ${coin.price_change_percentage_24h >= 0 ? "text-green-400" : "text-red-400"}`}>
                   {coin.price_change_percentage_24h.toFixed(2)}%
                 </span>
               </div>
-              <p className="text-gray-300 mb-2 text-sm">
-                ${coin.current_price.toLocaleString()}
-              </p>
+              <p className="text-gray-300 mb-2 text-sm">${coin.current_price.toLocaleString()}</p>
               <ResponsiveContainer width="100%" height={60}>
-                <LineChart
-                  data={coin.sparkline_in_7d.price.map((p, i) => ({ i, p }))}
-                >
-                  <Line
-                    type="monotone"
-                    dataKey="p"
-                    stroke={
-                      coin.price_change_percentage_24h >= 0 ? "#22c55e" : "#ef4444"
-                    }
-                    dot={false}
-                    strokeWidth={2}
-                  />
+                <LineChart data={coin.sparkline_in_7d.price.map((p, i) => ({ i, p }))}>
+                  <Line type="monotone" dataKey="p" stroke={coin.price_change_percentage_24h >= 0 ? "#22c55e" : "#ef4444"} dot={false} strokeWidth={2} />
                   <XAxis hide />
-                  <YAxis hide />
-                  <Tooltip
-                    contentStyle={{ background: "#111", border: "none" }}
-                  />
+                  <YAxis hide domain={["auto", "auto"]} />
+                  <Tooltip contentStyle={{ background: "#111", border: "none" }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
