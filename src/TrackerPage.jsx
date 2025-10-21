@@ -11,9 +11,7 @@ import {
   EyeOff,
   LogOut,
   ArrowUpDown,
-  Star,
-  CheckSquare,
-  Square,
+  CheckCircle,
 } from "lucide-react";
 import {
   LineChart,
@@ -32,10 +30,10 @@ function TrackerPage({ onLogout }) {
   const [loading, setLoading] = useState(false);
   const [hideData, setHideData] = useState(false);
   const [sortOrder, setSortOrder] = useState("asc");
-  const [searchTerm, setSearchTerm] = useState("");
   const [coins, setCoins] = useState([]);
-  const [visibleCount, setVisibleCount] = useState(3);
-  const [lastUpdate, setLastUpdate] = useState("");
+  const [visibleCount, setVisibleCount] = useState(6);
+  const [lastUpdate, setLastUpdate] = useState(null);
+
   const [formData, setFormData] = useState({
     name: "",
     twitter: "",
@@ -47,17 +45,16 @@ function TrackerPage({ onLogout }) {
     website: "",
   });
 
-  // 🔹 Fetch data dari Google Sheet
+  // 🧠 Fetch project list
   const fetchProjects = async () => {
     try {
       setLoading(true);
       const res = await fetch(GOOGLE_SCRIPT_URL + "?action=read");
       const data = await res.json();
-      if (Array.isArray(data)) {
-        setProjects(data);
-        setLastUpdate(new Date().toLocaleString());
-      }
+      if (Array.isArray(data)) setProjects(data);
+      setLastUpdate(new Date().toLocaleString());
     } catch (err) {
+      console.error("⚠️ Gagal load data:", err);
       alert("⚠️ Gagal load data dari Google Sheets.");
     } finally {
       setLoading(false);
@@ -68,7 +65,7 @@ function TrackerPage({ onLogout }) {
     fetchProjects();
   }, []);
 
-  // 🔹 Tambah project baru
+  // ➕ Add project
   const addProject = async () => {
     if (!formData.name) return alert("Nama project wajib diisi!");
     try {
@@ -92,24 +89,35 @@ function TrackerPage({ onLogout }) {
           github: "",
           website: "",
         });
+      } else {
+        console.warn("Respon:", text);
       }
-    } catch {
+    } catch (e) {
+      console.error(e);
       alert("❌ Gagal kirim data ke Google Script!");
     } finally {
       setLoading(false);
     }
   };
 
-  // 🔹 Toggle Favorite (⭐)
+  // 🔄 Sort projects
+  const sortedProjects = [...projects].sort((a, b) => {
+    const A = (a.name || "").toLowerCase();
+    const B = (b.name || "").toLowerCase();
+    return sortOrder === "asc" ? A.localeCompare(B) : B.localeCompare(A);
+  });
+
+  // ⭐ Toggle favorite
   const toggleFavorite = async (name) => {
-    setProjects((prev) =>
-      prev.map((p) =>
-        p.name === name
-          ? { ...p, favorite: p.favorite === "TRUE" ? "FALSE" : "TRUE" }
-          : p
-      )
-    );
     try {
+      setProjects((prev) =>
+        prev.map((p) =>
+          p.name === name
+            ? { ...p, favorite: p.favorite === "TRUE" ? "FALSE" : "TRUE" }
+            : p
+        )
+      );
+
       await fetch(GOOGLE_SCRIPT_URL, {
         method: "POST",
         mode: "cors",
@@ -121,16 +129,15 @@ function TrackerPage({ onLogout }) {
     }
   };
 
-  // 🔹 Toggle Daily Checklist (✅)
+  // ✅ Toggle daily
   const toggleDaily = async (name) => {
-    setProjects((prev) =>
-      prev.map((p) =>
-        p.name === name
-          ? { ...p, daily: p.daily === "CHECKED" ? "UNCHECKED" : "CHECKED" }
-          : p
-      )
-    );
     try {
+      setProjects((prev) =>
+        prev.map((p) =>
+          p.name === name ? { ...p, daily: p.daily === "TRUE" ? "FALSE" : "TRUE" } : p
+        )
+      );
+
       await fetch(GOOGLE_SCRIPT_URL, {
         method: "POST",
         mode: "cors",
@@ -142,20 +149,7 @@ function TrackerPage({ onLogout }) {
     }
   };
 
-  // 🔹 Sorting dan Search
-  const filteredProjects = projects
-    .filter((p) =>
-      p.name?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .sort((a, b) => {
-      const A = (a.name || "").toLowerCase();
-      const B = (b.name || "").toLowerCase();
-      return sortOrder === "asc" ? A.localeCompare(B) : B.localeCompare(A);
-    });
-
-  const visibleProjects = filteredProjects.slice(0, visibleCount);
-
-  // 🔹 Fetch Market Data
+  // 📈 Fetch market chart
   const fetchMarket = async () => {
     try {
       const res = await fetch(
@@ -164,7 +158,7 @@ function TrackerPage({ onLogout }) {
       const data = await res.json();
       setCoins(data);
     } catch {
-      console.warn("Gagal ambil data market, gunakan dummy.");
+      console.warn("Gunakan dummy market");
     }
   };
 
@@ -180,23 +174,10 @@ function TrackerPage({ onLogout }) {
 
       {/* HEADER */}
       <div className="relative z-10 p-6 flex flex-col md:flex-row justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-            🚀 Airdrop Tracker
-          </h1>
-          <p className="text-sm text-gray-400 mt-1">
-            Last update: {lastUpdate}
-          </p>
-        </div>
-
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+          🚀 Airdrop Tracker
+        </h1>
         <div className="flex items-center gap-3 mt-3 md:mt-0">
-          <input
-            type="text"
-            placeholder="🔍 Search project..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-sm text-white"
-          />
           <button
             onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
             className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg"
@@ -220,6 +201,14 @@ function TrackerPage({ onLogout }) {
         </div>
       </div>
 
+      {/* INFO */}
+      <div className="text-center text-gray-400 mb-4">
+        🕒 Last Update:{" "}
+        <span className="text-cyan-400 font-semibold">
+          {lastUpdate || "Loading..."}
+        </span>
+      </div>
+
       {/* FORM INPUT */}
       <div className="relative z-10 bg-gray-900/60 p-6 rounded-2xl max-w-5xl mx-auto mb-8 shadow-lg">
         <h2 className="text-xl font-semibold mb-4 text-cyan-300">
@@ -241,7 +230,9 @@ function TrackerPage({ onLogout }) {
           onClick={addProject}
           disabled={loading}
           className={`mt-4 px-6 py-2 rounded-lg shadow-md transition-all ${
-            loading ? "bg-gray-600 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
+            loading
+              ? "bg-gray-600 cursor-not-allowed"
+              : "bg-green-600 hover:bg-green-700"
           }`}
         >
           {loading ? "Loading..." : "+ Tambah Project"}
@@ -250,28 +241,26 @@ function TrackerPage({ onLogout }) {
 
       {/* PROJECT LIST */}
       <div className="relative z-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 px-6">
-        {visibleProjects.map((p, i) => (
+        {sortedProjects.slice(0, visibleCount).map((p, i) => (
           <div
             key={i}
             className="bg-gray-900/70 backdrop-blur-md p-5 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all shadow-lg relative"
           >
-            {/* Favorite Star */}
-            <button
-              onClick={() => toggleFavorite(p.name)}
-              className={`absolute top-3 right-3 text-xl transition ${
-                p.favorite === "TRUE" ? "text-yellow-400" : "text-gray-500"
-              }`}
-            >
-              <Star fill={p.favorite === "TRUE" ? "yellow" : "none"} />
-            </button>
-
-            {/* Daily Checkbox */}
-            <button
-              onClick={() => toggleDaily(p.name)}
-              className="absolute top-3 left-3 text-cyan-400"
-            >
-              {p.daily === "CHECKED" ? <CheckSquare /> : <Square />}
-            </button>
+            {/* FAVORITE + DAILY */}
+            <div className="absolute top-3 right-3 flex gap-2">
+              <button onClick={() => toggleFavorite(p.name)} title="Favorite">
+                {p.favorite === "TRUE" ? "⭐" : "☆"}
+              </button>
+              <button
+                onClick={() => toggleDaily(p.name)}
+                title="Daily Task"
+                className={`transition-transform ${
+                  p.daily === "TRUE" ? "text-green-400" : "text-gray-500"
+                }`}
+              >
+                <CheckCircle size={18} />
+              </button>
+            </div>
 
             <h3 className="text-lg font-bold text-cyan-400 mb-3">{p.name}</h3>
             {p.twitter && <p className="flex items-center gap-2 text-blue-400"><Twitter size={18}/><span>{hideData?"••••••••":p.twitter}</span></p>}
@@ -285,27 +274,28 @@ function TrackerPage({ onLogout }) {
         ))}
       </div>
 
-      {/* READ MORE */}
-      {visibleCount < filteredProjects.length && (
-        <div className="flex justify-center mt-6">
+      {visibleCount < sortedProjects.length && (
+        <div className="text-center mt-6">
           <button
-            onClick={() => setVisibleCount(visibleCount + 3)}
-            className="px-6 py-2 bg-cyan-600 hover:bg-cyan-700 rounded-lg shadow-md"
+            onClick={() => setVisibleCount(visibleCount + 6)}
+            className="bg-cyan-600 hover:bg-cyan-700 px-6 py-2 rounded-lg shadow-lg"
           >
-            Read More
+            Read More ↓
           </button>
         </div>
       )}
 
-      {/* LIVE CHART */}
+      {/* 📊 MARKET CHART */}
       <div className="relative z-10 mt-16 px-6 pb-10">
         <h2 className="text-2xl font-bold mb-6 text-center bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
           📈 Live Crypto Market
         </h2>
-
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {coins.map((coin) => (
-            <div key={coin.id} className="bg-gray-900/70 p-4 rounded-xl border border-gray-700 hover:border-cyan-400/60 shadow-lg">
+            <div
+              key={coin.id}
+              className="bg-gray-900/70 p-4 rounded-xl border border-gray-700 hover:border-cyan-400/60 shadow-lg"
+            >
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-3">
                   <img src={coin.image} alt={coin.name} className="w-6 h-6" />
@@ -341,9 +331,7 @@ function TrackerPage({ onLogout }) {
                   />
                   <XAxis hide />
                   <YAxis hide domain={["auto", "auto"]} />
-                  <Tooltip
-                    contentStyle={{ background: "#111", border: "none" }}
-                  />
+                  <Tooltip contentStyle={{ background: "#111", border: "none" }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
