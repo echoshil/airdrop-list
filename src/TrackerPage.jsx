@@ -11,7 +11,8 @@ import {
   EyeOff,
   LogOut,
   ArrowUpDown,
-  CheckCircle,
+  Star,
+  CheckSquare,
 } from "lucide-react";
 import {
   LineChart,
@@ -31,9 +32,6 @@ function TrackerPage({ onLogout }) {
   const [hideData, setHideData] = useState(false);
   const [sortOrder, setSortOrder] = useState("asc");
   const [coins, setCoins] = useState([]);
-  const [visibleCount, setVisibleCount] = useState(6);
-  const [lastUpdate, setLastUpdate] = useState(null);
-
   const [formData, setFormData] = useState({
     name: "",
     twitter: "",
@@ -45,16 +43,24 @@ function TrackerPage({ onLogout }) {
     website: "",
   });
 
-  // 🧠 Fetch project list
+  // 🔄 Ambil data dari Google Sheet
   const fetchProjects = async () => {
     try {
       setLoading(true);
       const res = await fetch(GOOGLE_SCRIPT_URL + "?action=read");
       const data = await res.json();
-      if (Array.isArray(data)) setProjects(data);
-      setLastUpdate(new Date().toLocaleString());
+
+      if (Array.isArray(data)) {
+        // Konversi TRUE/FALSE ke boolean
+        const normalized = data.map((p) => ({
+          ...p,
+          favorite: p.favorite === "TRUE" || p.favorite === true,
+          daily: p.daily === "TRUE" || p.daily === true,
+        }));
+        setProjects(normalized);
+      }
     } catch (err) {
-      console.error("⚠️ Gagal load data:", err);
+      console.error(err);
       alert("⚠️ Gagal load data dari Google Sheets.");
     } finally {
       setLoading(false);
@@ -65,7 +71,7 @@ function TrackerPage({ onLogout }) {
     fetchProjects();
   }, []);
 
-  // ➕ Add project
+  // ➕ Tambah project
   const addProject = async () => {
     if (!formData.name) return alert("Nama project wajib diisi!");
     try {
@@ -89,67 +95,42 @@ function TrackerPage({ onLogout }) {
           github: "",
           website: "",
         });
-      } else {
-        console.warn("Respon:", text);
       }
-    } catch (e) {
-      console.error(e);
+    } catch {
       alert("❌ Gagal kirim data ke Google Script!");
     } finally {
       setLoading(false);
     }
   };
 
-  // 🔄 Sort projects
+  // ⭐ Toggle Favorite
+  const toggleFavorite = async (name) => {
+    await fetch(GOOGLE_SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "updateFavorite", name }),
+    });
+    fetchProjects();
+  };
+
+  // ✅ Toggle Daily
+  const toggleDaily = async (name) => {
+    await fetch(GOOGLE_SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "updateDaily", name }),
+    });
+    fetchProjects();
+  };
+
+  // 🔤 Sorting
   const sortedProjects = [...projects].sort((a, b) => {
     const A = (a.name || "").toLowerCase();
     const B = (b.name || "").toLowerCase();
     return sortOrder === "asc" ? A.localeCompare(B) : B.localeCompare(A);
   });
 
-  // ⭐ Toggle favorite
-  const toggleFavorite = async (name) => {
-    try {
-      setProjects((prev) =>
-        prev.map((p) =>
-          p.name === name
-            ? { ...p, favorite: p.favorite === "TRUE" ? "FALSE" : "TRUE" }
-            : p
-        )
-      );
-
-      await fetch(GOOGLE_SCRIPT_URL, {
-        method: "POST",
-        mode: "cors",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ action: "updateFavorite", name }),
-      });
-    } catch (err) {
-      console.error("Gagal update favorite:", err);
-    }
-  };
-
-  // ✅ Toggle daily
-  const toggleDaily = async (name) => {
-    try {
-      setProjects((prev) =>
-        prev.map((p) =>
-          p.name === name ? { ...p, daily: p.daily === "TRUE" ? "FALSE" : "TRUE" } : p
-        )
-      );
-
-      await fetch(GOOGLE_SCRIPT_URL, {
-        method: "POST",
-        mode: "cors",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ action: "updateDaily", name }),
-      });
-    } catch (err) {
-      console.error("Gagal update daily:", err);
-    }
-  };
-
-  // 📈 Fetch market chart
+  // 📈 Fetch Market
   const fetchMarket = async () => {
     try {
       const res = await fetch(
@@ -158,7 +139,7 @@ function TrackerPage({ onLogout }) {
       const data = await res.json();
       setCoins(data);
     } catch {
-      console.warn("Gunakan dummy market");
+      console.warn("Gagal ambil data market.");
     }
   };
 
@@ -177,6 +158,7 @@ function TrackerPage({ onLogout }) {
         <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
           🚀 Airdrop Tracker
         </h1>
+
         <div className="flex items-center gap-3 mt-3 md:mt-0">
           <button
             onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
@@ -201,21 +183,13 @@ function TrackerPage({ onLogout }) {
         </div>
       </div>
 
-      {/* INFO */}
-      <div className="text-center text-gray-400 mb-4">
-        🕒 Last Update:{" "}
-        <span className="text-cyan-400 font-semibold">
-          {lastUpdate || "Loading..."}
-        </span>
-      </div>
-
       {/* FORM INPUT */}
       <div className="relative z-10 bg-gray-900/60 p-6 rounded-2xl max-w-5xl mx-auto mb-8 shadow-lg">
         <h2 className="text-xl font-semibold mb-4 text-cyan-300">
           ➕ Tambah Project Baru
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {["name","twitter","discord","telegram","wallet","email","github","website"].map((field) => (
+          {["name", "twitter", "discord", "telegram", "wallet", "email", "github", "website"].map((field) => (
             <input
               key={field}
               type="text"
@@ -230,9 +204,7 @@ function TrackerPage({ onLogout }) {
           onClick={addProject}
           disabled={loading}
           className={`mt-4 px-6 py-2 rounded-lg shadow-md transition-all ${
-            loading
-              ? "bg-gray-600 cursor-not-allowed"
-              : "bg-green-600 hover:bg-green-700"
+            loading ? "bg-gray-600 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
           }`}
         >
           {loading ? "Loading..." : "+ Tambah Project"}
@@ -240,52 +212,83 @@ function TrackerPage({ onLogout }) {
       </div>
 
       {/* PROJECT LIST */}
-      <div className="relative z-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 px-6">
-        {sortedProjects.slice(0, visibleCount).map((p, i) => (
+      <div className="relative z-10 grid gap-6 sm:grid-cols-3 lg:grid-cols-3 px-6">
+        {sortedProjects.map((p, i) => (
           <div
             key={i}
             className="bg-gray-900/70 backdrop-blur-md p-5 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all shadow-lg relative"
           >
-            {/* FAVORITE + DAILY */}
+            {/* ⭐ & ✅ tombol pojok kanan atas */}
             <div className="absolute top-3 right-3 flex gap-2">
-              <button onClick={() => toggleFavorite(p.name)} title="Favorite">
-                {p.favorite === "TRUE" ? "⭐" : "☆"}
+              <button
+                onClick={() => toggleFavorite(p.name)}
+                className={`transition text-xl ${p.favorite ? "text-yellow-400" : "text-gray-500"}`}
+              >
+                {p.favorite ? "⭐" : "☆"}
               </button>
               <button
                 onClick={() => toggleDaily(p.name)}
-                title="Daily Task"
-                className={`transition-transform ${
-                  p.daily === "TRUE" ? "text-green-400" : "text-gray-500"
-                }`}
+                className={`transition text-xl ${p.daily ? "text-green-400" : "text-gray-500"}`}
               >
-                <CheckCircle size={18} />
+                {p.daily ? "✅" : "☑️"}
               </button>
             </div>
 
             <h3 className="text-lg font-bold text-cyan-400 mb-3">{p.name}</h3>
-            {p.twitter && <p className="flex items-center gap-2 text-blue-400"><Twitter size={18}/><span>{hideData?"••••••••":p.twitter}</span></p>}
-            {p.discord && <p className="flex items-center gap-2 text-indigo-400"><MessageCircle size={18}/><span>{hideData?"••••••••":p.discord}</span></p>}
-            {p.telegram && <p className="flex items-center gap-2 text-sky-400"><Send size={18}/><span>{hideData?"••••••••":p.telegram}</span></p>}
-            {p.wallet && <p className="flex items-center gap-2 text-yellow-400"><Wallet size={18}/><span>{hideData?"••••••••":p.wallet}</span></p>}
-            {p.email && <p className="flex items-center gap-2 text-pink-400"><Mail size={18}/><span>{hideData?"••••••••":p.email}</span></p>}
-            {p.github && <p className="flex items-center gap-2 text-gray-300"><Github size={18}/><span>{hideData?"••••••••":p.github}</span></p>}
-            {p.website && <p className="flex items-center gap-2 text-blue-400"><Globe size={18}/><a href={p.website} target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-300">{p.website}</a></p>}
+            {p.twitter && (
+              <p className="flex items-center gap-2 text-blue-400">
+                <Twitter size={18} />
+                <span>{hideData ? "••••••••" : p.twitter}</span>
+              </p>
+            )}
+            {p.discord && (
+              <p className="flex items-center gap-2 text-indigo-400">
+                <MessageCircle size={18} />
+                <span>{hideData ? "••••••••" : p.discord}</span>
+              </p>
+            )}
+            {p.telegram && (
+              <p className="flex items-center gap-2 text-sky-400">
+                <Send size={18} />
+                <span>{hideData ? "••••••••" : p.telegram}</span>
+              </p>
+            )}
+            {p.wallet && (
+              <p className="flex items-center gap-2 text-yellow-400 overflow-hidden text-ellipsis whitespace-nowrap">
+                <Wallet size={18} />
+                <span>{hideData ? "••••••••" : p.wallet}</span>
+              </p>
+            )}
+            {p.email && (
+              <p className="flex items-center gap-2 text-pink-400">
+                <Mail size={18} />
+                <span>{hideData ? "••••••••" : p.email}</span>
+              </p>
+            )}
+            {p.github && (
+              <p className="flex items-center gap-2 text-gray-300">
+                <Github size={18} />
+                <span>{hideData ? "••••••••" : p.github}</span>
+              </p>
+            )}
+            {p.website && (
+              <p className="flex items-center gap-2 text-blue-400">
+                <Globe size={18} />
+                <a
+                  href={p.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-blue-300"
+                >
+                  {p.website}
+                </a>
+              </p>
+            )}
           </div>
         ))}
       </div>
 
-      {visibleCount < sortedProjects.length && (
-        <div className="text-center mt-6">
-          <button
-            onClick={() => setVisibleCount(visibleCount + 6)}
-            className="bg-cyan-600 hover:bg-cyan-700 px-6 py-2 rounded-lg shadow-lg"
-          >
-            Read More ↓
-          </button>
-        </div>
-      )}
-
-      {/* 📊 MARKET CHART */}
+      {/* 📊 LIVE CHART */}
       <div className="relative z-10 mt-16 px-6 pb-10">
         <h2 className="text-2xl font-bold mb-6 text-center bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
           📈 Live Crypto Market
@@ -322,16 +325,16 @@ function TrackerPage({ onLogout }) {
                     type="monotone"
                     dataKey="p"
                     stroke={
-                      coin.price_change_percentage_24h >= 0
-                        ? "#22c55e"
-                        : "#ef4444"
+                      coin.price_change_percentage_24h >= 0 ? "#22c55e" : "#ef4444"
                     }
                     dot={false}
                     strokeWidth={2}
                   />
                   <XAxis hide />
-                  <YAxis hide domain={["auto", "auto"]} />
-                  <Tooltip contentStyle={{ background: "#111", border: "none" }} />
+                  <YAxis hide />
+                  <Tooltip
+                    contentStyle={{ background: "#111", border: "none" }}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </div>
