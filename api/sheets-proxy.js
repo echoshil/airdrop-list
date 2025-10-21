@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
 
   try {
-    const scriptUrl = "https://script.google.com/macros/s/AKfycbzHXtkvMyfGX4Gi7yMsQ0wuAzonapzo9dD85zAwh9PV2drqcg5mygFcVRSII2t9Tojb/exec"; // 🔹 Ganti dengan URL kamu
+    const scriptUrl = "https://script.google.com/macros/s/AKfycbxx4NYpJcpkrVqwdAyw_uEZmL44IW9AJtei_6acNYDS15bS2uNB1S4oLhML6sGPxNgX/exec"; // 🔹 Ganti dengan URL kamu
     const response = await fetch(scriptUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -19,6 +19,7 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: error.toString() });
   }
 }
+
 
 
 
