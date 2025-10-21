@@ -15,6 +15,15 @@ import {
   CheckSquare,
   Square,
 } from "lucide-react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { motion } from "framer-motion";
 import NeonParticles from "./NeonParticles";
 
 const GOOGLE_SCRIPT_URL = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
@@ -25,6 +34,7 @@ function TrackerPage({ onLogout }) {
   const [hideData, setHideData] = useState(false);
   const [sortOrder, setSortOrder] = useState("asc");
   const [searchTerm, setSearchTerm] = useState("");
+  const [coins, setCoins] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
     twitter: "",
@@ -51,7 +61,7 @@ function TrackerPage({ onLogout }) {
     fetchProjects();
   }, []);
 
-  // === TAMBAH PROJECT ===
+  // === ADD PROJECT ===
   const addProject = async () => {
     if (!formData.name) return alert("Nama project wajib diisi!");
     try {
@@ -102,7 +112,7 @@ function TrackerPage({ onLogout }) {
     }
   };
 
-  // === DAILY CHECK TOGGLE ===
+  // === DAILY TOGGLE ===
   const toggleDaily = async (name, current) => {
     const next = current === "CHECKED" ? "UNCHECKED" : "CHECKED";
     try {
@@ -122,7 +132,7 @@ function TrackerPage({ onLogout }) {
     }
   };
 
-  // === SORTING & FILTER ===
+  // === SORT + SEARCH ===
   const filteredProjects = projects
     .filter((p) => (p.name || "").toLowerCase().includes(searchTerm.toLowerCase()))
     .sort((a, b) => {
@@ -131,15 +141,38 @@ function TrackerPage({ onLogout }) {
       return sortOrder === "asc" ? A.localeCompare(B) : B.localeCompare(A);
     });
 
+  // === FETCH MARKET DATA ===
+  const fetchMarket = async () => {
+    try {
+      const res = await fetch(
+        "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=6&page=1&sparkline=true"
+      );
+      const data = await res.json();
+      setCoins(data);
+    } catch (err) {
+      console.warn("Gagal ambil data market:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchMarket();
+    const interval = setInterval(fetchMarket, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-950 text-white relative overflow-hidden">
       <NeonParticles />
 
       {/* HEADER */}
       <div className="relative z-10 p-6 flex flex-col md:flex-row justify-between items-center">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-          🚀 Airdrop Tracker
-        </h1>
+        <motion.h1
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent"
+        >
+          🚀 Airdrop Tracker Pro
+        </motion.h1>
 
         <div className="flex items-center gap-3 mt-3 md:mt-0">
           <input
@@ -198,16 +231,26 @@ function TrackerPage({ onLogout }) {
         </button>
       </div>
 
-      {/* PROJECT LIST */}
+      {/* PROJECT CARDS */}
       <div className="relative z-10 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 px-6">
         {filteredProjects.map((p, i) => (
-          <div key={i} className="relative bg-gray-900/70 backdrop-blur-md p-5 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all shadow-lg">
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.03 }}
+            className="relative bg-gray-900/70 backdrop-blur-md p-5 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all shadow-lg"
+          >
             {/* FAVORITE */}
             <button
               onClick={() => toggleFavorite(p.name, p.favorite)}
               className="absolute top-3 left-3 text-yellow-400 hover:scale-110 transition"
             >
-              <Star fill={p.favorite === "TRUE" ? "yellow" : "none"} size={20} />
+              <Star
+                fill={p.favorite === "TRUE" ? "#facc15" : "none"}
+                stroke={p.favorite === "TRUE" ? "#facc15" : "#a1a1aa"}
+                size={22}
+              />
             </button>
 
             {/* DAILY */}
@@ -236,8 +279,51 @@ function TrackerPage({ onLogout }) {
                 Last update: {new Date(p.lastupdate).toLocaleString()}
               </p>
             )}
-          </div>
+          </motion.div>
         ))}
+      </div>
+
+      {/* 📊 MARKET CHART */}
+      <div className="relative z-10 mt-16 px-6 pb-10">
+        <h2 className="text-2xl font-bold mb-6 text-center bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
+          📈 Live Crypto Market
+        </h2>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {coins.map((coin) => (
+            <div key={coin.id} className="bg-gray-900/70 p-4 rounded-xl border border-gray-700 hover:border-cyan-400/60 shadow-lg">
+              <div className="flex justify-between items-center mb-2">
+                <div className="flex items-center gap-3">
+                  <img src={coin.image} alt={coin.name} className="w-6 h-6" />
+                  <span className="font-semibold">{coin.name}</span>
+                </div>
+                <span
+                  className={`text-sm font-bold ${
+                    coin.price_change_percentage_24h >= 0 ? "text-green-400" : "text-red-400"
+                  }`}
+                >
+                  {coin.price_change_percentage_24h.toFixed(2)}%
+                </span>
+              </div>
+              <p className="text-gray-300 mb-2 text-sm">
+                ${coin.current_price.toLocaleString()}
+              </p>
+              <ResponsiveContainer width="100%" height={60}>
+                <LineChart data={coin.sparkline_in_7d.price.map((p, i) => ({ i, p }))}>
+                  <Line
+                    type="monotone"
+                    dataKey="p"
+                    stroke={coin.price_change_percentage_24h >= 0 ? "#22c55e" : "#ef4444"}
+                    dot={false}
+                    strokeWidth={2}
+                  />
+                  <XAxis hide />
+                  <YAxis hide domain={["auto", "auto"]} />
+                  <Tooltip contentStyle={{ background: "#111", border: "none" }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
