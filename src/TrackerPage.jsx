@@ -1,4 +1,3 @@
-// src/TrackerPage.jsx
 import React, { useEffect, useState } from "react";
 import {
   Twitter,
@@ -12,8 +11,9 @@ import {
   EyeOff,
   LogOut,
   ArrowUpDown,
+  Star,
+  CheckCircle,
   Clock,
-  Search,
 } from "lucide-react";
 import {
   LineChart,
@@ -33,10 +33,7 @@ function TrackerPage({ onLogout }) {
   const [hideData, setHideData] = useState(false);
   const [sortOrder, setSortOrder] = useState("asc");
   const [coins, setCoins] = useState([]);
-  const [lastUpdate, setLastUpdate] = useState(null);
-  const [showAll, setShowAll] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-
+  const [searchTerm, setSearchTerm] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     twitter: "",
@@ -48,28 +45,24 @@ function TrackerPage({ onLogout }) {
     website: "",
   });
 
-  // 🔹 Fetch project list
+  // Ambil data project dari Sheet
   const fetchProjects = async () => {
     try {
-      setLoading(true);
       const res = await fetch(GOOGLE_SCRIPT_URL + "?action=read");
       const data = await res.json();
-      if (Array.isArray(data)) {
-        setProjects(data);
-        setLastUpdate(new Date().toLocaleString());
-      }
+      if (Array.isArray(data)) setProjects(data);
     } catch {
-      alert("⚠️ Gagal load data dari Google Sheets.");
-    } finally {
-      setLoading(false);
+      alert("⚠️ Gagal memuat data dari Google Sheets");
     }
   };
 
   useEffect(() => {
     fetchProjects();
+    const interval = setInterval(fetchProjects, 60000);
+    return () => clearInterval(interval);
   }, []);
 
-  // 🔹 Add new project
+  // Tambah Project
   const addProject = async () => {
     if (!formData.name) return alert("Nama project wajib diisi!");
     try {
@@ -101,22 +94,56 @@ function TrackerPage({ onLogout }) {
     }
   };
 
-  // 🔹 Sorting
-  const sortedProjects = [...projects].sort((a, b) => {
-    const A = (a.name || "").toLowerCase();
-    const B = (b.name || "").toLowerCase();
-    return sortOrder === "asc" ? A.localeCompare(B) : B.localeCompare(A);
-  });
+  // Toggle Favorite (sync ke sheet)
+  const toggleFavorite = async (name, current) => {
+    try {
+      await fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        mode: "cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "updateFavorite",
+          name,
+          value: current === "TRUE" ? "FALSE" : "TRUE",
+        }),
+      });
+      fetchProjects();
+    } catch (err) {
+      console.error("Gagal update favorite:", err);
+    }
+  };
 
-  // 🔍 Search filter
-  const filteredProjects = sortedProjects.filter((p) =>
-    (p.name || "").toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Update Daily status
+  const toggleDaily = async (name, current) => {
+    const next =
+      current === "DONE" ? "PENDING" : current === "PENDING" ? "SKIPPED" : "DONE";
+    try {
+      await fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        mode: "cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "updateDaily",
+          name,
+          value: next,
+        }),
+      });
+      fetchProjects();
+    } catch (err) {
+      console.error("Gagal update daily:", err);
+    }
+  };
 
-  // 🔹 Show only 3 cards by default (1 row × 3 columns)
-  const visibleProjects = showAll ? filteredProjects : filteredProjects.slice(0, 3);
+  // Sorting dan Search
+  const filteredProjects = projects
+    .filter((p) => (p.name || "").toLowerCase().includes(searchTerm.toLowerCase()))
+    .sort((a, b) => {
+      const A = (a.name || "").toLowerCase();
+      const B = (b.name || "").toLowerCase();
+      return sortOrder === "asc" ? A.localeCompare(B) : B.localeCompare(A);
+    });
 
-  // 🔹 Fetch market data
+  // Fetch market data
   const fetchMarket = async () => {
     try {
       const res = await fetch(
@@ -125,24 +152,12 @@ function TrackerPage({ onLogout }) {
       const data = await res.json();
       setCoins(data);
     } catch (err) {
-      console.warn("Gagal ambil data market, gunakan dummy.");
-      setCoins([
-        {
-          id: "bitcoin",
-          name: "Bitcoin",
-          current_price: 68000,
-          price_change_percentage_24h: 1.2,
-          image: "https://assets.coingecko.com/coins/images/1/large/bitcoin.png",
-          sparkline_in_7d: { price: Array.from({ length: 30 }, (_, i) => 67000 + i * 10) },
-        },
-      ]);
+      console.warn("Gagal ambil data market.");
     }
   };
 
   useEffect(() => {
     fetchMarket();
-    const interval = setInterval(fetchMarket, 60000);
-    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -156,6 +171,13 @@ function TrackerPage({ onLogout }) {
         </h1>
 
         <div className="flex items-center gap-3 mt-3 md:mt-0">
+          <input
+            type="text"
+            placeholder="🔍 Cari project..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400"
+          />
           <button
             onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
             className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg"
@@ -179,181 +201,98 @@ function TrackerPage({ onLogout }) {
         </div>
       </div>
 
-      {/* LAST UPDATE + SEARCH */}
-      <div className="text-center text-gray-400 mb-6 flex flex-col md:flex-row items-center justify-center gap-3 px-6">
-        <div className="flex items-center gap-2">
-          <Clock size={16} />
-          <span>Terakhir diperbarui: {lastUpdate ? lastUpdate : "Memuat..."}</span>
-        </div>
-        <div className="relative w-full max-w-md">
-          <Search size={18} className="absolute left-3 top-2.5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Cari project..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 pr-4 py-2 w-full rounded-lg bg-gray-800 border border-gray-700 text-white focus:border-cyan-400 outline-none"
-          />
-        </div>
-      </div>
-
-      {/* FORM INPUT */}
+      {/* FORM */}
       <div className="relative z-10 bg-gray-900/60 p-6 rounded-2xl max-w-5xl mx-auto mb-8 shadow-lg">
         <h2 className="text-xl font-semibold mb-4 text-cyan-300">
           ➕ Tambah Project Baru
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {["name", "twitter", "discord", "telegram", "wallet", "email", "github", "website"].map(
-            (field) => (
-              <input
-                key={field}
-                type="text"
-                placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
-                value={formData[field]}
-                onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
-                className="p-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white w-full"
-              />
-            )
-          )}
+          {["name", "twitter", "discord", "telegram", "wallet", "email", "github", "website"].map((field) => (
+            <input
+              key={field}
+              type="text"
+              placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+              value={formData[field]}
+              onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
+              className="p-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white w-full"
+            />
+          ))}
         </div>
         <button
           onClick={addProject}
           disabled={loading}
-          className={`mt-4 px-6 py-2 rounded-lg shadow-md transition-all ${
-            loading
-              ? "bg-gray-600 cursor-not-allowed"
-              : "bg-green-600 hover:bg-green-700"
-          }`}
+          className={`mt-4 px-6 py-2 rounded-lg shadow-md transition-all ${loading ? "bg-gray-600 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"}`}
         >
           {loading ? "Loading..." : "+ Tambah Project"}
         </button>
       </div>
 
-      {/* PROJECT LIST - hanya 3 card awal */}
-      <div className="relative z-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 px-6">
-        {visibleProjects.map((p, i) => (
-          <div
-            key={i}
-            className="bg-gray-900/70 backdrop-blur-md p-5 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all shadow-lg"
-          >
-            <h3 className="text-lg font-bold text-cyan-400 mb-3">{p.name}</h3>
-            {p.twitter && (
-              <p className="flex items-center gap-2 text-blue-400">
-                <Twitter size={18} />
-                <span>{hideData ? "••••••••" : p.twitter}</span>
-              </p>
-            )}
-            {p.discord && (
-              <p className="flex items-center gap-2 text-indigo-400">
-                <MessageCircle size={18} />
-                <span>{hideData ? "••••••••" : p.discord}</span>
-              </p>
-            )}
-            {p.telegram && (
-              <p className="flex items-center gap-2 text-sky-400">
-                <Send size={18} />
-                <span>{hideData ? "••••••••" : p.telegram}</span>
-              </p>
-            )}
-            {p.wallet && (
-              <p className="flex items-center gap-2 text-yellow-400">
-                <Wallet size={18} />
-                <span className="break-all">{hideData ? "••••••••" : p.wallet}</span>
-              </p>
-            )}
-            {p.email && (
-              <p className="flex items-center gap-2 text-pink-400">
-                <Mail size={18} />
-                <span>{hideData ? "••••••••" : p.email}</span>
-              </p>
-            )}
-            {p.github && (
-              <p className="flex items-center gap-2 text-gray-300">
-                <Github size={18} />
-                <span>{hideData ? "••••••••" : p.github}</span>
-              </p>
-            )}
+      {/* PROJECT LIST */}
+      <div className="relative z-10 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 px-6">
+        {filteredProjects.map((p, i) => (
+          <div key={i} className="relative bg-gray-900/70 backdrop-blur-md p-5 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all shadow-lg">
+            {/* ⭐ FAVORITE */}
+            <button
+              onClick={() => toggleFavorite(p.name, p.favorite)}
+              className="absolute top-3 left-3 text-yellow-400 hover:scale-110 transition"
+            >
+              <Star fill={p.favorite === "TRUE" ? "yellow" : "none"} size={20} />
+            </button>
+
+            {/* 📅 DAILY */}
+            <button
+              onClick={() => toggleDaily(p.name, p.daily)}
+              className="absolute top-3 right-3 text-cyan-400 hover:scale-110 transition"
+            >
+              {p.daily === "DONE" ? <CheckCircle size={20} /> : <Clock size={20} />}
+            </button>
+
+            <h3 className="text-lg font-bold text-cyan-400 mb-3 mt-4">{p.name}</h3>
+            {p.twitter && <p className="flex items-center gap-2 text-blue-400"><Twitter size={18} /><span>{hideData ? "••••" : p.twitter}</span></p>}
+            {p.discord && <p className="flex items-center gap-2 text-indigo-400"><MessageCircle size={18} /><span>{hideData ? "••••" : p.discord}</span></p>}
+            {p.telegram && <p className="flex items-center gap-2 text-sky-400"><Send size={18} /><span>{hideData ? "••••" : p.telegram}</span></p>}
+            {p.wallet && <p className="flex items-center gap-2 text-yellow-400"><Wallet size={18} /><span>{hideData ? "••••" : p.wallet}</span></p>}
+            {p.email && <p className="flex items-center gap-2 text-pink-400"><Mail size={18} /><span>{hideData ? "••••" : p.email}</span></p>}
+            {p.github && <p className="flex items-center gap-2 text-gray-300"><Github size={18} /><span>{hideData ? "••••" : p.github}</span></p>}
             {p.website && (
               <p className="flex items-center gap-2 text-blue-400">
                 <Globe size={18} />
-                <a
-                  href={p.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline hover:text-blue-300"
-                >
-                  {p.website}
-                </a>
+                <a href={p.website} target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-300">{p.website}</a>
+              </p>
+            )}
+            {p.lastupdate && (
+              <p className="text-xs text-gray-400 mt-2 italic">
+                Last update: {new Date(p.lastupdate).toLocaleString()}
               </p>
             )}
           </div>
         ))}
       </div>
 
-      {/* READ MORE */}
-      {filteredProjects.length > 3 && (
-        <div className="text-center mt-6 mb-10">
-          <button
-            onClick={() => {
-              setShowAll(!showAll);
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg text-white font-semibold shadow-md"
-          >
-            {showAll ? "Show Less" : "Read More"}
-          </button>
-        </div>
-      )}
-
-      {/* 📊 LIVE CHART */}
-      <div className="relative z-10 mt-10 px-6 pb-10">
+      {/* 📊 LIVE MARKET */}
+      <div className="relative z-10 mt-16 px-6 pb-10">
         <h2 className="text-2xl font-bold mb-6 text-center bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
           📈 Live Crypto Market
         </h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {coins.map((coin) => (
-            <div
-              key={coin.id}
-              className="bg-gray-900/70 p-4 rounded-xl border border-gray-700 hover:border-cyan-400/60 shadow-lg"
-            >
+            <div key={coin.id} className="bg-gray-900/70 p-4 rounded-xl border border-gray-700 hover:border-cyan-400/60 shadow-lg">
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-3">
                   <img src={coin.image} alt={coin.name} className="w-6 h-6" />
                   <span className="font-semibold">{coin.name}</span>
                 </div>
-                <span
-                  className={`text-sm font-bold ${
-                    coin.price_change_percentage_24h >= 0
-                      ? "text-green-400"
-                      : "text-red-400"
-                  }`}
-                >
+                <span className={`text-sm font-bold ${coin.price_change_percentage_24h >= 0 ? "text-green-400" : "text-red-400"}`}>
                   {coin.price_change_percentage_24h.toFixed(2)}%
                 </span>
               </div>
-              <p className="text-gray-300 mb-2 text-sm">
-                ${coin.current_price.toLocaleString()}
-              </p>
+              <p className="text-gray-300 mb-2 text-sm">${coin.current_price.toLocaleString()}</p>
               <ResponsiveContainer width="100%" height={60}>
-                <LineChart
-                  data={coin.sparkline_in_7d.price.map((p, i) => ({ i, p }))}
-                >
-                  <Line
-                    type="monotone"
-                    dataKey="p"
-                    stroke={
-                      coin.price_change_percentage_24h >= 0
-                        ? "#22c55e"
-                        : "#ef4444"
-                    }
-                    dot={false}
-                    strokeWidth={2}
-                  />
+                <LineChart data={coin.sparkline_in_7d.price.map((p, i) => ({ i, p }))}>
+                  <Line type="monotone" dataKey="p" stroke={coin.price_change_percentage_24h >= 0 ? "#22c55e" : "#ef4444"} dot={false} strokeWidth={2} />
                   <XAxis hide />
                   <YAxis hide domain={["auto", "auto"]} />
-                  <Tooltip
-                    contentStyle={{ background: "#111", border: "none" }}
-                  />
+                  <Tooltip contentStyle={{ background: "#111", border: "none" }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
