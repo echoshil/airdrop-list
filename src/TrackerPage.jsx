@@ -35,6 +35,7 @@ function TrackerPage({ onLogout }) {
   const [sortOrder, setSortOrder] = useState("asc");
   const [searchTerm, setSearchTerm] = useState("");
   const [coins, setCoins] = useState([]);
+  const [visibleCount, setVisibleCount] = useState(6); // 👉 tampil 6 project dulu
   const [formData, setFormData] = useState({
     name: "",
     twitter: "",
@@ -93,8 +94,16 @@ function TrackerPage({ onLogout }) {
     }
   };
 
-  // === FAVORITE TOGGLE ===
-  const toggleFavorite = async (name, current) => {
+  // === FAVORITE TOGGLE (langsung update UI + simpan ke Sheet) ===
+  const toggleFavorite = async (name) => {
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.name === name
+          ? { ...p, favorite: p.favorite === "TRUE" ? "FALSE" : "TRUE" }
+          : p
+      )
+    );
+
     try {
       await fetch(GOOGLE_SCRIPT_URL, {
         method: "POST",
@@ -103,18 +112,23 @@ function TrackerPage({ onLogout }) {
         body: JSON.stringify({
           action: "updateFavorite",
           name,
-          value: current === "TRUE" ? "FALSE" : "TRUE",
         }),
       });
-      fetchProjects();
     } catch (err) {
       console.error("Gagal update favorite:", err);
     }
   };
 
-  // === DAILY TOGGLE ===
-  const toggleDaily = async (name, current) => {
-    const next = current === "CHECKED" ? "UNCHECKED" : "CHECKED";
+  // === DAILY TOGGLE (langsung update UI + simpan ke Sheet) ===
+  const toggleDaily = async (name) => {
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.name === name
+          ? { ...p, daily: p.daily === "CHECKED" ? "UNCHECKED" : "CHECKED" }
+          : p
+      )
+    );
+
     try {
       await fetch(GOOGLE_SCRIPT_URL, {
         method: "POST",
@@ -123,10 +137,8 @@ function TrackerPage({ onLogout }) {
         body: JSON.stringify({
           action: "updateDaily",
           name,
-          value: next,
         }),
       });
-      fetchProjects();
     } catch (err) {
       console.error("Gagal update daily:", err);
     }
@@ -159,6 +171,11 @@ function TrackerPage({ onLogout }) {
     const interval = setInterval(fetchMarket, 60000);
     return () => clearInterval(interval);
   }, []);
+
+  // === HANDLE READ MORE ===
+  const handleReadMore = () => {
+    setVisibleCount((prev) => prev + 6);
+  };
 
   return (
     <div className="min-h-screen bg-gray-950 text-white relative overflow-hidden">
@@ -205,35 +222,43 @@ function TrackerPage({ onLogout }) {
         </div>
       </div>
 
-      {/* FORM */}
+      {/* FORM INPUT */}
       <div className="relative z-10 bg-gray-900/60 p-6 rounded-2xl max-w-5xl mx-auto mb-8 shadow-lg">
         <h2 className="text-xl font-semibold mb-4 text-cyan-300">
           ➕ Tambah Project Baru
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {["name", "twitter", "discord", "telegram", "wallet", "email", "github", "website"].map((field) => (
-            <input
-              key={field}
-              type="text"
-              placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
-              value={formData[field]}
-              onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
-              className="p-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white w-full"
-            />
-          ))}
+          {["name", "twitter", "discord", "telegram", "wallet", "email", "github", "website"].map(
+            (field) => (
+              <input
+                key={field}
+                type="text"
+                placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+                value={formData[field]}
+                onChange={(e) =>
+                  setFormData({ ...formData, [field]: e.target.value })
+                }
+                className="p-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white w-full"
+              />
+            )
+          )}
         </div>
         <button
           onClick={addProject}
           disabled={loading}
-          className={`mt-4 px-6 py-2 rounded-lg shadow-md transition-all ${loading ? "bg-gray-600 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"}`}
+          className={`mt-4 px-6 py-2 rounded-lg shadow-md transition-all ${
+            loading
+              ? "bg-gray-600 cursor-not-allowed"
+              : "bg-green-600 hover:bg-green-700"
+          }`}
         >
           {loading ? "Loading..." : "+ Tambah Project"}
         </button>
       </div>
 
-      {/* PROJECT CARDS */}
+      {/* PROJECT LIST */}
       <div className="relative z-10 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 px-6">
-        {filteredProjects.map((p, i) => (
+        {filteredProjects.slice(0, visibleCount).map((p, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0, y: 15 }}
@@ -241,47 +266,93 @@ function TrackerPage({ onLogout }) {
             transition={{ delay: i * 0.03 }}
             className="relative bg-gray-900/70 backdrop-blur-md p-5 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all shadow-lg"
           >
-            {/* FAVORITE */}
+            {/* FAVORITE STAR */}
             <button
-              onClick={() => toggleFavorite(p.name, p.favorite)}
+              onClick={() => toggleFavorite(p.name)}
               className="absolute top-3 left-3 text-yellow-400 hover:scale-110 transition"
             >
               <Star
+                size={22}
                 fill={p.favorite === "TRUE" ? "#facc15" : "none"}
                 stroke={p.favorite === "TRUE" ? "#facc15" : "#a1a1aa"}
-                size={22}
               />
             </button>
 
-            {/* DAILY */}
+            {/* DAILY CHECK */}
             <button
-              onClick={() => toggleDaily(p.name, p.daily)}
+              onClick={() => toggleDaily(p.name)}
               className="absolute top-3 right-3 text-cyan-400 hover:scale-110 transition"
             >
               {p.daily === "CHECKED" ? <CheckSquare size={20} /> : <Square size={20} />}
             </button>
 
-            <h3 className="text-lg font-bold text-cyan-400 mb-3 mt-4">{p.name}</h3>
-            {p.twitter && <p className="flex items-center gap-2 text-blue-400"><Twitter size={18} /><span>{hideData ? "••••" : p.twitter}</span></p>}
-            {p.discord && <p className="flex items-center gap-2 text-indigo-400"><MessageCircle size={18} /><span>{hideData ? "••••" : p.discord}</span></p>}
-            {p.telegram && <p className="flex items-center gap-2 text-sky-400"><Send size={18} /><span>{hideData ? "••••" : p.telegram}</span></p>}
-            {p.wallet && <p className="flex items-center gap-2 text-yellow-400"><Wallet size={18} /><span>{hideData ? "••••" : p.wallet}</span></p>}
-            {p.email && <p className="flex items-center gap-2 text-pink-400"><Mail size={18} /><span>{hideData ? "••••" : p.email}</span></p>}
-            {p.github && <p className="flex items-center gap-2 text-gray-300"><Github size={18} /><span>{hideData ? "••••" : p.github}</span></p>}
+            <h3 className="text-lg font-bold text-cyan-400 mb-3 mt-4">
+              {p.name}
+            </h3>
+            {p.twitter && (
+              <p className="flex items-center gap-2 text-blue-400">
+                <Twitter size={18} />
+                <span>{hideData ? "••••" : p.twitter}</span>
+              </p>
+            )}
+            {p.discord && (
+              <p className="flex items-center gap-2 text-indigo-400">
+                <MessageCircle size={18} />
+                <span>{hideData ? "••••" : p.discord}</span>
+              </p>
+            )}
+            {p.telegram && (
+              <p className="flex items-center gap-2 text-sky-400">
+                <Send size={18} />
+                <span>{hideData ? "••••" : p.telegram}</span>
+              </p>
+            )}
+            {p.wallet && (
+              <p className="flex items-center gap-2 text-yellow-400">
+                <Wallet size={18} />
+                <span>{hideData ? "••••" : p.wallet}</span>
+              </p>
+            )}
+            {p.email && (
+              <p className="flex items-center gap-2 text-pink-400">
+                <Mail size={18} />
+                <span>{hideData ? "••••" : p.email}</span>
+              </p>
+            )}
+            {p.github && (
+              <p className="flex items-center gap-2 text-gray-300">
+                <Github size={18} />
+                <span>{hideData ? "••••" : p.github}</span>
+              </p>
+            )}
             {p.website && (
               <p className="flex items-center gap-2 text-blue-400">
                 <Globe size={18} />
-                <a href={p.website} target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-300">{p.website}</a>
-              </p>
-            )}
-            {p.lastupdate && (
-              <p className="text-xs text-gray-400 mt-2 italic">
-                Last update: {new Date(p.lastupdate).toLocaleString()}
+                <a
+                  href={p.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-blue-300"
+                >
+                  {p.website}
+                </a>
               </p>
             )}
           </motion.div>
         ))}
       </div>
+
+      {/* READ MORE BUTTON */}
+      {visibleCount < filteredProjects.length && (
+        <div className="text-center mt-8">
+          <button
+            onClick={handleReadMore}
+            className="bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-2 rounded-lg shadow-md"
+          >
+            🔽 Read More
+          </button>
+        </div>
+      )}
 
       {/* 📊 MARKET CHART */}
       <div className="relative z-10 mt-16 px-6 pb-10">
@@ -290,7 +361,10 @@ function TrackerPage({ onLogout }) {
         </h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {coins.map((coin) => (
-            <div key={coin.id} className="bg-gray-900/70 p-4 rounded-xl border border-gray-700 hover:border-cyan-400/60 shadow-lg">
+            <div
+              key={coin.id}
+              className="bg-gray-900/70 p-4 rounded-xl border border-gray-700 hover:border-cyan-400/60 shadow-lg"
+            >
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-3">
                   <img src={coin.image} alt={coin.name} className="w-6 h-6" />
@@ -298,7 +372,9 @@ function TrackerPage({ onLogout }) {
                 </div>
                 <span
                   className={`text-sm font-bold ${
-                    coin.price_change_percentage_24h >= 0 ? "text-green-400" : "text-red-400"
+                    coin.price_change_percentage_24h >= 0
+                      ? "text-green-400"
+                      : "text-red-400"
                   }`}
                 >
                   {coin.price_change_percentage_24h.toFixed(2)}%
@@ -308,17 +384,25 @@ function TrackerPage({ onLogout }) {
                 ${coin.current_price.toLocaleString()}
               </p>
               <ResponsiveContainer width="100%" height={60}>
-                <LineChart data={coin.sparkline_in_7d.price.map((p, i) => ({ i, p }))}>
+                <LineChart
+                  data={coin.sparkline_in_7d.price.map((p, i) => ({ i, p }))}
+                >
                   <Line
                     type="monotone"
                     dataKey="p"
-                    stroke={coin.price_change_percentage_24h >= 0 ? "#22c55e" : "#ef4444"}
+                    stroke={
+                      coin.price_change_percentage_24h >= 0
+                        ? "#22c55e"
+                        : "#ef4444"
+                    }
                     dot={false}
                     strokeWidth={2}
                   />
                   <XAxis hide />
                   <YAxis hide domain={["auto", "auto"]} />
-                  <Tooltip contentStyle={{ background: "#111", border: "none" }} />
+                  <Tooltip
+                    contentStyle={{ background: "#111", border: "none" }}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </div>
