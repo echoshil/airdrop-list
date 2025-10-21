@@ -23,7 +23,6 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { motion } from "framer-motion";
 import NeonParticles from "./NeonParticles";
 
 const GOOGLE_SCRIPT_URL = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
@@ -35,7 +34,8 @@ function TrackerPage({ onLogout }) {
   const [sortOrder, setSortOrder] = useState("asc");
   const [searchTerm, setSearchTerm] = useState("");
   const [coins, setCoins] = useState([]);
-  const [visibleCount, setVisibleCount] = useState(6); // 👉 tampil 6 project dulu
+  const [visibleCount, setVisibleCount] = useState(3);
+  const [lastUpdate, setLastUpdate] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     twitter: "",
@@ -47,14 +47,20 @@ function TrackerPage({ onLogout }) {
     website: "",
   });
 
-  // === FETCH PROJECTS ===
+  // 🔹 Fetch data dari Google Sheet
   const fetchProjects = async () => {
     try {
+      setLoading(true);
       const res = await fetch(GOOGLE_SCRIPT_URL + "?action=read");
       const data = await res.json();
-      if (Array.isArray(data)) setProjects(data);
-    } catch {
-      alert("⚠️ Gagal memuat data dari Google Sheets");
+      if (Array.isArray(data)) {
+        setProjects(data);
+        setLastUpdate(new Date().toLocaleString());
+      }
+    } catch (err) {
+      alert("⚠️ Gagal load data dari Google Sheets.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -62,7 +68,7 @@ function TrackerPage({ onLogout }) {
     fetchProjects();
   }, []);
 
-  // === ADD PROJECT ===
+  // 🔹 Tambah project baru
   const addProject = async () => {
     if (!formData.name) return alert("Nama project wajib diisi!");
     try {
@@ -94,7 +100,7 @@ function TrackerPage({ onLogout }) {
     }
   };
 
-  // === FAVORITE TOGGLE (langsung update UI + simpan ke Sheet) ===
+  // 🔹 Toggle Favorite (⭐)
   const toggleFavorite = async (name) => {
     setProjects((prev) =>
       prev.map((p) =>
@@ -103,23 +109,19 @@ function TrackerPage({ onLogout }) {
           : p
       )
     );
-
     try {
       await fetch(GOOGLE_SCRIPT_URL, {
         method: "POST",
         mode: "cors",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({
-          action: "updateFavorite",
-          name,
-        }),
+        body: JSON.stringify({ action: "updateFavorite", name }),
       });
     } catch (err) {
       console.error("Gagal update favorite:", err);
     }
   };
 
-  // === DAILY TOGGLE (langsung update UI + simpan ke Sheet) ===
+  // 🔹 Toggle Daily Checklist (✅)
   const toggleDaily = async (name) => {
     setProjects((prev) =>
       prev.map((p) =>
@@ -128,32 +130,32 @@ function TrackerPage({ onLogout }) {
           : p
       )
     );
-
     try {
       await fetch(GOOGLE_SCRIPT_URL, {
         method: "POST",
         mode: "cors",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({
-          action: "updateDaily",
-          name,
-        }),
+        body: JSON.stringify({ action: "updateDaily", name }),
       });
     } catch (err) {
       console.error("Gagal update daily:", err);
     }
   };
 
-  // === SORT + SEARCH ===
+  // 🔹 Sorting dan Search
   const filteredProjects = projects
-    .filter((p) => (p.name || "").toLowerCase().includes(searchTerm.toLowerCase()))
+    .filter((p) =>
+      p.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
     .sort((a, b) => {
       const A = (a.name || "").toLowerCase();
       const B = (b.name || "").toLowerCase();
       return sortOrder === "asc" ? A.localeCompare(B) : B.localeCompare(A);
     });
 
-  // === FETCH MARKET DATA ===
+  const visibleProjects = filteredProjects.slice(0, visibleCount);
+
+  // 🔹 Fetch Market Data
   const fetchMarket = async () => {
     try {
       const res = await fetch(
@@ -161,8 +163,8 @@ function TrackerPage({ onLogout }) {
       );
       const data = await res.json();
       setCoins(data);
-    } catch (err) {
-      console.warn("Gagal ambil data market:", err);
+    } catch {
+      console.warn("Gagal ambil data market, gunakan dummy.");
     }
   };
 
@@ -172,32 +174,28 @@ function TrackerPage({ onLogout }) {
     return () => clearInterval(interval);
   }, []);
 
-  // === HANDLE READ MORE ===
-  const handleReadMore = () => {
-    setVisibleCount((prev) => prev + 6);
-  };
-
   return (
     <div className="min-h-screen bg-gray-950 text-white relative overflow-hidden">
       <NeonParticles />
 
       {/* HEADER */}
       <div className="relative z-10 p-6 flex flex-col md:flex-row justify-between items-center">
-        <motion.h1
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent"
-        >
-          🚀 Airdrop Tracker Pro
-        </motion.h1>
+        <div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+            🚀 Airdrop Tracker
+          </h1>
+          <p className="text-sm text-gray-400 mt-1">
+            Last update: {lastUpdate}
+          </p>
+        </div>
 
         <div className="flex items-center gap-3 mt-3 md:mt-0">
           <input
             type="text"
-            placeholder="🔍 Cari project..."
+            placeholder="🔍 Search project..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400"
+            className="px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-sm text-white"
           />
           <button
             onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
@@ -228,28 +226,22 @@ function TrackerPage({ onLogout }) {
           ➕ Tambah Project Baru
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {["name", "twitter", "discord", "telegram", "wallet", "email", "github", "website"].map(
-            (field) => (
-              <input
-                key={field}
-                type="text"
-                placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
-                value={formData[field]}
-                onChange={(e) =>
-                  setFormData({ ...formData, [field]: e.target.value })
-                }
-                className="p-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white w-full"
-              />
-            )
-          )}
+          {["name","twitter","discord","telegram","wallet","email","github","website"].map((field) => (
+            <input
+              key={field}
+              type="text"
+              placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+              value={formData[field]}
+              onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
+              className="p-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white w-full"
+            />
+          ))}
         </div>
         <button
           onClick={addProject}
           disabled={loading}
           className={`mt-4 px-6 py-2 rounded-lg shadow-md transition-all ${
-            loading
-              ? "bg-gray-600 cursor-not-allowed"
-              : "bg-green-600 hover:bg-green-700"
+            loading ? "bg-gray-600 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"
           }`}
         >
           {loading ? "Loading..." : "+ Tambah Project"}
@@ -257,114 +249,63 @@ function TrackerPage({ onLogout }) {
       </div>
 
       {/* PROJECT LIST */}
-      <div className="relative z-10 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 px-6">
-        {filteredProjects.slice(0, visibleCount).map((p, i) => (
-          <motion.div
+      <div className="relative z-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 px-6">
+        {visibleProjects.map((p, i) => (
+          <div
             key={i}
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.03 }}
-            className="relative bg-gray-900/70 backdrop-blur-md p-5 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all shadow-lg"
+            className="bg-gray-900/70 backdrop-blur-md p-5 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all shadow-lg relative"
           >
-            {/* FAVORITE STAR */}
+            {/* Favorite Star */}
             <button
               onClick={() => toggleFavorite(p.name)}
-              className="absolute top-3 left-3 text-yellow-400 hover:scale-110 transition"
+              className={`absolute top-3 right-3 text-xl transition ${
+                p.favorite === "TRUE" ? "text-yellow-400" : "text-gray-500"
+              }`}
             >
-              <Star
-                size={22}
-                fill={p.favorite === "TRUE" ? "#facc15" : "none"}
-                stroke={p.favorite === "TRUE" ? "#facc15" : "#a1a1aa"}
-              />
+              <Star fill={p.favorite === "TRUE" ? "yellow" : "none"} />
             </button>
 
-            {/* DAILY CHECK */}
+            {/* Daily Checkbox */}
             <button
               onClick={() => toggleDaily(p.name)}
-              className="absolute top-3 right-3 text-cyan-400 hover:scale-110 transition"
+              className="absolute top-3 left-3 text-cyan-400"
             >
-              {p.daily === "CHECKED" ? <CheckSquare size={20} /> : <Square size={20} />}
+              {p.daily === "CHECKED" ? <CheckSquare /> : <Square />}
             </button>
 
-            <h3 className="text-lg font-bold text-cyan-400 mb-3 mt-4">
-              {p.name}
-            </h3>
-            {p.twitter && (
-              <p className="flex items-center gap-2 text-blue-400">
-                <Twitter size={18} />
-                <span>{hideData ? "••••" : p.twitter}</span>
-              </p>
-            )}
-            {p.discord && (
-              <p className="flex items-center gap-2 text-indigo-400">
-                <MessageCircle size={18} />
-                <span>{hideData ? "••••" : p.discord}</span>
-              </p>
-            )}
-            {p.telegram && (
-              <p className="flex items-center gap-2 text-sky-400">
-                <Send size={18} />
-                <span>{hideData ? "••••" : p.telegram}</span>
-              </p>
-            )}
-            {p.wallet && (
-              <p className="flex items-center gap-2 text-yellow-400">
-                <Wallet size={18} />
-                <span>{hideData ? "••••" : p.wallet}</span>
-              </p>
-            )}
-            {p.email && (
-              <p className="flex items-center gap-2 text-pink-400">
-                <Mail size={18} />
-                <span>{hideData ? "••••" : p.email}</span>
-              </p>
-            )}
-            {p.github && (
-              <p className="flex items-center gap-2 text-gray-300">
-                <Github size={18} />
-                <span>{hideData ? "••••" : p.github}</span>
-              </p>
-            )}
-            {p.website && (
-              <p className="flex items-center gap-2 text-blue-400">
-                <Globe size={18} />
-                <a
-                  href={p.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline hover:text-blue-300"
-                >
-                  {p.website}
-                </a>
-              </p>
-            )}
-          </motion.div>
+            <h3 className="text-lg font-bold text-cyan-400 mb-3">{p.name}</h3>
+            {p.twitter && <p className="flex items-center gap-2 text-blue-400"><Twitter size={18}/><span>{hideData?"••••••••":p.twitter}</span></p>}
+            {p.discord && <p className="flex items-center gap-2 text-indigo-400"><MessageCircle size={18}/><span>{hideData?"••••••••":p.discord}</span></p>}
+            {p.telegram && <p className="flex items-center gap-2 text-sky-400"><Send size={18}/><span>{hideData?"••••••••":p.telegram}</span></p>}
+            {p.wallet && <p className="flex items-center gap-2 text-yellow-400"><Wallet size={18}/><span>{hideData?"••••••••":p.wallet}</span></p>}
+            {p.email && <p className="flex items-center gap-2 text-pink-400"><Mail size={18}/><span>{hideData?"••••••••":p.email}</span></p>}
+            {p.github && <p className="flex items-center gap-2 text-gray-300"><Github size={18}/><span>{hideData?"••••••••":p.github}</span></p>}
+            {p.website && <p className="flex items-center gap-2 text-blue-400"><Globe size={18}/><a href={p.website} target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-300">{p.website}</a></p>}
+          </div>
         ))}
       </div>
 
-      {/* READ MORE BUTTON */}
+      {/* READ MORE */}
       {visibleCount < filteredProjects.length && (
-        <div className="text-center mt-8">
+        <div className="flex justify-center mt-6">
           <button
-            onClick={handleReadMore}
-            className="bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-2 rounded-lg shadow-md"
+            onClick={() => setVisibleCount(visibleCount + 3)}
+            className="px-6 py-2 bg-cyan-600 hover:bg-cyan-700 rounded-lg shadow-md"
           >
-            🔽 Read More
+            Read More
           </button>
         </div>
       )}
 
-      {/* 📊 MARKET CHART */}
+      {/* LIVE CHART */}
       <div className="relative z-10 mt-16 px-6 pb-10">
         <h2 className="text-2xl font-bold mb-6 text-center bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
           📈 Live Crypto Market
         </h2>
+
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {coins.map((coin) => (
-            <div
-              key={coin.id}
-              className="bg-gray-900/70 p-4 rounded-xl border border-gray-700 hover:border-cyan-400/60 shadow-lg"
-            >
+            <div key={coin.id} className="bg-gray-900/70 p-4 rounded-xl border border-gray-700 hover:border-cyan-400/60 shadow-lg">
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-3">
                   <img src={coin.image} alt={coin.name} className="w-6 h-6" />
