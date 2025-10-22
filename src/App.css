@@ -1,3 +1,38 @@
+/* === BASE STYLES === */
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background-color: #0f172a;
+  color: white;
+  overflow-x: hidden;
+}
+
+input,
+button {
+  outline: none;
+  border: none;
+}
+
+button {
+  cursor: pointer;
+  transition: 0.2s ease-in-out;
+}
+
+button:hover {
+  opacity: 0.9;
+  transform: scale(1.02);
+}
+
+.dark {
+  background-color: #111;
+  color: white;
+}
+
+.light {
+  background-color: #f6f6f6;
+  color: black;
+}
+
 /* === ANIMATED GRADIENT BACKGROUND === */
 .animated-bg {
   position: fixed;
@@ -37,19 +72,100 @@
   border-color: rgba(59, 130, 246, 0.6);
 }
 
+/* === PROJECT CARD CONTENT === */
+.card h3 {
+  color: #22d3ee;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.card p {
+  margin: 0.25rem 0;
+  font-size: 0.95rem;
+  color: #cbd5e1;
+}
+
 /* === REFRESH TIMER === */
 .refresh-timer {
   font-size: 14px;
   color: #94a3b8;
+  text-align: center;
 }
+
 .refresh-timer span {
   color: #22d3ee;
   font-weight: 600;
 }
 
+/* === READ MORE BUTTON === */
+.readmore-btn {
+  background-color: #0891b2;
+  color: white;
+  padding: 0.5rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.readmore-btn:hover {
+  background-color: #06b6d4;
+  transform: scale(1.05);
+}
+
+/* === CHART CONTAINER === */
+.chart-container {
+  background: rgba(17, 24, 39, 0.7);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 1rem;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
+  transition: all 0.3s ease;
+}
+
+.chart-container:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 0 25px rgba(59, 130, 246, 0.4);
+}
+
+/* === MINI HEADER STATS === */
+.header-stats {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.header-stats .stat {
+  background: rgba(17, 24, 39, 0.8);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 0.75rem;
+  padding: 0.5rem 1.2rem;
+  font-size: 0.9rem;
+  color: #93c5fd;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.15);
+  transition: all 0.3s ease;
+}
+
+.header-stats .stat:hover {
+  background: rgba(59, 130, 246, 0.2);
+  color: white;
+  transform: scale(1.05);
+}
+
 /* === RESPONSIVE GRID FIX === */
+@media (max-width: 1024px) {
+  .grid-cols-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
 @media (max-width: 768px) {
   .grid-cols-3 {
     grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+
+  .header-stats {
+    flex-direction: column;
+    align-items: center;
   }
 }
