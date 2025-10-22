@@ -185,11 +185,13 @@ function TrackerPage({ onLogout }) {
       return sortOrder === "asc" ? A.localeCompare(B) : B.localeCompare(A);
     });
 
+  // === PAGINATION / READ MORE ===
+  const itemsPerPage = 3;
   const displayedProjects = showAll
     ? filteredProjects
-    : filteredProjects.slice(0, 3);
+    : filteredProjects.slice(0, itemsPerPage);
 
-  // === MINI STATISTIC HEADER ===
+  // === MINI STATS ===
   const totalProjects = projects.length;
   const totalDaily = projects.filter((p) => p.daily === "CHECKED").length;
 
@@ -239,47 +241,6 @@ function TrackerPage({ onLogout }) {
       <div className="relative z-10 flex justify-center gap-6 text-sm mb-6">
         <p className="text-cyan-400">Total Projects: {totalProjects}</p>
         <p className="text-green-400">Daily Checked: {totalDaily}</p>
-      </div>
-
-      {/* FORM INPUT */}
-      <div className="relative z-10 bg-gray-900/60 p-6 rounded-2xl max-w-5xl mx-auto mb-8 shadow-lg w-[90%] md:w-auto">
-        <h2 className="text-xl font-semibold mb-4 text-cyan-300 text-center md:text-left">
-          ➕ Tambah Project Baru
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-          {[
-            "name",
-            "twitter",
-            "discord",
-            "telegram",
-            "wallet",
-            "email",
-            "github",
-            "website",
-          ].map((field) => (
-            <input
-              key={field}
-              type="text"
-              placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
-              value={formData[field]}
-              onChange={(e) =>
-                setFormData({ ...formData, [field]: e.target.value })
-              }
-              className="p-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white w-full"
-            />
-          ))}
-        </div>
-        <button
-          onClick={addProject}
-          disabled={loading}
-          className={`mt-4 px-6 py-2 rounded-lg shadow-md transition-all ${
-            loading
-              ? "bg-gray-600 cursor-not-allowed"
-              : "bg-green-600 hover:bg-green-700"
-          }`}
-        >
-          {loading ? "Loading..." : "+ Tambah Project"}
-        </button>
       </div>
 
       {/* PROJECT LIST */}
@@ -364,8 +325,8 @@ function TrackerPage({ onLogout }) {
         ))}
       </div>
 
-      {/* READ MORE / LESS */}
-      {filteredProjects.length > 3 && (
+      {/* READ MORE / LESS BUTTON */}
+      {filteredProjects.length > itemsPerPage && (
         <div className="text-center mt-8 mb-12">
           <button
             onClick={() => setShowAll(!showAll)}
@@ -382,7 +343,6 @@ function TrackerPage({ onLogout }) {
           📈 Live Crypto Market
         </h2>
 
-        {/* TIMER & PROGRESS */}
         <div className="text-center mb-4">
           <p className="text-gray-400 text-sm mb-2">
             ⏱️ Auto-refresh in{" "}
