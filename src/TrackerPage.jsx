@@ -14,7 +14,6 @@ import {
   CheckSquare,
   Square,
 } from "lucide-react";
-import { motion } from "framer-motion";
 import {
   LineChart,
   Line,
@@ -24,7 +23,6 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import NeonParticles from "./NeonParticles";
-import "./App.css";
 
 const GOOGLE_SCRIPT_URL = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
 
@@ -124,14 +122,16 @@ function TrackerPage({ onLogout }) {
       );
       const data = await res.json();
       setCoins(data);
-    } catch {
+    } catch (err) {
+      console.warn("⚠️ Gagal ambil data market, gunakan dummy.");
       setCoins([
         {
           id: "bitcoin",
           name: "Bitcoin",
           current_price: 68000,
           price_change_percentage_24h: 1.2,
-          image: "https://assets.coingecko.com/coins/images/1/large/bitcoin.png",
+          image:
+            "https://assets.coingecko.com/coins/images/1/large/bitcoin.png",
           sparkline_in_7d: {
             price: Array.from({ length: 30 }, (_, i) => 67000 + i * 10),
           },
@@ -151,7 +151,7 @@ function TrackerPage({ onLogout }) {
     }
   };
 
-  // === AUTO REFRESH TIMER ===
+  // === AUTO REFRESH TIMER + PROGRESS BAR ===
   useEffect(() => {
     fetchMarket();
     const refreshInterval = setInterval(() => {
@@ -171,6 +171,7 @@ function TrackerPage({ onLogout }) {
     };
   }, []);
 
+  // === PROGRESS BAR COLOR GRADIENT ===
   const progressColor =
     timer > 40 ? "#22c55e" : timer > 20 ? "#facc15" : "#ef4444";
 
@@ -185,28 +186,21 @@ function TrackerPage({ onLogout }) {
       return sortOrder === "asc" ? A.localeCompare(B) : B.localeCompare(A);
     });
 
-  // === PAGINATION / READ MORE ===
-  const itemsPerPage = 3;
   const displayedProjects = showAll
     ? filteredProjects
-    : filteredProjects.slice(0, itemsPerPage);
-
-  // === MINI STATS ===
-  const totalProjects = projects.length;
-  const totalDaily = projects.filter((p) => p.daily === "CHECKED").length;
+    : filteredProjects.slice(0, 3);
 
   return (
-    <div className="min-h-screen text-white relative overflow-hidden">
-      <div className="animated-bg" />
+    <div className="min-h-screen bg-gray-950 text-white relative overflow-hidden">
       <NeonParticles />
 
       {/* HEADER */}
       <div className="relative z-10 p-6 flex flex-col md:flex-row justify-between items-center gap-4">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent text-center md:text-left">
           🚀 Airdrop Tracker
         </h1>
 
-        <div className="flex flex-wrap items-center justify-center md:justify-end gap-3">
+        <div className="flex flex-wrap justify-center md:justify-end items-center gap-3">
           <input
             type="text"
             placeholder="🔍 Cari project..."
@@ -237,21 +231,53 @@ function TrackerPage({ onLogout }) {
         </div>
       </div>
 
-      {/* MINI STATS */}
-      <div className="relative z-10 flex justify-center gap-6 text-sm mb-6">
-        <p className="text-cyan-400">Total Projects: {totalProjects}</p>
-        <p className="text-green-400">Daily Checked: {totalDaily}</p>
+      {/* FORM INPUT */}
+      <div className="relative z-10 bg-gray-900/60 p-6 rounded-2xl max-w-5xl mx-auto mb-8 shadow-lg w-[90%] md:w-auto">
+        <h2 className="text-xl font-semibold mb-4 text-cyan-300 text-center md:text-left">
+          ➕ Tambah Project Baru
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          {[
+            "name",
+            "twitter",
+            "discord",
+            "telegram",
+            "wallet",
+            "email",
+            "github",
+            "website",
+          ].map((field) => (
+            <input
+              key={field}
+              type="text"
+              placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+              value={formData[field]}
+              onChange={(e) =>
+                setFormData({ ...formData, [field]: e.target.value })
+              }
+              className="p-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white w-full"
+            />
+          ))}
+        </div>
+        <button
+          onClick={addProject}
+          disabled={loading}
+          className={`mt-4 px-6 py-2 rounded-lg shadow-md transition-all ${
+            loading
+              ? "bg-gray-600 cursor-not-allowed"
+              : "bg-green-600 hover:bg-green-700"
+          }`}
+        >
+          {loading ? "Loading..." : "+ Tambah Project"}
+        </button>
       </div>
 
       {/* PROJECT LIST */}
       <div className="relative z-10 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 px-6">
         {displayedProjects.map((p, i) => (
-          <motion.div
+          <div
             key={i}
-            className="card relative p-5 transition-all shadow-lg"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1, duration: 0.4 }}
+            className="relative bg-gray-900/70 backdrop-blur-md p-5 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all shadow-lg"
           >
             <button
               onClick={() => toggleDaily(p.name, p.daily)}
@@ -321,12 +347,12 @@ function TrackerPage({ onLogout }) {
                 Last update: {new Date(p.lastupdate).toLocaleString()}
               </p>
             )}
-          </motion.div>
+          </div>
         ))}
       </div>
 
-      {/* READ MORE / LESS BUTTON */}
-      {filteredProjects.length > itemsPerPage && (
+      {/* READ MORE / LESS */}
+      {filteredProjects.length > 3 && (
         <div className="text-center mt-8 mb-12">
           <button
             onClick={() => setShowAll(!showAll)}
@@ -343,6 +369,7 @@ function TrackerPage({ onLogout }) {
           📈 Live Crypto Market
         </h2>
 
+        {/* TIMER & PROGRESS */}
         <div className="text-center mb-4">
           <p className="text-gray-400 text-sm mb-2">
             ⏱️ Auto-refresh in{" "}
@@ -363,7 +390,7 @@ function TrackerPage({ onLogout }) {
           {coins.map((coin) => (
             <div
               key={coin.id}
-              className="card bg-gray-900/70 p-4 rounded-xl border border-gray-700 hover:border-cyan-400/60 shadow-lg"
+              className="bg-gray-900/70 p-4 rounded-xl border border-gray-700 hover:border-cyan-400/60 shadow-lg"
             >
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-3">
