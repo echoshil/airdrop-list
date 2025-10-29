@@ -36,6 +36,9 @@ function TrackerPage({ onLogout }) {
   const [coins, setCoins] = useState([]);
   const [timer, setTimer] = useState(60);
   const [progress, setProgress] = useState(100);
+  const [dexData, setDexData] = useState([]);
+  const [selectedChain, setSelectedChain] = useState("ethereum");
+
   const [formData, setFormData] = useState({
     name: "",
     twitter: "",
@@ -122,7 +125,7 @@ function TrackerPage({ onLogout }) {
       );
       const data = await res.json();
       setCoins(data);
-    } catch (err) {
+    } catch {
       console.warn("⚠️ Gagal ambil data market, gunakan dummy.");
       setCoins([
         {
@@ -156,6 +159,7 @@ function TrackerPage({ onLogout }) {
     fetchMarket();
     const refreshInterval = setInterval(() => {
       fetchMarket();
+      fetchDexData(selectedChain);
       setTimer(60);
       setProgress(100);
     }, 60000);
@@ -169,7 +173,7 @@ function TrackerPage({ onLogout }) {
       clearInterval(refreshInterval);
       clearInterval(countdown);
     };
-  }, []);
+  }, [selectedChain]);
 
   // === PROGRESS BAR COLOR GRADIENT ===
   const progressColor =
@@ -189,6 +193,65 @@ function TrackerPage({ onLogout }) {
   const displayedProjects = showAll
     ? filteredProjects
     : filteredProjects.slice(0, 3);
+
+  // === DEX TRACKER ===
+  const DEX_LOGOS = {
+    uniswap: "https://cryptologos.cc/logos/uniswap-uni-logo.png",
+    pancakeswap: "https://cryptologos.cc/logos/pancakeswap-cake-logo.png",
+    sushiswap: "https://cryptologos.cc/logos/sushiswap-sushi-logo.png",
+    raydium: "https://cryptologos.cc/logos/raydium-ray-logo.png",
+    quickswap: "https://cryptologos.cc/logos/quickswap-quick-logo.png",
+    traderjoe: "https://cryptologos.cc/logos/trader-joe-joe-logo.png",
+  };
+
+  const fetchDexData = async (chain = "ethereum") => {
+    try {
+      const res = await fetch(
+        `https://api.dexscreener.com/latest/dex/search?q=${chain}`
+      );
+      const data = await res.json();
+      const parsed = (data.pairs || []).slice(0, 6).map((p) => ({
+        name: p.baseToken?.name || "Unknown",
+        symbol: p.baseToken?.symbol || "",
+        dex: p.dexId,
+        volume: p.volume?.h24 || 0,
+        price: p.priceUsd || 0,
+        logo:
+          DEX_LOGOS[p.dexId?.toLowerCase()] ||
+          "https://cdn-icons-png.flaticon.com/512/149/149071.png",
+      }));
+      setDexData(parsed);
+    } catch (e) {
+      console.warn("⚠️ Gagal fetch DEX data", e);
+      setDexData([
+        {
+          name: "Uniswap",
+          dex: "uniswap",
+          logo: DEX_LOGOS.uniswap,
+          volume: 12000000,
+          price: 1.2,
+        },
+        {
+          name: "PancakeSwap",
+          dex: "pancakeswap",
+          logo: DEX_LOGOS.pancakeswap,
+          volume: 8500000,
+          price: 0.98,
+        },
+        {
+          name: "SushiSwap",
+          dex: "sushiswap",
+          logo: DEX_LOGOS.sushiswap,
+          volume: 4100000,
+          price: 0.75,
+        },
+      ]);
+    }
+  };
+
+  useEffect(() => {
+    fetchDexData(selectedChain);
+  }, [selectedChain]);
 
   return (
     <div className="min-h-screen bg-gray-950 text-white relative overflow-hidden">
@@ -386,6 +449,7 @@ function TrackerPage({ onLogout }) {
           </div>
         </div>
 
+        {/* CHARTS */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {coins.map((coin) => (
             <div
@@ -444,78 +508,54 @@ function TrackerPage({ onLogout }) {
           ))}
         </div>
       </div>
-              {/* 🧩 DEX MENU */}
-        <div className="relative z-10 mt-16 px-6 pb-20">
-          <h2 className="text-2xl font-bold mb-6 text-center bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
-            🧩 Popular DEX Platforms
-          </h2>
-        
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {[
-              {
-                name: "Uniswap",
-                logo: "https://cryptologos.cc/logos/uniswap-uni-logo.png",
-                desc: "Leading DEX on Ethereum network.",
-                link: "https://app.uniswap.org/",
-                color: "from-pink-500 to-purple-500",
-              },
-              {
-                name: "PancakeSwap",
-                logo: "https://cryptologos.cc/logos/pancakeswap-cake-logo.png",
-                desc: "Top DEX on BNB Smart Chain.",
-                link: "https://pancakeswap.finance/",
-                color: "from-yellow-400 to-orange-500",
-              },
-              {
-                name: "SushiSwap",
-                logo: "https://cryptologos.cc/logos/sushiswap-sushi-logo.png",
-                desc: "Multi-chain AMM & yield platform.",
-                link: "https://www.sushi.com/",
-                color: "from-purple-400 to-blue-500",
-              },
-              {
-                name: "1inch",
-                logo: "https://cryptologos.cc/logos/1inch-1inch-logo.png",
-                desc: "DEX aggregator offering best rates.",
-                link: "https://app.1inch.io/",
-                color: "from-blue-400 to-cyan-500",
-              },
-              {
-                name: "Raydium",
-                logo: "https://cryptologos.cc/logos/raydium-ray-logo.png",
-                desc: "Fast Solana-based DEX & liquidity pool.",
-                link: "https://raydium.io/",
-                color: "from-cyan-400 to-teal-500",
-              },
-              {
-                name: "Balancer",
-                logo: "https://cryptologos.cc/logos/balancer-bal-logo.png",
-                desc: "Ethereum DEX with smart pools.",
-                link: "https://balancer.fi/",
-                color: "from-indigo-400 to-pink-400",
-              },
-            ].map((dex, idx) => (
-              <div
-                key={idx}
-                className={`bg-gray-900/70 border border-gray-700 rounded-2xl p-5 flex flex-col items-center justify-between text-center hover:border-cyan-400/60 shadow-lg transition-transform transform hover:-translate-y-2 hover:scale-105`}
-              >
-                <img src={dex.logo} alt={dex.name} className="w-12 h-12 mb-3 rounded-full" />
-                <h3 className={`text-lg font-semibold bg-gradient-to-r ${dex.color} bg-clip-text text-transparent`}>
-                  {dex.name}
-                </h3>
-                <p className="text-gray-400 text-sm mb-4">{dex.desc}</p>
-                <a
-                  href={dex.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-gradient-to-r from-cyan-500 to-blue-500 px-4 py-2 rounded-lg font-semibold text-sm hover:from-blue-500 hover:to-cyan-500 transition"
-                >
-                  Visit DEX
-                </a>
-              </div>
-            ))}
-          </div>
+
+      {/* 🧩 LIVE DEX TRACKER */}
+      <div className="relative z-10 mt-16 px-6 pb-20">
+        <h2 className="text-2xl font-bold mb-6 text-center bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
+          🧩 Live DEX Tracker
+        </h2>
+
+        {/* FILTER */}
+        <div className="flex justify-center mb-6">
+          <select
+            onChange={(e) => setSelectedChain(e.target.value)}
+            value={selectedChain}
+            className="bg-gray-900 border border-gray-700 text-white px-4 py-2 rounded-lg"
+          >
+            <option value="ethereum">Ethereum</option>
+            <option value="bsc">BNB Chain</option>
+            <option value="solana">Solana</option>
+            <option value="polygon">Polygon</option>
+            <option value="arbitrum">Arbitrum</option>
+          </select>
         </div>
+
+        {/* GRID DEX */}
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {dexData.map((dex, idx) => (
+            <div
+              key={idx}
+              className="bg-gray-900/70 border border-gray-700 rounded-2xl p-6 flex flex-col items-center justify-between text-center hover:border-cyan-400/60 shadow-lg transition-transform transform hover:-translate-y-2 hover:scale-105 hover:shadow-cyan-500/20"
+            >
+              <img
+                src={dex.logo}
+                alt={dex.name}
+                className="w-14 h-14 mb-3 rounded-full border border-gray-700"
+              />
+              <h3 className="text-lg font-semibold text-cyan-300">
+                {dex.name}
+              </h3>
+              <p className="text-gray-400 text-sm mb-2 uppercase">{dex.dex}</p>
+              <p className="text-sm text-green-400 font-bold">
+                Vol 24h: ${dex.volume.toLocaleString()}
+              </p>
+              <p className="text-gray-300 text-sm">
+                Price: ${Number(dex.price).toFixed(3)}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
