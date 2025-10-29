@@ -444,6 +444,78 @@ function TrackerPage({ onLogout }) {
           ))}
         </div>
       </div>
+              {/* 🧩 DEX MENU */}
+        <div className="relative z-10 mt-16 px-6 pb-20">
+          <h2 className="text-2xl font-bold mb-6 text-center bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
+            🧩 Popular DEX Platforms
+          </h2>
+        
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {[
+              {
+                name: "Uniswap",
+                logo: "https://cryptologos.cc/logos/uniswap-uni-logo.png",
+                desc: "Leading DEX on Ethereum network.",
+                link: "https://app.uniswap.org/",
+                color: "from-pink-500 to-purple-500",
+              },
+              {
+                name: "PancakeSwap",
+                logo: "https://cryptologos.cc/logos/pancakeswap-cake-logo.png",
+                desc: "Top DEX on BNB Smart Chain.",
+                link: "https://pancakeswap.finance/",
+                color: "from-yellow-400 to-orange-500",
+              },
+              {
+                name: "SushiSwap",
+                logo: "https://cryptologos.cc/logos/sushiswap-sushi-logo.png",
+                desc: "Multi-chain AMM & yield platform.",
+                link: "https://www.sushi.com/",
+                color: "from-purple-400 to-blue-500",
+              },
+              {
+                name: "1inch",
+                logo: "https://cryptologos.cc/logos/1inch-1inch-logo.png",
+                desc: "DEX aggregator offering best rates.",
+                link: "https://app.1inch.io/",
+                color: "from-blue-400 to-cyan-500",
+              },
+              {
+                name: "Raydium",
+                logo: "https://cryptologos.cc/logos/raydium-ray-logo.png",
+                desc: "Fast Solana-based DEX & liquidity pool.",
+                link: "https://raydium.io/",
+                color: "from-cyan-400 to-teal-500",
+              },
+              {
+                name: "Balancer",
+                logo: "https://cryptologos.cc/logos/balancer-bal-logo.png",
+                desc: "Ethereum DEX with smart pools.",
+                link: "https://balancer.fi/",
+                color: "from-indigo-400 to-pink-400",
+              },
+            ].map((dex, idx) => (
+              <div
+                key={idx}
+                className={`bg-gray-900/70 border border-gray-700 rounded-2xl p-5 flex flex-col items-center justify-between text-center hover:border-cyan-400/60 shadow-lg transition-transform transform hover:-translate-y-2 hover:scale-105`}
+              >
+                <img src={dex.logo} alt={dex.name} className="w-12 h-12 mb-3 rounded-full" />
+                <h3 className={`text-lg font-semibold bg-gradient-to-r ${dex.color} bg-clip-text text-transparent`}>
+                  {dex.name}
+                </h3>
+                <p className="text-gray-400 text-sm mb-4">{dex.desc}</p>
+                <a
+                  href={dex.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-gradient-to-r from-cyan-500 to-blue-500 px-4 py-2 rounded-lg font-semibold text-sm hover:from-blue-500 hover:to-cyan-500 transition"
+                >
+                  Visit DEX
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
     </div>
   );
 }
