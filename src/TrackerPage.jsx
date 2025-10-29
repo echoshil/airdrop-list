@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Twitter,
   MessageCircle,
@@ -13,6 +13,8 @@ import {
   ArrowUpDown,
   CheckSquare,
   Square,
+  ChevronDown,
+  ExternalLink,
 } from "lucide-react";
 import {
   LineChart,
@@ -36,8 +38,7 @@ function TrackerPage({ onLogout }) {
   const [coins, setCoins] = useState([]);
   const [timer, setTimer] = useState(60);
   const [progress, setProgress] = useState(100);
-  const [showDex, setShowDex] = useState(false);
-  const dexRef = useRef(null);
+  const [showDexList, setShowDexList] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -49,6 +50,35 @@ function TrackerPage({ onLogout }) {
     github: "",
     website: "",
   });
+
+  // === DEX LIST ===
+  const dexList = [
+    {
+      name: "Uniswap",
+      logo: "https://cryptologos.cc/logos/uniswap-uni-logo.png",
+      url: "https://app.uniswap.org",
+    },
+    {
+      name: "PancakeSwap",
+      logo: "https://cryptologos.cc/logos/pancakeswap-cake-logo.png",
+      url: "https://pancakeswap.finance",
+    },
+    {
+      name: "Raydium",
+      logo: "https://cryptologos.cc/logos/raydium-ray-logo.png",
+      url: "https://raydium.io",
+    },
+    {
+      name: "SushiSwap",
+      logo: "https://cryptologos.cc/logos/sushiswap-sushi-logo.png",
+      url: "https://www.sushi.com",
+    },
+    {
+      name: "QuickSwap",
+      logo: "https://cryptologos.cc/logos/quickswap-quick-logo.png",
+      url: "https://quickswap.exchange",
+    },
+  ];
 
   // === FETCH PROJECTS ===
   const fetchProjects = async () => {
@@ -154,7 +184,7 @@ function TrackerPage({ onLogout }) {
     }
   };
 
-  // === AUTO REFRESH TIMER + PROGRESS BAR ===
+  // === AUTO REFRESH TIMER ===
   useEffect(() => {
     fetchMarket();
     const refreshInterval = setInterval(() => {
@@ -172,17 +202,6 @@ function TrackerPage({ onLogout }) {
       clearInterval(refreshInterval);
       clearInterval(countdown);
     };
-  }, []);
-
-  // === CLOSE DEX DROPDOWN WHEN CLICK OUTSIDE ===
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (dexRef.current && !dexRef.current.contains(e.target)) {
-        setShowDex(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const progressColor =
@@ -203,56 +222,50 @@ function TrackerPage({ onLogout }) {
     ? filteredProjects
     : filteredProjects.slice(0, 3);
 
-  // === DEX LIST ===
-  const dexList = [
-    { name: "Uniswap", logo: "https://cryptologos.cc/logos/uniswap-uni-logo.png" },
-    { name: "PancakeSwap", logo: "https://cryptologos.cc/logos/pancakeswap-cake-logo.png" },
-    { name: "Raydium", logo: "https://cryptologos.cc/logos/raydium-ray-logo.png" },
-    { name: "SushiSwap", logo: "https://cryptologos.cc/logos/sushiswap-sushi-logo.png" },
-    { name: "TraderJoe", logo: "https://cryptologos.cc/logos/traderjoe-joe-logo.png" },
-    { name: "QuickSwap", logo: "https://cryptologos.cc/logos/quickswap-quick-logo.png" },
-  ];
-
   return (
     <div className="min-h-screen bg-gray-950 text-white relative overflow-hidden">
       <NeonParticles />
 
       {/* HEADER */}
-      <div className="relative z-10 p-6 flex flex-col md:flex-row justify-between items-center gap-4">
+      <div className="relative z-20 p-6 flex flex-col md:flex-row justify-between items-center gap-4">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent flex items-center gap-2">
-          🚀 Airdrop <span className="text-pink-400">Tracker</span>
+          🚀 Airdrop Tracker
         </h1>
 
         <div className="flex flex-wrap justify-center md:justify-end items-center gap-3 relative">
-          {/* === DEX DROPDOWN BUTTON === */}
-          <div className="relative" ref={dexRef}>
+          {/* DEX Button */}
+          <div className="relative">
             <button
-              onClick={() => setShowDex(!showDex)}
-              className="bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg font-medium transition-all"
+              onClick={() => setShowDexList(!showDexList)}
+              className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg transition"
             >
-              List DEX
+              List DEX <ChevronDown size={16} />
             </button>
 
-            {showDex && (
-              <div className="absolute right-0 mt-2 w-52 bg-gray-900 border border-gray-700 rounded-lg shadow-xl animate-fadeIn">
+            {showDexList && (
+              <div className="absolute top-12 right-0 bg-gray-900 border border-gray-700 rounded-xl shadow-lg p-3 w-52 z-50">
                 {dexList.map((dex) => (
-                  <div
+                  <a
                     key={dex.name}
-                    className="flex items-center gap-2 px-4 py-2 hover:bg-gray-800 cursor-pointer text-sm text-gray-300 hover:text-cyan-300 transition"
+                    href={dex.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-800 transition"
                   >
                     <img
                       src={dex.logo}
                       alt={dex.name}
                       className="w-5 h-5 rounded-full"
                     />
-                    {dex.name}
-                  </div>
+                    <span>{dex.name}</span>
+                    <ExternalLink size={14} className="ml-auto opacity-60" />
+                  </a>
                 ))}
               </div>
             )}
           </div>
 
-          {/* === SEARCH + FILTER === */}
+          {/* Search and Buttons */}
           <input
             type="text"
             placeholder="🔍 Cari project..."
@@ -284,7 +297,7 @@ function TrackerPage({ onLogout }) {
       </div>
 
       {/* FORM INPUT */}
-      <div className="relative z-10 bg-gray-900/60 p-6 rounded-2xl max-w-5xl mx-auto mb-8 shadow-lg w-[90%] md:w-auto">
+      <div className="relative z-10 bg-gray-900/60 p-6 rounded-2xl max-w-5xl mx-auto mb-8 shadow-lg w-[90%] md:w-auto mt-4">
         <h2 className="text-xl font-semibold mb-4 text-cyan-300 text-center md:text-left">
           ➕ Tambah Project Baru
         </h2>
@@ -325,11 +338,11 @@ function TrackerPage({ onLogout }) {
       </div>
 
       {/* PROJECT LIST */}
-      <div className="relative z-10 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 px-6 animate-fadeIn">
+      <div className="relative z-10 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 px-6">
         {displayedProjects.map((p, i) => (
           <div
             key={i}
-            className="relative bg-gray-900/70 backdrop-blur-md p-5 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all shadow-lg hover:shadow-cyan-700/30 hover:-translate-y-1"
+            className="relative bg-gray-900/70 backdrop-blur-md p-5 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all shadow-lg"
           >
             <button
               onClick={() => toggleDaily(p.name, p.daily)}
@@ -403,7 +416,7 @@ function TrackerPage({ onLogout }) {
         ))}
       </div>
 
-      {/* READ MORE / LESS */}
+      {/* READ MORE */}
       {filteredProjects.length > 3 && (
         <div className="text-center mt-8 mb-12">
           <button
@@ -415,7 +428,7 @@ function TrackerPage({ onLogout }) {
         </div>
       )}
 
-      {/* LIVE CHART + TIMER */}
+      {/* LIVE CHART */}
       <div className="relative z-10 mt-16 px-6 pb-10">
         <h2 className="text-2xl font-bold mb-2 text-center bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
           📈 Live Crypto Market
@@ -441,7 +454,7 @@ function TrackerPage({ onLogout }) {
           {coins.map((coin) => (
             <div
               key={coin.id}
-              className="bg-gray-900/70 p-4 rounded-xl border border-gray-700 hover:border-cyan-400/60 shadow-lg hover:-translate-y-1 transition"
+              className="bg-gray-900/70 p-4 rounded-xl border border-gray-700 hover:border-cyan-400/60 shadow-lg"
             >
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-3">
