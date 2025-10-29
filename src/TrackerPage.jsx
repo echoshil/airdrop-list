@@ -13,8 +13,6 @@ import {
   ArrowUpDown,
   CheckSquare,
   Square,
-  ChevronDown,
-  ExternalLink,
 } from "lucide-react";
 import {
   LineChart,
@@ -35,11 +33,10 @@ function TrackerPage({ onLogout }) {
   const [sortOrder, setSortOrder] = useState("asc");
   const [searchTerm, setSearchTerm] = useState("");
   const [showAll, setShowAll] = useState(false);
+  const [showDexList, setShowDexList] = useState(false);
   const [coins, setCoins] = useState([]);
   const [timer, setTimer] = useState(60);
   const [progress, setProgress] = useState(100);
-  const [showDexList, setShowDexList] = useState(false);
-
   const [formData, setFormData] = useState({
     name: "",
     twitter: "",
@@ -51,32 +48,32 @@ function TrackerPage({ onLogout }) {
     website: "",
   });
 
-  // === DEX LIST ===
-  const dexList = [
+  // === LIST DEX ===
+  const DEX_LIST = [
     {
       name: "Uniswap",
+      url: "https://app.uniswap.org/",
       logo: "https://cryptologos.cc/logos/uniswap-uni-logo.png",
-      url: "https://app.uniswap.org",
     },
     {
       name: "PancakeSwap",
+      url: "https://pancakeswap.finance/",
       logo: "https://cryptologos.cc/logos/pancakeswap-cake-logo.png",
-      url: "https://pancakeswap.finance",
     },
     {
       name: "Raydium",
-      logo: "https://cryptologos.cc/logos/raydium-ray-logo.png",
-      url: "https://raydium.io",
+      url: "https://raydium.io/",
+      logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/8526.png",
     },
     {
       name: "SushiSwap",
+      url: "https://www.sushi.com/",
       logo: "https://cryptologos.cc/logos/sushiswap-sushi-logo.png",
-      url: "https://www.sushi.com",
     },
     {
       name: "QuickSwap",
-      logo: "https://cryptologos.cc/logos/quickswap-quick-logo.png",
-      url: "https://quickswap.exchange",
+      url: "https://quickswap.exchange/",
+      logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/8206.png",
     },
   ];
 
@@ -184,7 +181,7 @@ function TrackerPage({ onLogout }) {
     }
   };
 
-  // === AUTO REFRESH TIMER ===
+  // === AUTO REFRESH TIMER + PROGRESS BAR ===
   useEffect(() => {
     fetchMarket();
     const refreshInterval = setInterval(() => {
@@ -204,6 +201,7 @@ function TrackerPage({ onLogout }) {
     };
   }, []);
 
+  // === PROGRESS BAR COLOR GRADIENT ===
   const progressColor =
     timer > 40 ? "#22c55e" : timer > 20 ? "#facc15" : "#ef4444";
 
@@ -233,39 +231,51 @@ function TrackerPage({ onLogout }) {
         </h1>
 
         <div className="flex flex-wrap justify-center md:justify-end items-center gap-3 relative">
-          {/* DEX Button */}
+          {/* DEX LIST */}
           <div className="relative">
             <button
               onClick={() => setShowDexList(!showDexList)}
-              className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg transition"
+              className="bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg font-semibold"
             >
-              List DEX <ChevronDown size={16} />
+              List DEX
             </button>
 
             {showDexList && (
-              <div className="absolute top-12 right-0 bg-gray-900 border border-gray-700 rounded-xl shadow-lg p-3 w-52 z-50">
-                {dexList.map((dex) => (
+              <div className="absolute right-0 mt-2 bg-gray-900 border border-gray-700 rounded-xl shadow-xl p-2 w-56 animate-fadeIn z-50">
+                {DEX_LIST.map((dex) => (
                   <a
                     key={dex.name}
                     href={dex.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-800 transition"
+                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition"
                   >
                     <img
                       src={dex.logo}
                       alt={dex.name}
-                      className="w-5 h-5 rounded-full"
+                      className="w-6 h-6 rounded-full object-cover"
                     />
                     <span>{dex.name}</span>
-                    <ExternalLink size={14} className="ml-auto opacity-60" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-4 h-4 ml-auto text-gray-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M14 3h7v7m0 0L10 21l-7-7L21 3z"
+                      />
+                    </svg>
                   </a>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Search and Buttons */}
           <input
             type="text"
             placeholder="🔍 Cari project..."
@@ -273,6 +283,7 @@ function TrackerPage({ onLogout }) {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 w-48 sm:w-60"
           />
+
           <button
             onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
             className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg"
@@ -280,6 +291,7 @@ function TrackerPage({ onLogout }) {
             <ArrowUpDown size={16} />
             {sortOrder === "asc" ? "A-Z" : "Z-A"}
           </button>
+
           <button
             onClick={() => setHideData(!hideData)}
             className="bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg flex items-center gap-2"
@@ -287,6 +299,7 @@ function TrackerPage({ onLogout }) {
             {hideData ? <Eye size={18} /> : <EyeOff size={18} />}
             {hideData ? "Show" : "Hide"}
           </button>
+
           <button
             onClick={onLogout}
             className="flex items-center gap-2 bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg"
@@ -297,7 +310,7 @@ function TrackerPage({ onLogout }) {
       </div>
 
       {/* FORM INPUT */}
-      <div className="relative z-10 bg-gray-900/60 p-6 rounded-2xl max-w-5xl mx-auto mb-8 shadow-lg w-[90%] md:w-auto mt-4">
+      <div className="relative z-10 bg-gray-900/60 p-6 rounded-2xl max-w-5xl mx-auto mb-8 shadow-lg w-[90%] md:w-auto">
         <h2 className="text-xl font-semibold mb-4 text-cyan-300 text-center md:text-left">
           ➕ Tambah Project Baru
         </h2>
@@ -342,7 +355,7 @@ function TrackerPage({ onLogout }) {
         {displayedProjects.map((p, i) => (
           <div
             key={i}
-            className="relative bg-gray-900/70 backdrop-blur-md p-5 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all shadow-lg"
+            className="relative bg-gray-900/70 backdrop-blur-md p-5 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all shadow-lg animate-fadeIn"
           >
             <button
               onClick={() => toggleDaily(p.name, p.daily)}
@@ -416,7 +429,7 @@ function TrackerPage({ onLogout }) {
         ))}
       </div>
 
-      {/* READ MORE */}
+      {/* READ MORE / LESS */}
       {filteredProjects.length > 3 && (
         <div className="text-center mt-8 mb-12">
           <button
@@ -428,12 +441,13 @@ function TrackerPage({ onLogout }) {
         </div>
       )}
 
-      {/* LIVE CHART */}
+      {/* LIVE CHART + TIMER */}
       <div className="relative z-10 mt-16 px-6 pb-10">
         <h2 className="text-2xl font-bold mb-2 text-center bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
           📈 Live Crypto Market
         </h2>
 
+        {/* TIMER & PROGRESS */}
         <div className="text-center mb-4">
           <p className="text-gray-400 text-sm mb-2">
             ⏱️ Auto-refresh in{" "}
@@ -454,7 +468,7 @@ function TrackerPage({ onLogout }) {
           {coins.map((coin) => (
             <div
               key={coin.id}
-              className="bg-gray-900/70 p-4 rounded-xl border border-gray-700 hover:border-cyan-400/60 shadow-lg"
+              className="bg-gray-900/70 p-4 rounded-xl border border-gray-700 hover:border-cyan-400/60 shadow-lg animate-fadeIn"
             >
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-3">
