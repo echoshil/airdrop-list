@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Twitter,
   MessageCircle,
@@ -36,8 +36,8 @@ function TrackerPage({ onLogout }) {
   const [coins, setCoins] = useState([]);
   const [timer, setTimer] = useState(60);
   const [progress, setProgress] = useState(100);
-  const [dexData, setDexData] = useState([]);
-  const [selectedChain, setSelectedChain] = useState("ethereum");
+  const [showDex, setShowDex] = useState(false);
+  const dexRef = useRef(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -125,7 +125,7 @@ function TrackerPage({ onLogout }) {
       );
       const data = await res.json();
       setCoins(data);
-    } catch {
+    } catch (err) {
       console.warn("⚠️ Gagal ambil data market, gunakan dummy.");
       setCoins([
         {
@@ -159,7 +159,6 @@ function TrackerPage({ onLogout }) {
     fetchMarket();
     const refreshInterval = setInterval(() => {
       fetchMarket();
-      fetchDexData(selectedChain);
       setTimer(60);
       setProgress(100);
     }, 60000);
@@ -173,9 +172,19 @@ function TrackerPage({ onLogout }) {
       clearInterval(refreshInterval);
       clearInterval(countdown);
     };
-  }, [selectedChain]);
+  }, []);
 
-  // === PROGRESS BAR COLOR GRADIENT ===
+  // === CLOSE DEX DROPDOWN WHEN CLICK OUTSIDE ===
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dexRef.current && !dexRef.current.contains(e.target)) {
+        setShowDex(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const progressColor =
     timer > 40 ? "#22c55e" : timer > 20 ? "#facc15" : "#ef4444";
 
@@ -194,64 +203,15 @@ function TrackerPage({ onLogout }) {
     ? filteredProjects
     : filteredProjects.slice(0, 3);
 
-  // === DEX TRACKER ===
-  const DEX_LOGOS = {
-    uniswap: "https://cryptologos.cc/logos/uniswap-uni-logo.png",
-    pancakeswap: "https://cryptologos.cc/logos/pancakeswap-cake-logo.png",
-    sushiswap: "https://cryptologos.cc/logos/sushiswap-sushi-logo.png",
-    raydium: "https://cryptologos.cc/logos/raydium-ray-logo.png",
-    quickswap: "https://cryptologos.cc/logos/quickswap-quick-logo.png",
-    traderjoe: "https://cryptologos.cc/logos/trader-joe-joe-logo.png",
-  };
-
-  const fetchDexData = async (chain = "ethereum") => {
-    try {
-      const res = await fetch(
-        `https://api.dexscreener.com/latest/dex/search?q=${chain}`
-      );
-      const data = await res.json();
-      const parsed = (data.pairs || []).slice(0, 6).map((p) => ({
-        name: p.baseToken?.name || "Unknown",
-        symbol: p.baseToken?.symbol || "",
-        dex: p.dexId,
-        volume: p.volume?.h24 || 0,
-        price: p.priceUsd || 0,
-        logo:
-          DEX_LOGOS[p.dexId?.toLowerCase()] ||
-          "https://cdn-icons-png.flaticon.com/512/149/149071.png",
-      }));
-      setDexData(parsed);
-    } catch (e) {
-      console.warn("⚠️ Gagal fetch DEX data", e);
-      setDexData([
-        {
-          name: "Uniswap",
-          dex: "uniswap",
-          logo: DEX_LOGOS.uniswap,
-          volume: 12000000,
-          price: 1.2,
-        },
-        {
-          name: "PancakeSwap",
-          dex: "pancakeswap",
-          logo: DEX_LOGOS.pancakeswap,
-          volume: 8500000,
-          price: 0.98,
-        },
-        {
-          name: "SushiSwap",
-          dex: "sushiswap",
-          logo: DEX_LOGOS.sushiswap,
-          volume: 4100000,
-          price: 0.75,
-        },
-      ]);
-    }
-  };
-
-  useEffect(() => {
-    fetchDexData(selectedChain);
-  }, [selectedChain]);
+  // === DEX LIST ===
+  const dexList = [
+    { name: "Uniswap", logo: "https://cryptologos.cc/logos/uniswap-uni-logo.png" },
+    { name: "PancakeSwap", logo: "https://cryptologos.cc/logos/pancakeswap-cake-logo.png" },
+    { name: "Raydium", logo: "https://cryptologos.cc/logos/raydium-ray-logo.png" },
+    { name: "SushiSwap", logo: "https://cryptologos.cc/logos/sushiswap-sushi-logo.png" },
+    { name: "TraderJoe", logo: "https://cryptologos.cc/logos/traderjoe-joe-logo.png" },
+    { name: "QuickSwap", logo: "https://cryptologos.cc/logos/quickswap-quick-logo.png" },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-950 text-white relative overflow-hidden">
@@ -259,11 +219,40 @@ function TrackerPage({ onLogout }) {
 
       {/* HEADER */}
       <div className="relative z-10 p-6 flex flex-col md:flex-row justify-between items-center gap-4">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent text-center md:text-left">
-          🚀 Airdrop Tracker
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent flex items-center gap-2">
+          🚀 Airdrop <span className="text-pink-400">Tracker</span>
         </h1>
 
-        <div className="flex flex-wrap justify-center md:justify-end items-center gap-3">
+        <div className="flex flex-wrap justify-center md:justify-end items-center gap-3 relative">
+          {/* === DEX DROPDOWN BUTTON === */}
+          <div className="relative" ref={dexRef}>
+            <button
+              onClick={() => setShowDex(!showDex)}
+              className="bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg font-medium transition-all"
+            >
+              List DEX
+            </button>
+
+            {showDex && (
+              <div className="absolute right-0 mt-2 w-52 bg-gray-900 border border-gray-700 rounded-lg shadow-xl animate-fadeIn">
+                {dexList.map((dex) => (
+                  <div
+                    key={dex.name}
+                    className="flex items-center gap-2 px-4 py-2 hover:bg-gray-800 cursor-pointer text-sm text-gray-300 hover:text-cyan-300 transition"
+                  >
+                    <img
+                      src={dex.logo}
+                      alt={dex.name}
+                      className="w-5 h-5 rounded-full"
+                    />
+                    {dex.name}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* === SEARCH + FILTER === */}
           <input
             type="text"
             placeholder="🔍 Cari project..."
@@ -336,11 +325,11 @@ function TrackerPage({ onLogout }) {
       </div>
 
       {/* PROJECT LIST */}
-      <div className="relative z-10 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 px-6">
+      <div className="relative z-10 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 px-6 animate-fadeIn">
         {displayedProjects.map((p, i) => (
           <div
             key={i}
-            className="relative bg-gray-900/70 backdrop-blur-md p-5 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all shadow-lg"
+            className="relative bg-gray-900/70 backdrop-blur-md p-5 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all shadow-lg hover:shadow-cyan-700/30 hover:-translate-y-1"
           >
             <button
               onClick={() => toggleDaily(p.name, p.daily)}
@@ -432,7 +421,6 @@ function TrackerPage({ onLogout }) {
           📈 Live Crypto Market
         </h2>
 
-        {/* TIMER & PROGRESS */}
         <div className="text-center mb-4">
           <p className="text-gray-400 text-sm mb-2">
             ⏱️ Auto-refresh in{" "}
@@ -449,12 +437,11 @@ function TrackerPage({ onLogout }) {
           </div>
         </div>
 
-        {/* CHARTS */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {coins.map((coin) => (
             <div
               key={coin.id}
-              className="bg-gray-900/70 p-4 rounded-xl border border-gray-700 hover:border-cyan-400/60 shadow-lg"
+              className="bg-gray-900/70 p-4 rounded-xl border border-gray-700 hover:border-cyan-400/60 shadow-lg hover:-translate-y-1 transition"
             >
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-3">
@@ -504,54 +491,6 @@ function TrackerPage({ onLogout }) {
                   />
                 </LineChart>
               </ResponsiveContainer>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* 🧩 LIVE DEX TRACKER */}
-      <div className="relative z-10 mt-16 px-6 pb-20">
-        <h2 className="text-2xl font-bold mb-6 text-center bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
-          🧩 Live DEX Tracker
-        </h2>
-
-        {/* FILTER */}
-        <div className="flex justify-center mb-6">
-          <select
-            onChange={(e) => setSelectedChain(e.target.value)}
-            value={selectedChain}
-            className="bg-gray-900 border border-gray-700 text-white px-4 py-2 rounded-lg"
-          >
-            <option value="ethereum">Ethereum</option>
-            <option value="bsc">BNB Chain</option>
-            <option value="solana">Solana</option>
-            <option value="polygon">Polygon</option>
-            <option value="arbitrum">Arbitrum</option>
-          </select>
-        </div>
-
-        {/* GRID DEX */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {dexData.map((dex, idx) => (
-            <div
-              key={idx}
-              className="bg-gray-900/70 border border-gray-700 rounded-2xl p-6 flex flex-col items-center justify-between text-center hover:border-cyan-400/60 shadow-lg transition-transform transform hover:-translate-y-2 hover:scale-105 hover:shadow-cyan-500/20"
-            >
-              <img
-                src={dex.logo}
-                alt={dex.name}
-                className="w-14 h-14 mb-3 rounded-full border border-gray-700"
-              />
-              <h3 className="text-lg font-semibold text-cyan-300">
-                {dex.name}
-              </h3>
-              <p className="text-gray-400 text-sm mb-2 uppercase">{dex.dex}</p>
-              <p className="text-sm text-green-400 font-bold">
-                Vol 24h: ${dex.volume.toLocaleString()}
-              </p>
-              <p className="text-gray-300 text-sm">
-                Price: ${Number(dex.price).toFixed(3)}
-              </p>
             </div>
           ))}
         </div>
