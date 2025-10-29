@@ -13,6 +13,7 @@ import {
   ArrowUpDown,
   CheckSquare,
   Square,
+  ExternalLink,
 } from "lucide-react";
 import {
   LineChart,
@@ -33,10 +34,11 @@ function TrackerPage({ onLogout }) {
   const [sortOrder, setSortOrder] = useState("asc");
   const [searchTerm, setSearchTerm] = useState("");
   const [showAll, setShowAll] = useState(false);
-  const [showDexList, setShowDexList] = useState(false);
   const [coins, setCoins] = useState([]);
   const [timer, setTimer] = useState(60);
   const [progress, setProgress] = useState(100);
+  const [showDex, setShowDex] = useState(false);
+
   const [formData, setFormData] = useState({
     name: "",
     twitter: "",
@@ -47,35 +49,6 @@ function TrackerPage({ onLogout }) {
     github: "",
     website: "",
   });
-
-  // === LIST DEX ===
-  const DEX_LIST = [
-    {
-      name: "Uniswap",
-      url: "https://app.uniswap.org/",
-      logo: "https://cryptologos.cc/logos/uniswap-uni-logo.png",
-    },
-    {
-      name: "PancakeSwap",
-      url: "https://pancakeswap.finance/",
-      logo: "https://cryptologos.cc/logos/pancakeswap-cake-logo.png",
-    },
-    {
-      name: "Raydium",
-      url: "https://raydium.io/",
-      logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/8526.png",
-    },
-    {
-      name: "SushiSwap",
-      url: "https://www.sushi.com/",
-      logo: "https://cryptologos.cc/logos/sushiswap-sushi-logo.png",
-    },
-    {
-      name: "QuickSwap",
-      url: "https://quickswap.exchange/",
-      logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/8206.png",
-    },
-  ];
 
   // === FETCH PROJECTS ===
   const fetchProjects = async () => {
@@ -124,7 +97,7 @@ function TrackerPage({ onLogout }) {
     }
   };
 
-  // === DAILY CHECK TOGGLE ===
+  // === DAILY TOGGLE ===
   const toggleDaily = async (name, current) => {
     const next = current === "CHECKED" ? "UNCHECKED" : "CHECKED";
     try {
@@ -144,7 +117,7 @@ function TrackerPage({ onLogout }) {
     }
   };
 
-  // === FETCH COIN MARKET ===
+  // === FETCH COINS ===
   const fetchMarket = async () => {
     try {
       const res = await fetch(
@@ -152,36 +125,13 @@ function TrackerPage({ onLogout }) {
       );
       const data = await res.json();
       setCoins(data);
-    } catch (err) {
+    } catch {
       console.warn("⚠️ Gagal ambil data market, gunakan dummy.");
-      setCoins([
-        {
-          id: "bitcoin",
-          name: "Bitcoin",
-          current_price: 68000,
-          price_change_percentage_24h: 1.2,
-          image:
-            "https://assets.coingecko.com/coins/images/1/large/bitcoin.png",
-          sparkline_in_7d: {
-            price: Array.from({ length: 30 }, (_, i) => 67000 + i * 10),
-          },
-        },
-        {
-          id: "ethereum",
-          name: "Ethereum",
-          current_price: 2500,
-          price_change_percentage_24h: -0.5,
-          image:
-            "https://assets.coingecko.com/coins/images/279/large/ethereum.png",
-          sparkline_in_7d: {
-            price: Array.from({ length: 30 }, (_, i) => 2400 + i * 5),
-          },
-        },
-      ]);
+      setCoins([]);
     }
   };
 
-  // === AUTO REFRESH TIMER + PROGRESS BAR ===
+  // === AUTO REFRESH TIMER ===
   useEffect(() => {
     fetchMarket();
     const refreshInterval = setInterval(() => {
@@ -201,11 +151,11 @@ function TrackerPage({ onLogout }) {
     };
   }, []);
 
-  // === PROGRESS BAR COLOR GRADIENT ===
+  // === STYLE DYNAMIC ===
   const progressColor =
     timer > 40 ? "#22c55e" : timer > 20 ? "#facc15" : "#ef4444";
 
-  // === FILTER & SORT ===
+  // === SORT & FILTER ===
   const filteredProjects = projects
     .filter((p) =>
       (p.name || "").toLowerCase().includes(searchTerm.toLowerCase())
@@ -220,62 +170,80 @@ function TrackerPage({ onLogout }) {
     ? filteredProjects
     : filteredProjects.slice(0, 3);
 
+  // === DEX LIST ===
+  const dexList = [
+    {
+      name: "Uniswap",
+      logo: "https://cryptologos.cc/logos/uniswap-uni-logo.png",
+      url: "https://app.uniswap.org",
+    },
+    {
+      name: "PancakeSwap",
+      logo: "https://cryptologos.cc/logos/pancakeswap-cake-logo.png",
+      url: "https://pancakeswap.finance",
+    },
+    {
+      name: "Raydium",
+      logo: "https://cryptologos.cc/logos/raydium-ray-logo.png",
+      url: "https://raydium.io",
+    },
+    {
+      name: "SushiSwap",
+      logo: "https://cryptologos.cc/logos/sushiswap-sushi-logo.png",
+      url: "https://sushi.com",
+    },
+    {
+      name: "QuickSwap",
+      logo: "https://cryptologos.cc/logos/quickswap-quick-logo.png",
+      url: "https://quickswap.exchange",
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-gray-950 text-white relative overflow-hidden">
       <NeonParticles />
 
       {/* HEADER */}
       <div className="relative z-20 p-6 flex flex-col md:flex-row justify-between items-center gap-4">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent flex items-center gap-2">
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
           🚀 Airdrop Tracker
         </h1>
 
         <div className="flex flex-wrap justify-center md:justify-end items-center gap-3 relative">
-          {/* DEX LIST */}
+          {/* DEX DROPDOWN */}
           <div className="relative">
             <button
-              onClick={() => setShowDexList(!showDexList)}
+              onClick={() => setShowDex(!showDex)}
               className="bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg font-semibold"
             >
               List DEX
             </button>
-
-            {showDexList && (
-              <div className="absolute right-0 mt-2 bg-gray-900 border border-gray-700 rounded-xl shadow-xl p-2 w-56 animate-fadeIn z-50">
-                {DEX_LIST.map((dex) => (
+            {showDex && (
+              <div className="absolute left-0 mt-2 w-56 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-50 animate-fadeIn">
+                {dexList.map((dex) => (
                   <a
                     key={dex.name}
                     href={dex.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition"
+                    className="flex items-center justify-between gap-2 px-4 py-2 hover:bg-gray-800 transition"
                   >
-                    <img
-                      src={dex.logo}
-                      alt={dex.name}
-                      className="w-6 h-6 rounded-full object-cover"
-                    />
-                    <span>{dex.name}</span>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="w-4 h-4 ml-auto text-gray-400"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M14 3h7v7m0 0L10 21l-7-7L21 3z"
+                    <div className="flex items-center gap-2">
+                      <img
+                        src={dex.logo}
+                        alt={dex.name}
+                        className="w-5 h-5 rounded-full"
                       />
-                    </svg>
+                      <span>{dex.name}</span>
+                    </div>
+                    <ExternalLink size={14} />
                   </a>
                 ))}
               </div>
             )}
           </div>
 
+          {/* SEARCH BAR */}
           <input
             type="text"
             placeholder="🔍 Cari project..."
@@ -283,7 +251,6 @@ function TrackerPage({ onLogout }) {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 w-48 sm:w-60"
           />
-
           <button
             onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
             className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg"
@@ -291,7 +258,6 @@ function TrackerPage({ onLogout }) {
             <ArrowUpDown size={16} />
             {sortOrder === "asc" ? "A-Z" : "Z-A"}
           </button>
-
           <button
             onClick={() => setHideData(!hideData)}
             className="bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg flex items-center gap-2"
@@ -299,7 +265,6 @@ function TrackerPage({ onLogout }) {
             {hideData ? <Eye size={18} /> : <EyeOff size={18} />}
             {hideData ? "Show" : "Hide"}
           </button>
-
           <button
             onClick={onLogout}
             className="flex items-center gap-2 bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg"
@@ -309,9 +274,9 @@ function TrackerPage({ onLogout }) {
         </div>
       </div>
 
-      {/* FORM INPUT */}
-      <div className="relative z-10 bg-gray-900/60 p-6 rounded-2xl max-w-5xl mx-auto mb-8 shadow-lg w-[90%] md:w-auto">
-        <h2 className="text-xl font-semibold mb-4 text-cyan-300 text-center md:text-left">
+      {/* FORM */}
+      <div className="relative z-10 bg-gray-900/60 p-6 rounded-2xl max-w-5xl mx-auto mb-8 shadow-lg w-[90%] md:w-auto mt-4">
+        <h2 className="text-xl font-semibold mb-4 text-cyan-300">
           ➕ Tambah Project Baru
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
@@ -350,27 +315,21 @@ function TrackerPage({ onLogout }) {
         </button>
       </div>
 
-      {/* PROJECT LIST */}
+      {/* PROJECT CARDS */}
       <div className="relative z-10 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 px-6">
         {displayedProjects.map((p, i) => (
           <div
             key={i}
-            className="relative bg-gray-900/70 backdrop-blur-md p-5 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all shadow-lg animate-fadeIn"
+            className="relative bg-gray-900/70 backdrop-blur-md p-5 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all shadow-lg"
           >
             <button
               onClick={() => toggleDaily(p.name, p.daily)}
               className="absolute top-3 right-3 text-cyan-400 hover:scale-110 transition"
             >
-              {p.daily === "CHECKED" ? (
-                <CheckSquare size={20} />
-              ) : (
-                <Square size={20} />
-              )}
+              {p.daily === "CHECKED" ? <CheckSquare size={20} /> : <Square size={20} />}
             </button>
 
-            <h3 className="text-lg font-bold text-cyan-400 mb-3 mt-4">
-              {p.name}
-            </h3>
+            <h3 className="text-lg font-bold text-cyan-400 mb-3 mt-4">{p.name}</h3>
             {p.twitter && (
               <p className="flex items-center gap-2 text-blue-400">
                 <Twitter size={18} />
@@ -429,7 +388,7 @@ function TrackerPage({ onLogout }) {
         ))}
       </div>
 
-      {/* READ MORE / LESS */}
+      {/* READ MORE */}
       {filteredProjects.length > 3 && (
         <div className="text-center mt-8 mb-12">
           <button
@@ -441,13 +400,12 @@ function TrackerPage({ onLogout }) {
         </div>
       )}
 
-      {/* LIVE CHART + TIMER */}
+      {/* LIVE MARKET SECTION */}
       <div className="relative z-10 mt-16 px-6 pb-10">
         <h2 className="text-2xl font-bold mb-2 text-center bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
           📈 Live Crypto Market
         </h2>
 
-        {/* TIMER & PROGRESS */}
         <div className="text-center mb-4">
           <p className="text-gray-400 text-sm mb-2">
             ⏱️ Auto-refresh in{" "}
@@ -468,22 +426,16 @@ function TrackerPage({ onLogout }) {
           {coins.map((coin) => (
             <div
               key={coin.id}
-              className="bg-gray-900/70 p-4 rounded-xl border border-gray-700 hover:border-cyan-400/60 shadow-lg animate-fadeIn"
+              className="bg-gray-900/70 p-4 rounded-xl border border-gray-700 hover:border-cyan-400/60 shadow-lg"
             >
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-3">
-                  <img
-                    src={coin.image}
-                    alt={coin.name}
-                    className="w-6 h-6 rounded-full"
-                  />
+                  <img src={coin.image} alt={coin.name} className="w-6 h-6 rounded-full" />
                   <span className="font-semibold">{coin.name}</span>
                 </div>
                 <span
                   className={`text-sm font-bold ${
-                    coin.price_change_percentage_24h >= 0
-                      ? "text-green-400"
-                      : "text-red-400"
+                    coin.price_change_percentage_24h >= 0 ? "text-green-400" : "text-red-400"
                   }`}
                 >
                   {coin.price_change_percentage_24h.toFixed(2)}%
