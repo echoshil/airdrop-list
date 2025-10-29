@@ -117,7 +117,7 @@ function TrackerPage({ onLogout }) {
     }
   };
 
-  // === FETCH COINS ===
+  // === FETCH MARKET ===
   const fetchMarket = async () => {
     try {
       const res = await fetch(
@@ -151,11 +151,11 @@ function TrackerPage({ onLogout }) {
     };
   }, []);
 
-  // === STYLE DYNAMIC ===
+  // === PROGRESS BAR COLOR ===
   const progressColor =
     timer > 40 ? "#22c55e" : timer > 20 ? "#facc15" : "#ef4444";
 
-  // === SORT & FILTER ===
+  // === FILTER & SORT ===
   const filteredProjects = projects
     .filter((p) =>
       (p.name || "").toLowerCase().includes(searchTerm.toLowerCase())
@@ -170,31 +170,31 @@ function TrackerPage({ onLogout }) {
     ? filteredProjects
     : filteredProjects.slice(0, 3);
 
-  // === DEX LIST ===
+  // === DEX LIST (LOCAL LOGOS) ===
   const dexList = [
     {
       name: "Uniswap",
-      logo: "https://cryptologos.cc/logos/uniswap-uni-logo.png",
+      logo: "/dex/uniswap.png",
       url: "https://app.uniswap.org",
     },
     {
       name: "PancakeSwap",
-      logo: "https://cryptologos.cc/logos/pancakeswap-cake-logo.png",
+      logo: "/dex/pancakeswap.png",
       url: "https://pancakeswap.finance",
     },
     {
       name: "Raydium",
-      logo: "https://cryptologos.cc/logos/raydium-ray-logo.png",
+      logo: "/dex/raydium.png",
       url: "https://raydium.io",
     },
     {
       name: "SushiSwap",
-      logo: "https://cryptologos.cc/logos/sushiswap-sushi-logo.png",
+      logo: "/dex/sushiswap.png",
       url: "https://sushi.com",
     },
     {
       name: "QuickSwap",
-      logo: "https://cryptologos.cc/logos/quickswap-quick-logo.png",
+      logo: "/dex/quickswap.png",
       url: "https://quickswap.exchange",
     },
   ];
@@ -243,7 +243,7 @@ function TrackerPage({ onLogout }) {
             )}
           </div>
 
-          {/* SEARCH BAR */}
+          {/* SEARCH + SORT + HIDE */}
           <input
             type="text"
             placeholder="🔍 Cari project..."
@@ -274,7 +274,7 @@ function TrackerPage({ onLogout }) {
         </div>
       </div>
 
-      {/* FORM */}
+      {/* FORM INPUT */}
       <div className="relative z-10 bg-gray-900/60 p-6 rounded-2xl max-w-5xl mx-auto mb-8 shadow-lg w-[90%] md:w-auto mt-4">
         <h2 className="text-xl font-semibold mb-4 text-cyan-300">
           ➕ Tambah Project Baru
@@ -315,7 +315,7 @@ function TrackerPage({ onLogout }) {
         </button>
       </div>
 
-      {/* PROJECT CARDS */}
+      {/* PROJECT LIST */}
       <div className="relative z-10 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 px-6">
         {displayedProjects.map((p, i) => (
           <div
@@ -400,7 +400,7 @@ function TrackerPage({ onLogout }) {
         </div>
       )}
 
-      {/* LIVE MARKET SECTION */}
+      {/* LIVE MARKET */}
       <div className="relative z-10 mt-16 px-6 pb-10">
         <h2 className="text-2xl font-bold mb-2 text-center bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
           📈 Live Crypto Market
