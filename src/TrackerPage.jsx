@@ -241,15 +241,15 @@ function TrackerPage({ onLogout }) {
     <div className="min-h-screen text-white relative overflow-hidden bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 animate-gradient">
       <NeonParticles />
 
-      {/* HEADER */}
-      <div className="relative z-10 p-6 flex flex-col md:flex-row justify-between items-center gap-4">
+      {/* HEADER - Z-INDEX FIXED TO z-50 */}
+      <div className="relative z-50 p-6 flex flex-col md:flex-row justify-between items-center gap-4">
         <h1 className="flex items-center gap-2 text-3xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
           🚀 Airdrop Tracker
         </h1>
 
-        <div className="flex flex-wrap justify-center md:justify-end items-center gap-3 relative">
-          {/* DEX BUTTON */}
-          <div className="relative">
+        <div className="flex flex-wrap justify-center md:justify-end items-center gap-3 relative z-50">
+          {/* DEX BUTTON - Z-INDEX FIXED */}
+          <div className="relative z-50">
             <button
               onClick={() => setShowDexList(!showDexList)}
               className="bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg font-semibold transition"
@@ -258,7 +258,7 @@ function TrackerPage({ onLogout }) {
             </button>
 
             {showDexList && (
-              <div className="absolute top-12 left-0 bg-gray-900 border border-gray-700 rounded-xl shadow-lg w-56 p-2 transition-all duration-300 ease-in-out z-50">
+              <div className="absolute top-12 left-0 bg-gray-900 border border-gray-700 rounded-xl shadow-lg w-56 p-2 transition-all duration-300 ease-in-out z-[9999]">
                 {DEX_LIST.map((dex, i) => (
                   <a
                     key={i}
@@ -574,4 +574,3 @@ function TrackerPage({ onLogout }) {
 }
 
 export default TrackerPage;
-
