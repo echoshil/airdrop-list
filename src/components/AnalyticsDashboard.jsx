@@ -182,7 +182,7 @@ const AnalyticsDashboard = ({ projects, balances, selectedNetwork }) => {
             <div className="bg-gradient-to-br from-green-600/20 to-green-800/20 border border-green-500/30 rounded-xl p-4 hover:scale-105 transition-transform">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-400 text-sm">Completed Today</p>
+                  <p className="text-gray-400 text-sm">Daily Task</p>
                   <p className="text-3xl font-bold text-green-400">{stats.completed}</p>
                 </div>
                 <CheckCircle className="text-green-400" size={32} />
