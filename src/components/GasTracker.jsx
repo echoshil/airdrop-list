@@ -1,4 +1,4 @@
-"import React, { useState, useEffect } from \"react\";
+import React, { useState, useEffect } from \"react\";
 import { Fuel, TrendingUp, TrendingDown, AlertCircle } from \"lucide-react\";
 import {
   LineChart,
@@ -309,4 +309,3 @@ const GasTracker = () => {
 };
 
 export default GasTracker;
-"
