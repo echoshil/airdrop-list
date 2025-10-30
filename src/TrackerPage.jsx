@@ -37,11 +37,11 @@ const DEX_LIST = [
 ];
 
 const NETWORKS = {
-  Ethereum: { rpc: "https://rpc.ankr.com/eth" },
-  Polygon: { rpc: "https://rpc.ankr.com/polygon" },
-  BSC: { rpc: "https://rpc.ankr.com/bsc" },
-  Arbitrum: { rpc: "https://rpc.ankr.com/arbitrum" },
-  Base: { rpc: "https://rpc.ankr.com/base" },
+  Ethereum: { rpc: "https://eth.llamarpc.com" },
+  Polygon: { rpc: "https://polygon-rpc.com" },
+  BSC: { rpc: "https://bsc-dataseed.binance.org" },
+  Arbitrum: { rpc: "https://arb1.arbitrum.io/rpc" },
+  Base: { rpc: "https://mainnet.base.org" },
 };
 
 function TrackerPage({ onLogout }) {
@@ -190,21 +190,50 @@ function TrackerPage({ onLogout }) {
 
   // === BULK BALANCE CHECK ===
   const checkBalances = async () => {
-    const provider = new ethers.JsonRpcProvider(NETWORKS[selectedNetwork].rpc);
-    const list = addresses.split(/\s+/).filter(Boolean);
+    const list = addresses.split(/[\n,\s]+/).filter(Boolean);
     if (list.length === 0) return alert("Masukkan address wallet!");
+    
     setBalanceLoading(true);
+    setBalances([]);
     const result = [];
-    for (const addr of list) {
-      try {
-        const bal = await provider.getBalance(addr);
-        result.push({ address: addr, balance: ethers.formatEther(bal) });
-      } catch {
-        result.push({ address: addr, balance: "❌ Error" });
+    
+    try {
+      const provider = new ethers.JsonRpcProvider(NETWORKS[selectedNetwork].rpc);
+      
+      for (const addr of list) {
+        try {
+          // Validate and normalize address
+          if (!ethers.isAddress(addr)) {
+            result.push({ 
+              address: addr, 
+              balance: "❌ Invalid Address" 
+            });
+            continue;
+          }
+          
+          const checksumAddr = ethers.getAddress(addr);
+          const bal = await provider.getBalance(checksumAddr);
+          const formattedBalance = parseFloat(ethers.formatEther(bal)).toFixed(6);
+          
+          result.push({ 
+            address: checksumAddr, 
+            balance: formattedBalance 
+          });
+        } catch (err) {
+          console.error(`Error checking ${addr}:`, err);
+          result.push({ 
+            address: addr, 
+            balance: "❌ Error" 
+          });
+        }
       }
+    } catch (err) {
+      console.error("Provider error:", err);
+      alert(`⚠️ Gagal terhubung ke ${selectedNetwork} network. Coba lagi!`);
+    } finally {
+      setBalances(result);
+      setBalanceLoading(false);
     }
-    setBalances(result);
-    setBalanceLoading(false);
   };
 
   return (
@@ -454,39 +483,78 @@ function TrackerPage({ onLogout }) {
           </div>
 
           <textarea
-            className="w-full bg-gray-800 p-3 rounded-lg border border-gray-700 text-white resize-none"
-            placeholder="Tempelkan wallet address (satu baris satu address)..."
+            className="w-full bg-gray-800 p-3 rounded-lg border border-gray-700 text-white resize-none focus:border-cyan-400 focus:outline-none"
+            placeholder="Tempelkan wallet address (satu baris satu address)&#10;Contoh:&#10;0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb&#10;0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045&#10;0x3f5CE5FBFe3E9af3971dD833D26bA9b5C936f0bE"
             rows="6"
             value={addresses}
             onChange={(e) => setAddresses(e.target.value)}
           ></textarea>
 
-          <button
-            onClick={checkBalances}
-            disabled={balanceLoading}
-            className="mt-4 bg-green-600 hover:bg-green-700 px-6 py-2 rounded-lg font-semibold transition"
-          >
-            {balanceLoading ? "Checking..." : "Cek Saldo"}
-          </button>
+          <div className="flex items-center justify-between mt-4">
+            <button
+              onClick={checkBalances}
+              disabled={balanceLoading}
+              className={`px-6 py-2 rounded-lg font-semibold transition ${
+                balanceLoading
+                  ? "bg-gray-600 cursor-not-allowed"
+                  : "bg-green-600 hover:bg-green-700"
+              }`}
+            >
+              {balanceLoading ? "⏳ Checking..." : "✅ Cek Saldo"}
+            </button>
+            {balances.length > 0 && (
+              <span className="text-sm text-gray-400">
+                Total: {balances.length} address(es) checked
+              </span>
+            )}
+          </div>
 
           {balances.length > 0 && (
             <div className="mt-6 bg-gray-800 rounded-lg p-4 overflow-x-auto">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-cyan-400 font-semibold">Results - {selectedNetwork}</h3>
+                <button
+                  onClick={() => setBalances([])}
+                  className="text-xs bg-red-600 hover:bg-red-700 px-3 py-1 rounded"
+                >
+                  Clear
+                </button>
+              </div>
               <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="text-cyan-400 border-b border-gray-700">
+                    <th className="p-2">#</th>
                     <th className="p-2">Address</th>
-                    <th className="p-2">Balance (ETH)</th>
+                    <th className="p-2 text-right">Balance</th>
                   </tr>
                 </thead>
                 <tbody>
                   {balances.map((b, i) => (
-                    <tr key={i} className="border-b border-gray-700">
-                      <td className="p-2 break-all">{b.address}</td>
-                      <td className="p-2">{b.balance}</td>
+                    <tr key={i} className="border-b border-gray-700 hover:bg-gray-700/30">
+                      <td className="p-2 text-gray-400">{i + 1}</td>
+                      <td className="p-2 break-all font-mono text-xs">{b.address}</td>
+                      <td className={`p-2 text-right font-semibold ${
+                        b.balance.includes('Error') || b.balance.includes('Invalid') 
+                          ? 'text-red-400' 
+                          : parseFloat(b.balance) > 0 
+                          ? 'text-green-400' 
+                          : 'text-gray-400'
+                      }`}>
+                        {b.balance.includes('Error') || b.balance.includes('Invalid') 
+                          ? b.balance 
+                          : `${b.balance} ${selectedNetwork === 'BSC' ? 'BNB' : selectedNetwork === 'Polygon' ? 'MATIC' : 'ETH'}`
+                        }
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              <div className="mt-3 text-xs text-gray-400 text-right">
+                Total Balance: {balances
+                  .filter(b => !b.balance.includes('Error') && !b.balance.includes('Invalid'))
+                  .reduce((sum, b) => sum + parseFloat(b.balance), 0)
+                  .toFixed(6)} {selectedNetwork === 'BSC' ? 'BNB' : selectedNetwork === 'Polygon' ? 'MATIC' : 'ETH'}
+              </div>
             </div>
           )}
         </div>
