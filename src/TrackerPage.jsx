@@ -311,7 +311,7 @@ function TrackerPage({ onLogout }) {
       </div>
 
       {/* ===== ANALYTICS DASHBOARD ===== */}
-      <div className=\"px-6\">
+      <div className="px-6">
         <AnalyticsDashboard 
           projects={projects} 
           balances={balances}
