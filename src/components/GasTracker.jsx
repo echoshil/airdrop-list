@@ -8,7 +8,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
-} from \"recharts\";
+} from "recharts";
 
 const GasTracker = () => {
   const [gasData, setGasData] = useState({
