@@ -26,6 +26,7 @@ import {
 import { ethers } from "ethers";
 import NeonParticles from "./NeonParticles";
 import AnalyticsDashboard from "./components/AnalyticsDashboard";
+
 const GOOGLE_SCRIPT_URL = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
 
 const DEX_LIST = [
