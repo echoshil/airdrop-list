@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { ethers } from 'ethers';
 
 const NETWORKS = {
-  Ethereum: { rpc: 'https://rpc.ankr.com/eth' },
-  Polygon: { rpc: 'https://rpc.ankr.com/polygon' },
-  BSC: { rpc: 'https://rpc.ankr.com/bsc' },
-  Arbitrum: { rpc: 'https://rpc.ankr.com/arbitrum' },
-  Base: { rpc: 'https://rpc.ankr.com/base' },
+  Ethereum: "https://rpc.ankr.com/eth",
+  Polygon: "https://rpc.ankr.com/polygon",
+  BSC: "https://rpc.ankr.com/bsc",
+  Arbitrum: "https://rpc.ankr.com/arbitrum",
+  Base: "https://rpc.ankr.com/base",
 };
 
 export default function BulkBalanceChecker() {
