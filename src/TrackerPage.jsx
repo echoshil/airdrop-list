@@ -424,6 +424,16 @@ function TrackerPage({ onLogout }) {
           </div>
         </div>
 
+        {/* 🔍 Bulk Wallet Balance Checker */}
+<div className="relative z-10 mt-16 px-6 pb-10">
+  <h2 className="text-2xl font-bold mb-4 text-center bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
+    💰 Bulk Wallet Balance Checker
+  </h2>
+
+  <BulkBalanceChecker />
+</div>
+
+
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {coins.map((coin) => (
             <div
