@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from \"react\";
-import { Fuel, TrendingUp, TrendingDown, AlertCircle } from \"lucide-react\";
+import React, { useState, useEffect } from "react";
+import { Fuel, TrendingUp, TrendingDown, AlertCircle } from "lucide-react";
 import {
   LineChart,
   Line,
