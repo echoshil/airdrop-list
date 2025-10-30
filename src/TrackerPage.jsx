@@ -23,6 +23,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import BulkBalanceChecker from "./BulkBalanceChecker";
 import NeonParticles from "./NeonParticles";
 import { ethers } from "ethers";
 
