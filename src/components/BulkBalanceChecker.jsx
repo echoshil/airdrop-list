@@ -21,31 +21,32 @@ export default function BulkBalanceChecker() {
     if (addrList.length === 0) return alert('Masukkan minimal 1 address!');
 
 const checkBalances = async () => {
-  const list = addresses
-    .split("\n")
-    .map((a) => a.trim())
-    .filter((a) => a);
-
+  const list = addresses.split("\n").map((a) => a.trim()).filter(Boolean);
   if (list.length === 0) return alert("Masukkan minimal satu address!");
 
   setBalanceLoading(true);
+
   const provider = new ethers.JsonRpcProvider(NETWORKS[selectedNetwork]);
-  const results = [];
 
-  for (const addr of list) {
-    try {
-      const balance = await provider.getBalance(addr);
-      results.push({
-        address: addr,
-        balance: ethers.formatEther(balance),
-      });
-    } catch (err) {
-      results.push({ address: addr, balance: "Error" });
-    }
+  try {
+    // Jalankan semua request secara paralel
+    const results = await Promise.all(
+      list.map(async (addr) => {
+        try {
+          const balance = await provider.getBalance(addr);
+          return { address: addr, balance: ethers.formatEther(balance) };
+        } catch {
+          return { address: addr, balance: "Error" };
+        }
+      })
+    );
+
+    setBalances(results);
+  } catch (err) {
+    console.error("Error saat fetch balances:", err);
+  } finally {
+    setBalanceLoading(false);
   }
-
-  setBalances(results);
-  setBalanceLoading(false);
 };
 
   return (
