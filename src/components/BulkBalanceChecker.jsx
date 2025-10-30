@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ethers } from 'ethers';
 
 const NETWORKS = {
-  Ethereum: "https://rpc.ankr.com/eth",
+  Ethereum: "https://cloudflare-eth.com",
   Polygon: "https://rpc.ankr.com/polygon",
   BSC: "https://rpc.ankr.com/bsc",
   Arbitrum: "https://rpc.ankr.com/arbitrum",
