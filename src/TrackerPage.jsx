@@ -14,6 +14,10 @@ import {
   CheckSquare,
   Square,
   ExternalLink,
+  Tag,
+  StickyNote,
+  Filter,
+  X,
 } from "lucide-react";
 import {
   LineChart,
@@ -26,6 +30,7 @@ import {
 import { ethers } from "ethers";
 import NeonParticles from "./NeonParticles";
 import AnalyticsDashboard from "./components/AnalyticsDashboard";
+import GasTracker from "./components/GasTracker";
 
 const GOOGLE_SCRIPT_URL = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
 
@@ -45,6 +50,20 @@ const NETWORKS = {
   Base: { rpc: "https://mainnet.base.org" },
 };
 
+// Predefined Tags/Categories
+const AVAILABLE_TAGS = [
+  { id: "defi", label: "DeFi", color: "bg-blue-500" },
+  { id: "gamefi", label: "GameFi", color: "bg-purple-500" },
+  { id: "layer2", label: "Layer2", color: "bg-green-500" },
+  { id: "nft", label: "NFT", color: "bg-pink-500" },
+  { id: "meme", label: "Meme", color: "bg-yellow-500" },
+  { id: "infra", label: "Infrastructure", color: "bg-cyan-500" },
+  { id: "social", label: "SocialFi", color: "bg-orange-500" },
+  { id: "bridge", label: "Bridge", color: "bg-indigo-500" },
+  { id: "dex", label: "DEX", color: "bg-red-500" },
+  { id: "lending", label: "Lending", color: "bg-teal-500" },
+];
+
 function TrackerPage({ onLogout }) {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -60,6 +79,8 @@ function TrackerPage({ onLogout }) {
   const [addresses, setAddresses] = useState("");
   const [balances, setBalances] = useState([]);
   const [balanceLoading, setBalanceLoading] = useState(false);
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [filterTag, setFilterTag] = useState("all");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -70,6 +91,8 @@ function TrackerPage({ onLogout }) {
     email: "",
     github: "",
     website: "",
+    notes: "",
+    tags: [],
   });
 
   // === FETCH PROJECTS ===
@@ -110,7 +133,10 @@ function TrackerPage({ onLogout }) {
           email: "",
           github: "",
           website: "",
+          notes: "",
+          tags: [],
         });
+        setSelectedTags([]);
       }
     } catch {
       alert("❌ Gagal kirim data ke Google Script!");
@@ -175,10 +201,17 @@ function TrackerPage({ onLogout }) {
   const progressColor =
     timer > 40 ? "#22c55e" : timer > 20 ? "#facc15" : "#ef4444";
 
+  // Filter projects by search term and tags
   const filteredProjects = projects
-    .filter((p) =>
-      (p.name || "").toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    .filter((p) => {
+      const matchesSearch = (p.name || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      const matchesTags =
+        filterTag === "all" ||
+        (p.tags && Array.isArray(p.tags) && p.tags.includes(filterTag));
+      return matchesSearch && matchesTags;
+    })
     .sort((a, b) => {
       const A = (a.name || "").toLowerCase();
       const B = (b.name || "").toLowerCase();
@@ -188,6 +221,21 @@ function TrackerPage({ onLogout }) {
   const displayedProjects = showAll
     ? filteredProjects
     : filteredProjects.slice(0, 3);
+
+  // Toggle tag selection in form
+  const toggleTag = (tagId) => {
+    setSelectedTags((prev) =>
+      prev.includes(tagId)
+        ? prev.filter((t) => t !== tagId)
+        : [...prev, tagId]
+    );
+    setFormData((prev) => ({
+      ...prev,
+      tags: selectedTags.includes(tagId)
+        ? selectedTags.filter((t) => t !== tagId)
+        : [...selectedTags, tagId],
+    }));
+  };
 
   // === BULK BALANCE CHECK ===
   const checkBalances = async () => {
@@ -241,14 +289,35 @@ function TrackerPage({ onLogout }) {
     <div className="min-h-screen text-white relative overflow-hidden bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 animate-gradient">
       <NeonParticles />
 
-      {/* HEADER - Z-INDEX FIXED TO z-50 */}
+      {/* HEADER */}
       <div className="relative z-50 p-6 flex flex-col md:flex-row justify-between items-center gap-4">
         <h1 className="flex items-center gap-2 text-3xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
           🚀 Airdrop Tracker
         </h1>
 
         <div className="flex flex-wrap justify-center md:justify-end items-center gap-3 relative z-50">
-          {/* DEX BUTTON - Z-INDEX FIXED */}
+          {/* TAG FILTER */}
+          <div className="relative">
+            <button
+              className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg transition"
+            >
+              <Filter size={16} />
+              <select
+                value={filterTag}
+                onChange={(e) => setFilterTag(e.target.value)}
+                className="bg-transparent text-white outline-none cursor-pointer"
+              >
+                <option value="all">All Tags</option>
+                {AVAILABLE_TAGS.map((tag) => (
+                  <option key={tag.id} value={tag.id}>
+                    {tag.label}
+                  </option>
+                ))}
+              </select>
+            </button>
+          </div>
+
+          {/* DEX BUTTON */}
           <div className="relative z-50">
             <button
               onClick={() => setShowDexList(!showDexList)}
@@ -318,6 +387,11 @@ function TrackerPage({ onLogout }) {
           selectedNetwork={selectedNetwork}
         />
       </div>
+
+      {/* ===== GAS TRACKER ===== */}
+      <div className="px-6">
+        <GasTracker />
+      </div>
       
       {/* FORM INPUT */}
       <div className="relative z-10 bg-gray-900/60 p-6 rounded-2xl max-w-5xl mx-auto mb-8 shadow-lg w-[90%] md:w-auto">
@@ -340,6 +414,46 @@ function TrackerPage({ onLogout }) {
             )
           )}
         </div>
+
+        {/* Notes Field */}
+        <div className="mt-3">
+          <label className="flex items-center gap-2 text-sm text-gray-400 mb-2">
+            <StickyNote size={16} />
+            Notes (Status, ROI estimate, dll)
+          </label>
+          <textarea
+            placeholder="Add notes about this project..."
+            value={formData.notes}
+            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+            className="w-full p-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white resize-none"
+            rows="2"
+          ></textarea>
+        </div>
+
+        {/* Tags Selection */}
+        <div className="mt-3">
+          <label className="flex items-center gap-2 text-sm text-gray-400 mb-2">
+            <Tag size={16} />
+            Select Tags/Categories
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {AVAILABLE_TAGS.map((tag) => (
+              <button
+                key={tag.id}
+                type="button"
+                onClick={() => toggleTag(tag.id)}
+                className={`px-3 py-1 rounded-full text-xs font-semibold transition ${
+                  selectedTags.includes(tag.id) || (formData.tags && formData.tags.includes(tag.id))
+                    ? `${tag.color} text-white`
+                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                }`}
+              >
+                {tag.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <button
           onClick={addProject}
           disabled={loading}
@@ -368,6 +482,34 @@ function TrackerPage({ onLogout }) {
             </button>
 
             <h3 className="text-lg font-bold text-cyan-400 mb-3 mt-4">{p.name}</h3>
+
+            {/* Tags Display */}
+            {p.tags && Array.isArray(p.tags) && p.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mb-3">
+                {p.tags.map((tagId) => {
+                  const tag = AVAILABLE_TAGS.find((t) => t.id === tagId);
+                  return tag ? (
+                    <span
+                      key={tagId}
+                      className={`${tag.color} text-white text-xs px-2 py-0.5 rounded-full font-semibold`}
+                    >
+                      {tag.label}
+                    </span>
+                  ) : null;
+                })}
+              </div>
+            )}
+
+            {/* Notes Display */}
+            {p.notes && (
+              <div className="mb-3 p-2 bg-gray-800/50 rounded-lg border border-gray-700">
+                <p className="flex items-start gap-2 text-sm text-gray-300">
+                  <StickyNote size={14} className="mt-0.5 text-yellow-400 flex-shrink-0" />
+                  <span className="italic">{p.notes}</span>
+                </p>
+              </div>
+            )}
+
             {p.twitter && <p className="flex items-center gap-2 text-blue-400"><Twitter size={18}/><span>{hideData?"••••":p.twitter}</span></p>}
             {p.discord && <p className="flex items-center gap-2 text-indigo-400"><MessageCircle size={18}/><span>{hideData?"••••":p.discord}</span></p>}
             {p.telegram && <p className="flex items-center gap-2 text-sky-400"><Send size={18}/><span>{hideData?"••••":p.telegram}</span></p>}
