@@ -9,88 +9,106 @@ const NETWORKS = {
   Base: "https://rpc.ankr.com/base",
 };
 
-export default function BulkBalanceChecker() {
-  const [network, setNetwork] = useState('Ethereum');
-  const [addresses, setAddresses] = useState('');
-  const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
+async function testRpc(url) {
+  try {
+    // test simple JSON-RPC call untuk cek CORS / koneksi
+    const r = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_blockNumber", params: [] }),
+    });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const j = await r.json();
+    if (j.error) throw new Error("RPC error: " + JSON.stringify(j.error));
+    console.log("RPC OK:", url, j);
+    return true;
+  } catch (err) {
+    console.error("RPC test failed:", url, err);
+    return false;
+  }
+}
 
-  const checkBalances = async () => {
-    const provider = new ethers.JsonRpcProvider(NETWORKS[network].rpc);
-    const addrList = addresses.split(/\s+/).filter(Boolean);
-    if (addrList.length === 0) return alert('Masukkan minimal 1 address!');
+const chunk = (arr, size) => {
+  const out = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+};
 
-const checkBalances = async () => {
-  const list = addresses.split("\n").map((a) => a.trim()).filter(Boolean);
-  if (list.length === 0) return alert("Masukkan minimal satu address!");
+const checkBalances = async (addressesText, selectedNetwork = "Ethereum") => {
+  const list = addressesText
+    .split("\n")
+    .map((a) => a.trim())
+    .filter(Boolean);
+
+  if (list.length === 0) {
+    alert("Masukkan minimal satu address!");
+    return;
+  }
+
+  // validasi addresses
+  const invalid = list.filter((a) => !ethers.isAddress(a));
+  if (invalid.length) {
+    alert("Ada address tidak valid:\n" + invalid.join("\n"));
+    return;
+  }
+
+  const rpcUrl = NETWORKS[selectedNetwork];
+  if (!rpcUrl) {
+    alert("RPC untuk network ini tidak ditemukan: " + selectedNetwork);
+    return;
+  }
 
   setBalanceLoading(true);
+  setBalances([]);
 
-  const provider = new ethers.JsonRpcProvider(NETWORKS[selectedNetwork]);
+  // test koneksi RPC terlebih dahulu (lihat console jika gagal)
+  const ok = await testRpc(rpcUrl);
+  if (!ok) {
+    alert("Koneksi RPC gagal — cek console untuk detail. Coba ganti network atau RPC URL.");
+    setBalanceLoading(false);
+    return;
+  }
 
+  // buat provider (ethers v6)
+  let provider;
   try {
-    // Jalankan semua request secara paralel
-    const results = await Promise.all(
-      list.map(async (addr) => {
+    provider = new ethers.JsonRpcProvider(rpcUrl);
+  } catch (err) {
+    console.error("Gagal buat provider:", err);
+    alert("Gagal buat provider ethers. Lihat console.");
+    setBalanceLoading(false);
+    return;
+  }
+
+  // chunking: 10 address per batch (sesuaikan jika masih kena rate-limit)
+  const batches = chunk(list, 10);
+  const results = [];
+
+  for (const b of batches) {
+    // jalankan parallel untuk satu batch
+    const settled = await Promise.allSettled(
+      b.map(async (addr) => {
         try {
-          const balance = await provider.getBalance(addr);
-          return { address: addr, balance: ethers.formatEther(balance) };
-        } catch {
+          const balanceBN = await provider.getBalance(addr);
+          const bal = ethers.formatEther(balanceBN);
+          return { address: addr, balance: bal };
+        } catch (err) {
+          console.error("Error getBalance", addr, err);
           return { address: addr, balance: "Error" };
         }
       })
     );
 
-    setBalances(results);
-  } catch (err) {
-    console.error("Error saat fetch balances:", err);
-  } finally {
-    setBalanceLoading(false);
+    // ambil hasil
+    settled.forEach((s) => {
+      if (s.status === "fulfilled") results.push(s.value);
+      else results.push({ address: "unknown", balance: "Error" });
+    });
+
+    // jeda kecil antar batch untuk mengurangi kemungkinan rate-limit (200-500ms)
+    await new Promise((r) => setTimeout(r, 300));
   }
+
+  setBalances(results);
+  setBalanceLoading(false);
 };
-
-  return (
-    <div className="bg-gray-900/60 p-6 rounded-2xl shadow-lg border border-gray-700">
-      <div className="flex flex-wrap justify-center gap-3 mb-4">
-        {Object.keys(NETWORKS).map((net) => (
-          <button key={net} onClick={() => setNetwork(net)} className={`px-4 py-2 rounded-lg ${network === net ? 'bg-cyan-600' : 'bg-gray-800 hover:bg-gray-700'}`}>
-            {net}
-          </button>
-        ))}
-      </div>
-
-      <textarea
-        className="w-full bg-gray-800 p-3 rounded-lg border border-gray-700 text-white resize-none"
-        placeholder="Tempelkan wallet address (satu baris satu address)..."
-        rows="6"
-        value={addresses}
-        onChange={(e) => setAddresses(e.target.value)}
-      ></textarea>
-
-      <button onClick={checkBalances} disabled={loading} className="mt-4 bg-green-600 hover:bg-green-700 px-6 py-2 rounded-lg font-semibold">
-        {loading ? 'Checking...' : 'Cek Saldo'}
-      </button>
-
-      {results.length > 0 && (
-        <div className="mt-6 bg-gray-800 rounded-lg p-4 overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="text-cyan-400 border-b border-gray-700">
-                <th className="p-2">Address</th>
-                <th className="p-2">Balance (ETH)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {results.map((r, i) => (
-                <tr key={i} className="border-b border-gray-700">
-                  <td className="p-2 break-all">{r.address}</td>
-                  <td className="p-2">{r.balance}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
-}
