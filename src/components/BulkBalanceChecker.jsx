@@ -20,22 +20,33 @@ export default function BulkBalanceChecker() {
     const addrList = addresses.split(/\s+/).filter(Boolean);
     if (addrList.length === 0) return alert('Masukkan minimal 1 address!');
 
-    setLoading(true);
-    const balances = [];
-    for (const addr of addrList) {
-      try {
-        const bal = await provider.getBalance(addr);
-        balances.push({
-          address: addr,
-          balance: ethers.formatEther(bal),
-        });
-      } catch (e) {
-        balances.push({ address: addr, balance: '❌ Error' });
-      }
+const checkBalances = async () => {
+  const list = addresses
+    .split("\n")
+    .map((a) => a.trim())
+    .filter((a) => a);
+
+  if (list.length === 0) return alert("Masukkan minimal satu address!");
+
+  setBalanceLoading(true);
+  const provider = new ethers.JsonRpcProvider(NETWORKS[selectedNetwork]);
+  const results = [];
+
+  for (const addr of list) {
+    try {
+      const balance = await provider.getBalance(addr);
+      results.push({
+        address: addr,
+        balance: ethers.formatEther(balance),
+      });
+    } catch (err) {
+      results.push({ address: addr, balance: "Error" });
     }
-    setResults(balances);
-    setLoading(false);
-  };
+  }
+
+  setBalances(results);
+  setBalanceLoading(false);
+};
 
   return (
     <div className="bg-gray-900/60 p-6 rounded-2xl shadow-lg border border-gray-700">
