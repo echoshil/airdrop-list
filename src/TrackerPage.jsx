@@ -23,11 +23,26 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import BulkBalanceChecker from "./BulkBalanceChecker";
-import NeonParticles from "./NeonParticles";
 import { ethers } from "ethers";
+import NeonParticles from "./NeonParticles";
 
 const GOOGLE_SCRIPT_URL = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
+
+const DEX_LIST = [
+  { name: "Uniswap", logo: "/dex/uniswap.png", link: "https://app.uniswap.org" },
+  { name: "PancakeSwap", logo: "/dex/pancakeswap.png", link: "https://pancakeswap.finance" },
+  { name: "Raydium", logo: "/dex/raydium.png", link: "https://raydium.io" },
+  { name: "SushiSwap", logo: "/dex/sushiswap.png", link: "https://www.sushi.com" },
+  { name: "QuickSwap", logo: "/dex/quickswap.png", link: "https://quickswap.exchange" },
+];
+
+const NETWORKS = {
+  Ethereum: { rpc: "https://rpc.ankr.com/eth" },
+  Polygon: { rpc: "https://rpc.ankr.com/polygon" },
+  BSC: { rpc: "https://rpc.ankr.com/bsc" },
+  Arbitrum: { rpc: "https://rpc.ankr.com/arbitrum" },
+  Base: { rpc: "https://rpc.ankr.com/base" },
+};
 
 function TrackerPage({ onLogout }) {
   const [projects, setProjects] = useState([]);
@@ -39,7 +54,11 @@ function TrackerPage({ onLogout }) {
   const [coins, setCoins] = useState([]);
   const [timer, setTimer] = useState(60);
   const [progress, setProgress] = useState(100);
-  const [showDex, setShowDex] = useState(false);
+  const [showDexList, setShowDexList] = useState(false);
+  const [selectedNetwork, setSelectedNetwork] = useState("Ethereum");
+  const [addresses, setAddresses] = useState("");
+  const [balances, setBalances] = useState([]);
+  const [balanceLoading, setBalanceLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -99,7 +118,7 @@ function TrackerPage({ onLogout }) {
     }
   };
 
-  // === DAILY TOGGLE ===
+  // === DAILY CHECK TOGGLE ===
   const toggleDaily = async (name, current) => {
     const next = current === "CHECKED" ? "UNCHECKED" : "CHECKED";
     try {
@@ -119,7 +138,7 @@ function TrackerPage({ onLogout }) {
     }
   };
 
-  // === FETCH MARKET ===
+  // === FETCH COIN MARKET ===
   const fetchMarket = async () => {
     try {
       const res = await fetch(
@@ -128,12 +147,11 @@ function TrackerPage({ onLogout }) {
       const data = await res.json();
       setCoins(data);
     } catch {
-      console.warn("⚠️ Gagal ambil data market, gunakan dummy.");
       setCoins([]);
     }
   };
 
-  // === AUTO REFRESH TIMER ===
+  // === AUTO REFRESH TIMER + PROGRESS BAR ===
   useEffect(() => {
     fetchMarket();
     const refreshInterval = setInterval(() => {
@@ -153,11 +171,9 @@ function TrackerPage({ onLogout }) {
     };
   }, []);
 
-  // === PROGRESS BAR COLOR ===
   const progressColor =
     timer > 40 ? "#22c55e" : timer > 20 ? "#facc15" : "#ef4444";
 
-  // === FILTER & SORT ===
   const filteredProjects = projects
     .filter((p) =>
       (p.name || "").toLowerCase().includes(searchTerm.toLowerCase())
@@ -172,80 +188,68 @@ function TrackerPage({ onLogout }) {
     ? filteredProjects
     : filteredProjects.slice(0, 3);
 
-  // === DEX LIST (LOCAL LOGOS) ===
-  const dexList = [
-    {
-      name: "Uniswap",
-      logo: "/dex/uniswap.png",
-      url: "https://app.uniswap.org",
-    },
-    {
-      name: "PancakeSwap",
-      logo: "/dex/pancakeswap.png",
-      url: "https://pancakeswap.finance",
-    },
-    {
-      name: "Raydium",
-      logo: "/dex/raydium.png",
-      url: "https://raydium.io",
-    },
-    {
-      name: "SushiSwap",
-      logo: "/dex/sushiswap.png",
-      url: "https://sushi.com",
-    },
-    {
-      name: "QuickSwap",
-      logo: "/dex/quickswap.png",
-      url: "https://quickswap.exchange",
-    },
-  ];
+  // === BULK BALANCE CHECK ===
+  const checkBalances = async () => {
+    const provider = new ethers.JsonRpcProvider(NETWORKS[selectedNetwork].rpc);
+    const list = addresses.split(/\s+/).filter(Boolean);
+    if (list.length === 0) return alert("Masukkan address wallet!");
+    setBalanceLoading(true);
+    const result = [];
+    for (const addr of list) {
+      try {
+        const bal = await provider.getBalance(addr);
+        result.push({ address: addr, balance: ethers.formatEther(bal) });
+      } catch {
+        result.push({ address: addr, balance: "❌ Error" });
+      }
+    }
+    setBalances(result);
+    setBalanceLoading(false);
+  };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white relative overflow-hidden">
+    <div className="min-h-screen text-white relative overflow-hidden bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 animate-gradient">
       <NeonParticles />
 
       {/* HEADER */}
-      <div className="relative z-20 p-6 flex flex-col md:flex-row justify-between items-center gap-4">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+      <div className="relative z-10 p-6 flex flex-col md:flex-row justify-between items-center gap-4">
+        <h1 className="flex items-center gap-2 text-3xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
           🚀 Airdrop Tracker
         </h1>
 
         <div className="flex flex-wrap justify-center md:justify-end items-center gap-3 relative">
-          {/* DEX DROPDOWN */}
+          {/* DEX BUTTON */}
           <div className="relative">
             <button
-              onClick={() => setShowDex(!showDex)}
-              className="bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg font-semibold"
+              onClick={() => setShowDexList(!showDexList)}
+              className="bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg font-semibold transition"
             >
               List DEX
             </button>
-            {showDex && (
-              <div className="absolute left-0 mt-2 w-56 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-50 animate-fadeIn">
-                {dexList.map((dex) => (
+
+            {showDexList && (
+              <div className="absolute top-12 left-0 bg-gray-900 border border-gray-700 rounded-xl shadow-lg w-56 p-2 transition-all duration-300 ease-in-out z-50">
+                {DEX_LIST.map((dex, i) => (
                   <a
-                    key={dex.name}
-                    href={dex.url}
+                    key={i}
+                    href={dex.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-between gap-2 px-4 py-2 hover:bg-gray-800 transition"
+                    className="flex items-center gap-2 px-3 py-2 hover:bg-gray-800 rounded-lg transition"
                   >
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={dex.logo}
-                        alt={dex.name}
-                        className="w-5 h-5 rounded-full"
-                      />
-                      <span>{dex.name}</span>
-                    </div>
-                    <ExternalLink size={14} />
+                    <img
+                      src={dex.logo}
+                      alt={dex.name}
+                      className="w-5 h-5 rounded-full"
+                    />
+                    <span>{dex.name}</span>
+                    <ExternalLink size={14} className="ml-auto text-gray-400" />
                   </a>
                 ))}
               </div>
             )}
           </div>
 
-          {/* SEARCH + SORT + HIDE */}
           <input
             type="text"
             placeholder="🔍 Cari project..."
@@ -277,32 +281,25 @@ function TrackerPage({ onLogout }) {
       </div>
 
       {/* FORM INPUT */}
-      <div className="relative z-10 bg-gray-900/60 p-6 rounded-2xl max-w-5xl mx-auto mb-8 shadow-lg w-[90%] md:w-auto mt-4">
-        <h2 className="text-xl font-semibold mb-4 text-cyan-300">
+      <div className="relative z-10 bg-gray-900/60 p-6 rounded-2xl max-w-5xl mx-auto mb-8 shadow-lg w-[90%] md:w-auto">
+        <h2 className="text-xl font-semibold mb-4 text-cyan-300 text-center md:text-left">
           ➕ Tambah Project Baru
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-          {[
-            "name",
-            "twitter",
-            "discord",
-            "telegram",
-            "wallet",
-            "email",
-            "github",
-            "website",
-          ].map((field) => (
-            <input
-              key={field}
-              type="text"
-              placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
-              value={formData[field]}
-              onChange={(e) =>
-                setFormData({ ...formData, [field]: e.target.value })
-              }
-              className="p-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white w-full"
-            />
-          ))}
+          {["name", "twitter", "discord", "telegram", "wallet", "email", "github", "website"].map(
+            (field) => (
+              <input
+                key={field}
+                type="text"
+                placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+                value={formData[field]}
+                onChange={(e) =>
+                  setFormData({ ...formData, [field]: e.target.value })
+                }
+                className="p-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white w-full"
+              />
+            )
+          )}
         </div>
         <button
           onClick={addProject}
@@ -322,7 +319,7 @@ function TrackerPage({ onLogout }) {
         {displayedProjects.map((p, i) => (
           <div
             key={i}
-            className="relative bg-gray-900/70 backdrop-blur-md p-5 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all shadow-lg"
+            className="relative bg-gray-900/70 backdrop-blur-md p-5 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all shadow-lg fade-in"
           >
             <button
               onClick={() => toggleDaily(p.name, p.daily)}
@@ -332,51 +329,16 @@ function TrackerPage({ onLogout }) {
             </button>
 
             <h3 className="text-lg font-bold text-cyan-400 mb-3 mt-4">{p.name}</h3>
-            {p.twitter && (
-              <p className="flex items-center gap-2 text-blue-400">
-                <Twitter size={18} />
-                <span>{hideData ? "••••" : p.twitter}</span>
-              </p>
-            )}
-            {p.discord && (
-              <p className="flex items-center gap-2 text-indigo-400">
-                <MessageCircle size={18} />
-                <span>{hideData ? "••••" : p.discord}</span>
-              </p>
-            )}
-            {p.telegram && (
-              <p className="flex items-center gap-2 text-sky-400">
-                <Send size={18} />
-                <span>{hideData ? "••••" : p.telegram}</span>
-              </p>
-            )}
-            {p.wallet && (
-              <p className="flex items-center gap-2 text-yellow-400 break-all">
-                <Wallet size={18} />
-                <span>{hideData ? "••••" : p.wallet}</span>
-              </p>
-            )}
-            {p.email && (
-              <p className="flex items-center gap-2 text-pink-400">
-                <Mail size={18} />
-                <span>{hideData ? "••••" : p.email}</span>
-              </p>
-            )}
-            {p.github && (
-              <p className="flex items-center gap-2 text-gray-300">
-                <Github size={18} />
-                <span>{hideData ? "••••" : p.github}</span>
-              </p>
-            )}
+            {p.twitter && <p className="flex items-center gap-2 text-blue-400"><Twitter size={18}/><span>{hideData?"••••":p.twitter}</span></p>}
+            {p.discord && <p className="flex items-center gap-2 text-indigo-400"><MessageCircle size={18}/><span>{hideData?"••••":p.discord}</span></p>}
+            {p.telegram && <p className="flex items-center gap-2 text-sky-400"><Send size={18}/><span>{hideData?"••••":p.telegram}</span></p>}
+            {p.wallet && <p className="flex items-center gap-2 text-yellow-400 break-all"><Wallet size={18}/><span>{hideData?"••••":p.wallet}</span></p>}
+            {p.email && <p className="flex items-center gap-2 text-pink-400"><Mail size={18}/><span>{hideData?"••••":p.email}</span></p>}
+            {p.github && <p className="flex items-center gap-2 text-gray-300"><Github size={18}/><span>{hideData?"••••":p.github}</span></p>}
             {p.website && (
               <p className="flex items-center gap-2 text-blue-400">
-                <Globe size={18} />
-                <a
-                  href={p.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline hover:text-blue-300 break-all"
-                >
+                <Globe size={18}/>
+                <a href={p.website} target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-300 break-all">
                   {p.website}
                 </a>
               </p>
@@ -402,7 +364,7 @@ function TrackerPage({ onLogout }) {
         </div>
       )}
 
-      {/* LIVE MARKET */}
+      {/* LIVE MARKET + TIMER */}
       <div className="relative z-10 mt-16 px-6 pb-10">
         <h2 className="text-2xl font-bold mb-2 text-center bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
           📈 Live Crypto Market
@@ -410,36 +372,19 @@ function TrackerPage({ onLogout }) {
 
         <div className="text-center mb-4">
           <p className="text-gray-400 text-sm mb-2">
-            ⏱️ Auto-refresh in{" "}
-            <span className="text-cyan-400 font-semibold">{timer}s</span>
+            ⏱️ Auto-refresh in <span className="text-cyan-400 font-semibold">{timer}s</span>
           </p>
           <div className="w-64 mx-auto h-2 bg-gray-800 rounded-full overflow-hidden">
             <div
               className="h-full transition-all duration-1000 ease-linear"
-              style={{
-                width: `${progress}%`,
-                backgroundColor: progressColor,
-              }}
+              style={{ width: `${progress}%`, backgroundColor: progressColor }}
             ></div>
           </div>
         </div>
 
-        {/* 🔍 Bulk Wallet Balance Checker */}
-<div className="relative z-10 mt-16 px-6 pb-10">
-  <h2 className="text-2xl font-bold mb-4 text-center bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
-    💰 Bulk Wallet Balance Checker
-  </h2>
-
-  <BulkBalanceChecker />
-</div>
-
-
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {coins.map((coin) => (
-            <div
-              key={coin.id}
-              className="bg-gray-900/70 p-4 rounded-xl border border-gray-700 hover:border-cyan-400/60 shadow-lg"
-            >
+            <div key={coin.id} className="bg-gray-900/70 p-4 rounded-xl border border-gray-700 hover:border-cyan-400/60 shadow-lg transition-transform hover:scale-105 fade-in">
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-3">
                   <img src={coin.image} alt={coin.name} className="w-6 h-6 rounded-full" />
@@ -457,9 +402,7 @@ function TrackerPage({ onLogout }) {
                 ${coin.current_price.toLocaleString()}
               </p>
               <ResponsiveContainer width="100%" height={60}>
-                <LineChart
-                  data={coin.sparkline_in_7d.price.map((p, i) => ({ i, p }))}
-                >
+                <LineChart data={coin.sparkline_in_7d.price.map((p, i) => ({ i, p }))}>
                   <Line
                     type="monotone"
                     dataKey="p"
@@ -484,6 +427,68 @@ function TrackerPage({ onLogout }) {
               </ResponsiveContainer>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* 💰 BULK WALLET BALANCE CHECKER */}
+      <div className="relative z-10 mt-16 px-6 pb-10 fade-in">
+        <h2 className="text-2xl font-bold mb-4 text-center bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
+          💰 Bulk Wallet Balance Checker
+        </h2>
+
+        <div className="bg-gray-900/60 p-6 rounded-2xl shadow-lg border border-gray-700 max-w-5xl mx-auto">
+          <div className="flex flex-wrap justify-center gap-3 mb-4">
+            {Object.keys(NETWORKS).map((net) => (
+              <button
+                key={net}
+                onClick={() => setSelectedNetwork(net)}
+                className={`px-4 py-2 rounded-lg ${
+                  selectedNetwork === net
+                    ? "bg-cyan-600"
+                    : "bg-gray-800 hover:bg-gray-700"
+                }`}
+              >
+                {net}
+              </button>
+            ))}
+          </div>
+
+          <textarea
+            className="w-full bg-gray-800 p-3 rounded-lg border border-gray-700 text-white resize-none"
+            placeholder="Tempelkan wallet address (satu baris satu address)..."
+            rows="6"
+            value={addresses}
+            onChange={(e) => setAddresses(e.target.value)}
+          ></textarea>
+
+          <button
+            onClick={checkBalances}
+            disabled={balanceLoading}
+            className="mt-4 bg-green-600 hover:bg-green-700 px-6 py-2 rounded-lg font-semibold transition"
+          >
+            {balanceLoading ? "Checking..." : "Cek Saldo"}
+          </button>
+
+          {balances.length > 0 && (
+            <div className="mt-6 bg-gray-800 rounded-lg p-4 overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="text-cyan-400 border-b border-gray-700">
+                    <th className="p-2">Address</th>
+                    <th className="p-2">Balance (ETH)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {balances.map((b, i) => (
+                    <tr key={i} className="border-b border-gray-700">
+                      <td className="p-2 break-all">{b.address}</td>
+                      <td className="p-2">{b.balance}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </div>
