@@ -25,7 +25,6 @@ import {
 } from "recharts";
 import { ethers } from "ethers";
 import NeonParticles from "./NeonParticles";
-import AnalyticsDashboard from \"./components/AnalyticsDashboard\";
 
 const GOOGLE_SCRIPT_URL = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
 
@@ -309,16 +308,7 @@ function TrackerPage({ onLogout }) {
           </button>
         </div>
       </div>
-      
-      {/* ===== ANALYTICS DASHBOARD ===== */}
-      <div className="px-6">
-        <AnalyticsDashboard 
-          projects={projects} 
-          balances={balances}
-          selectedNetwork={selectedNetwork}
-        />
-      </div>
-      
+
       {/* FORM INPUT */}
       <div className="relative z-10 bg-gray-900/60 p-6 rounded-2xl max-w-5xl mx-auto mb-8 shadow-lg w-[90%] md:w-auto">
         <h2 className="text-xl font-semibold mb-4 text-cyan-300 text-center md:text-left">
@@ -574,3 +564,4 @@ function TrackerPage({ onLogout }) {
 }
 
 export default TrackerPage;
+
