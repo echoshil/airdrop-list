@@ -24,6 +24,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import NeonParticles from "./NeonParticles";
+import { ethers } from "ethers";
 
 const GOOGLE_SCRIPT_URL = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
 
