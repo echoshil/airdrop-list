@@ -1,3 +1,254 @@
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  Newspaper,
+  TrendingUp,
+  ThumbsUp,
+  ThumbsDown,
+  ExternalLink,
+  Filter,
+  Plus,
+  X,
+  ChevronDown,
+  ChevronUp,
+  AlertCircle,
+  Sparkles,
+  RefreshCw,
+  Clock,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import axios from "axios";
+
+const NewsAggregator = () => {
+  const [isExpanded, setIsExpanded] = useState(true);
+  const [news, setNews] = useState([]);
+  const [apiNews, setApiNews] = useState([]);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [sortBy, setSortBy] = useState("trending");
+  const [isLoading, setIsLoading] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState(null);
+  const [error, setError] = useState(null);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    source: "",
+    category: "defi",
+    url: "",
+  });
+
+  const categories = [
+    { id: "all", label: "All", color: "bg-gray-600" },
+    { id: "defi", label: "DeFi", color: "bg-blue-500" },
+    { id: "gamefi", label: "GameFi", color: "bg-purple-500" },
+    { id: "layer2", label: "Layer2", color: "bg-green-500" },
+    { id: "nft", label: "NFT", color: "bg-pink-500" },
+    { id: "bridge", label: "Bridge", color: "bg-indigo-500" },
+    { id: "socialfi", label: "SocialFi", color: "bg-orange-500" },
+    { id: "airdrop", label: "Airdrop", color: "bg-yellow-500" },
+  ];
+
+  // Fetch news from CoinGecko API
+  const fetchCryptoNews = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // CoinGecko Public News API
+      const response = await axios.get("https://api.coingecko.com/api/v3/news", {
+        timeout: 10000,
+      });
+
+      if (response.data && response.data.data) {
+        // Transform CoinGecko news to our format
+        const transformedNews = response.data.data.slice(0, 20).map((item, index) => ({
+          id: `api-${item.id || Date.now() + index}`,
+          title: item.title || "No Title",
+          description: item.description || item.news_site || "No description available",
+          source: item.news_site || "CoinGecko",
+          category: detectCategory(item.title + " " + (item.description || "")),
+          url: item.url || "#",
+          sentiment: analyzeSentiment(item.title + " " + (item.description || "")),
+          votes: 0,
+          timestamp: item.updated_at || new Date().toISOString(),
+          isFromApi: true,
+          thumb_2x: item.thumb_2x || null,
+        }));
+
+        setApiNews(transformedNews);
+        setLastUpdate(new Date());
+      }
+    } catch (err) {
+      console.error("Error fetching crypto news:", err);
+      setError("Failed to fetch news. Using cached data.");
+      
+      // Fallback: use sample data if API fails
+      if (apiNews.length === 0) {
+        setApiNews(getSampleNews());
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [apiNews.length]);
+
+  // Auto-detect category from text
+  const detectCategory = (text) => {
+    const lowerText = text.toLowerCase();
+    
+    if (lowerText.match(/airdrop|claim|snapshot|distribution|reward/i)) return "airdrop";
+    if (lowerText.match(/defi|lending|yield|stake|liquidity/i)) return "defi";
+    if (lowerText.match(/defi|lending|yield|stake|liquidity/i)) return "defi";
+    if (lowerText.match(/game|play to earn|p2e|metaverse/i)) return "gamefi";
+    if (lowerText.match(/layer 2|l2|rollup|zk|optimistic|arbitrum|polygon/i)) return "layer2";
+    if (lowerText.match(/nft|non-fungible|opensea|collectible/i)) return "nft";
+    if (lowerText.match(/bridge|cross-chain|multichain/i)) return "bridge";
+    if (lowerText.match(/social|community|dao/i)) return "socialfi";
+    
+    return "defi"; // default
+  };
+
+  // Simple sentiment analysis
+  const analyzeSentiment = (text) => {
+    const bullishKeywords = [
+      "airdrop", "launch", "reward", "snapshot", "distribution",
+      "partnership", "expansion", "growth", "announcement", "new",
+      "confirmed", "bullish", "gain", "profit", "rise", "up", "surge",
+      "breakthrough", "adoption", "milestone"
+    ];
+    
+    const bearishKeywords = [
+      "delay", "postpone", "cancel", "issue", "problem",
+      "warning", "scam", "hack", "down", "crash", "bearish",
+      "loss", "decline", "drop", "fall", "risk", "fraud"
+    ];
+
+    const lowerText = text.toLowerCase();
+    const bullishCount = bullishKeywords.filter((word) =>
+      lowerText.includes(word)
+    ).length;
+    const bearishCount = bearishKeywords.filter((word) =>
+      lowerText.includes(word)
+    ).length;
+
+    if (bullishCount > bearishCount) return "bullish";
+    if (bearishCount > bullishCount) return "bearish";
+    return "neutral";
+  };
+
+  // Sample news fallback
+  const getSampleNews = () => [
+    {
+      id: "sample-1",
+      title: "Major L2 Protocol Announces Airdrop Snapshot",
+      description: "Leading Layer 2 solution confirms airdrop eligibility snapshot. Early users who interacted before deadline will qualify for rewards.",
+      source: "CryptoNews",
+      category: "airdrop",
+      url: "#",
+      sentiment: "bullish",
+      votes: 45,
+      timestamp: new Date().toISOString(),
+      isFromApi: true,
+    },
+    {
+      id: "sample-2",
+      title: "DeFi Protocol Launches New Yield Farming Program",
+      description: "Popular DeFi platform introduces high-yield farming opportunities with reduced gas fees.",
+      source: "DeFi Pulse",
+      category: "defi",
+      url: "#",
+      sentiment: "bullish",
+      votes: 32,
+      timestamp: new Date(Date.now() - 3600000).toISOString(),
+      isFromApi: true,
+    },
+  ];
+
+  // Load manual news from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("airdrop_news_manual");
+    if (saved) {
+      setNews(JSON.parse(saved));
+    }
+  }, []);
+
+  // Initial fetch and auto-refresh setup
+  useEffect(() => {
+    fetchCryptoNews();
+
+    // Auto-refresh every 10 minutes
+    let interval;
+    if (autoRefresh) {
+      interval = setInterval(() => {
+        fetchCryptoNews();
+      }, 10 * 60 * 1000); // 10 minutes
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [autoRefresh, fetchCryptoNews]);
+
+  // Add manual news
+  const addNews = () => {
+    if (!formData.title || !formData.description) {
+      alert("⚠️ Title and description are required!");
+      return;
+    }
+
+    const newNews = {
+      id: `manual-${Date.now()}`,
+      ...formData,
+      sentiment: analyzeSentiment(formData.description),
+      votes: 0,
+      timestamp: new Date().toISOString(),
+      isFromApi: false,
+    };
+
+    const updated = [newNews, ...news];
+    setNews(updated);
+    localStorage.setItem("airdrop_news_manual", JSON.stringify(updated));
+
+    setFormData({
+      title: "",
+      description: "",
+      source: "",
+      category: "defi",
+      url: "",
+    });
+    setShowAddForm(false);
+  };
+
+  // Vote handler
+  const handleVote = (newsId, type, isApi) => {
+    if (isApi) {
+      const updated = apiNews.map((item) => {
+        if (item.id === newsId) {
+          return {
+            ...item,
+            votes: type === "up" ? item.votes + 1 : item.votes - 1,
+          };
+        }
+        return item;
+      });
+      setApiNews(updated);
+    } else {
+      const updated = news.map((item) => {
+        if (item.id === newsId) {
+          return {
+            ...item,
+            votes: type === "up" ? item.votes + 1 : item.votes - 1,
+          };
+        }
+        return item;
+      });
+      setNews(updated);
+      localStorage.setItem("airdrop_news_manual", JSON.stringify(updated));
+    }
+  };
+
+  // Delete manual news
+  const deleteNews = (newsId) => {
   const deleteNews = (newsId) => {
     const updated = news.filter((item) => item.id !== newsId);
     setNews(updated);
