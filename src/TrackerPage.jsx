@@ -31,6 +31,8 @@ import { ethers } from "ethers";
 import NeonParticles from "./NeonParticles";
 import AnalyticsDashboard from "./components/AnalyticsDashboard";
 import GasTracker from "./components/GasTracker";
+import ROICalculator from "./components/ROICalculator";
+import NewsAggregator from "./components/NewsAggregator";
 
 const GOOGLE_SCRIPT_URL = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
 
@@ -392,6 +394,16 @@ function TrackerPage({ onLogout }) {
       <div className="px-6">
         <GasTracker />
       </div>
+
+      {/* ===== ROI CALCULATOR ===== */}
+      <div className="px-6">
+        <ROICalculator />
+      </div>
+
+      {/* ===== NEWS AGGREGATOR ===== */}
+      <div className="px-6">
+        <NewsAggregator />
+      </div>
       
       {/* FORM INPUT */}
       <div className="relative z-10 bg-gray-900/60 p-6 rounded-2xl max-w-5xl mx-auto mb-8 shadow-lg w-[90%] md:w-auto">
@@ -716,3 +728,4 @@ function TrackerPage({ onLogout }) {
 }
 
 export default TrackerPage;
+
