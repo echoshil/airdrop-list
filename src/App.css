@@ -1,190 +1,187 @@
+/* === BASE STYLES === */
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background-color: #0f172a;
+  color: white;
+  overflow-x: hidden;
+}
 
-Action: file_editor view /app/src/App.css
-Observation: /app/src/App.css:
-1|/* === BASE STYLES === */
-2|body {
-3|  margin: 0;
-4|  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-5|  background-color: #0f172a;
-6|  color: white;
-7|  overflow-x: hidden;
-8|}
-9|
-10|input,
-11|button {
-12|  outline: none;
-13|  border: none;
-14|}
-15|
-16|button {
-17|  cursor: pointer;
-18|  transition: 0.2s ease-in-out;
-19|}
-20|
-21|button:hover {
-22|  opacity: 0.9;
-23|  transform: scale(1.02);
-24|}
-25|
-26|.dark {
-27|  background-color: #111;
-28|  color: white;
-29|}
-30|
-31|.light {
-32|  background-color: #f6f6f6;
-33|  color: black;
-34|}
-35|
-36|/* === ANIMATED GRADIENT BACKGROUND === */
-37|.animated-bg {
-38|  position: fixed;
-39|  inset: 0;
-40|  background: linear-gradient(-45deg, #0f172a, #1e293b, #0c4a6e, #3b0764);
-41|  background-size: 400% 400%;
-42|  animation: gradientShift 15s ease infinite;
-43|  z-index: 0;
-44|  opacity: 0.5;
-45|}
-46|
-47|@keyframes gradientShift {
-48|  0% {
-49|    background-position: 0% 50%;
-50|  }
-51|  50% {
-52|    background-position: 100% 50%;
-53|  }
-54|  100% {
-55|    background-position: 0% 50%;
-56|  }
-57|}
-58|
-59|/* === NEON CARD EFFECT === */
-60|.card {
-61|  background: rgba(17, 24, 39, 0.8);
-62|  border: 1px solid rgba(59, 130, 246, 0.2);
-63|  backdrop-filter: blur(12px);
-64|  border-radius: 1rem;
-65|  box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
-66|  transition: all 0.3s ease;
-67|}
-68|
-69|.card:hover {
-70|  transform: translateY(-5px) scale(1.02);
-71|  box-shadow: 0 0 25px rgba(59, 130, 246, 0.3);
-72|  border-color: rgba(59, 130, 246, 0.6);
-73|}
-74|
-75|/* === PROJECT CARD CONTENT === */
-76|.card h3 {
-77|  color: #22d3ee;
-78|  font-weight: 700;
-79|  margin-bottom: 0.5rem;
-80|}
-81|
-82|.card p {
-83|  margin: 0.25rem 0;
-84|  font-size: 0.95rem;
-85|  color: #cbd5e1;
-86|}
-87|
-88|/* === REFRESH TIMER === */
-89|.refresh-timer {
-90|  font-size: 14px;
-91|  color: #94a3b8;
-92|  text-align: center;
-93|}
-94|
-95|.refresh-timer span {
-96|  color: #22d3ee;
-97|  font-weight: 600;
-98|}
-99|
-100|/* === READ MORE BUTTON === */
-101|.readmore-btn {
-102|  background-color: #0891b2;
-103|  color: white;
-104|  padding: 0.5rem 1.5rem;
-105|  border-radius: 0.5rem;
-106|  font-weight: 600;
-107|  transition: all 0.3s ease;
-108|}
-109|
-110|.readmore-btn:hover {
-111|  background-color: #06b6d4;
-112|  transform: scale(1.05);
-113|}
-114|
-115|/* === CHART CONTAINER === */
-116|.chart-container {
-117|  background: rgba(17, 24, 39, 0.7);
-118|  border: 1px solid rgba(59, 130, 246, 0.2);
-119|  border-radius: 1rem;
-120|  box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
-121|  transition: all 0.3s ease;
-122|}
-123|
-124|.chart-container:hover {
-125|  transform: translateY(-4px);
-126|  box-shadow: 0 0 25px rgba(59, 130, 246, 0.4);
-127|}
-128|
-129|/* === MINI HEADER STATS === */
-130|.header-stats {
-131|  display: flex;
-132|  justify-content: center;
-133|  gap: 2rem;
-134|  flex-wrap: wrap;
-135|  margin-top: 0.5rem;
-136|}
-137|
-138|.header-stats .stat {
-139|  background: rgba(17, 24, 39, 0.8);
-140|  border: 1px solid rgba(59, 130, 246, 0.2);
-141|  border-radius: 0.75rem;
-142|  padding: 0.5rem 1.2rem;
-143|  font-size: 0.9rem;
-144|  color: #93c5fd;
-145|  box-shadow: 0 0 10px rgba(59, 130, 246, 0.15);
-146|  transition: all 0.3s ease;
-147|}
-148|
-149|.header-stats .stat:hover {
-150|  background: rgba(59, 130, 246, 0.2);
-151|  color: white;
-152|  transform: scale(1.05);
-153|}
-154|
-155|/* === RESPONSIVE GRID FIX === */
-156|@keyframes fadeIn {
-157|  from {
-158|    opacity: 0;
-159|    transform: translateY(-5px);
-160|  }
-161|  to {
-162|    opacity: 1;
-163|    transform: translateY(0);
-164|  }
-165|}
-166|
-167|.animate-fadeIn {
-168|  animation: fadeIn 0.25s ease-out;
-169|}
-170|
-171|@media (max-width: 1024px) {
-172|  .grid-cols-3 {
-173|    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-174|  }
-175|}
-176|
-177|@media (max-width: 768px) {
-178|  .grid-cols-3 {
-179|    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
-180|  }
-181|
-182|  .header-stats {
-183|    flex-direction: column;
-184|    align-items: center;
-185|  }
-186|}
-187|
+input,
+button {
+  outline: none;
+  border: none;
+}
+
+button {
+  cursor: pointer;
+  transition: 0.2s ease-in-out;
+}
+
+button:hover {
+  opacity: 0.9;
+  transform: scale(1.02);
+}
+
+.dark {
+  background-color: #111;
+  color: white;
+}
+
+.light {
+  background-color: #f6f6f6;
+  color: black;
+}
+
+/* === ANIMATED GRADIENT BACKGROUND === */
+.animated-bg {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(-45deg, #0f172a, #1e293b, #0c4a6e, #3b0764);
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+  z-index: 0;
+  opacity: 0.5;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* === NEON CARD EFFECT === */
+.card {
+  background: rgba(17, 24, 39, 0.8);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  backdrop-filter: blur(12px);
+  border-radius: 1rem;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 0 25px rgba(59, 130, 246, 0.3);
+  border-color: rgba(59, 130, 246, 0.6);
+}
+
+/* === PROJECT CARD CONTENT === */
+.card h3 {
+  color: #22d3ee;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.card p {
+  margin: 0.25rem 0;
+  font-size: 0.95rem;
+  color: #cbd5e1;
+}
+
+/* === REFRESH TIMER === */
+.refresh-timer {
+  font-size: 14px;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.refresh-timer span {
+  color: #22d3ee;
+  font-weight: 600;
+}
+
+/* === READ MORE BUTTON === */
+.readmore-btn {
+  background-color: #0891b2;
+  color: white;
+  padding: 0.5rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.readmore-btn:hover {
+  background-color: #06b6d4;
+  transform: scale(1.05);
+}
+
+/* === CHART CONTAINER === */
+.chart-container {
+  background: rgba(17, 24, 39, 0.7);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 1rem;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
+  transition: all 0.3s ease;
+}
+
+.chart-container:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 0 25px rgba(59, 130, 246, 0.4);
+}
+
+/* === MINI HEADER STATS === */
+.header-stats {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.header-stats .stat {
+  background: rgba(17, 24, 39, 0.8);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 0.75rem;
+  padding: 0.5rem 1.2rem;
+  font-size: 0.9rem;
+  color: #93c5fd;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.15);
+  transition: all 0.3s ease;
+}
+
+.header-stats .stat:hover {
+  background: rgba(59, 130, 246, 0.2);
+  color: white;
+  transform: scale(1.05);
+}
+
+/* === RESPONSIVE GRID FIX === */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.25s ease-out;
+}
+
+@media (max-width: 1024px) {
+  .grid-cols-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .grid-cols-3 {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+
+  .header-stats {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
