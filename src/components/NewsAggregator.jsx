@@ -49,48 +49,49 @@ const NewsAggregator = () => {
     { id: "airdrop", label: "Airdrop", color: "bg-yellow-500" },
   ];
 
-  // Fetch news from CoinGecko API
-  const fetchCryptoNews = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      // CoinGecko Public News API
-      const response = await axios.get("https://api.coingecko.com/api/v3/news", {
-        timeout: 10000,
-      });
+// Fetch news from CryptoCompare API (Free, No API Key)
+const fetchCryptoNews = useCallback(async () => {
+  setIsLoading(true);
+  setError(null);
+  
+  try {
+    // CryptoCompare News API (Free & Reliable)
+    const response = await axios.get("https://min-api.cryptocompare.com/data/v2/news/?lang=EN", {
+      timeout: 10000,
+    });
 
-      if (response.data && response.data.data) {
-        // Transform CoinGecko news to our format
-        const transformedNews = response.data.data.slice(0, 20).map((item, index) => ({
-          id: `api-${item.id || Date.now() + index}`,
-          title: item.title || "No Title",
-          description: item.description || item.news_site || "No description available",
-          source: item.news_site || "CoinGecko",
-          category: detectCategory(item.title + " " + (item.description || "")),
-          url: item.url || "#",
-          sentiment: analyzeSentiment(item.title + " " + (item.description || "")),
-          votes: 0,
-          timestamp: item.updated_at || new Date().toISOString(),
-          isFromApi: true,
-          thumb_2x: item.thumb_2x || null,
-        }));
+    if (response.data && response.data.Data) {
+      // Transform CryptoCompare news to our format
+      const transformedNews = response.data.Data.slice(0, 20).map((item, index) => ({
+        id: `api-${item.id || Date.now() + index}`,
+        title: item.title || "No Title",
+        description: item.body || "No description available",
+        source: item.source || "CryptoCompare",
+        category: detectCategory(item.title + " " + (item.body || "") + " " + (item.categories || "")),
+        url: item.url || item.guid || "#",
+        sentiment: analyzeSentiment(item.title + " " + (item.body || "")),
+        votes: 0,
+        timestamp: new Date(item.published_on * 1000).toISOString(), // Convert Unix timestamp
+        isFromApi: true,
+        imageurl: item.imageurl || null,
+      }));
 
-        setApiNews(transformedNews);
-        setLastUpdate(new Date());
-      }
-    } catch (err) {
-      console.error("Error fetching crypto news:", err);
-      setError("Failed to fetch news. Using cached data.");
-      
-      // Fallback: use sample data if API fails
-      if (apiNews.length === 0) {
-        setApiNews(getSampleNews());
-      }
-    } finally {
-      setIsLoading(false);
+      setApiNews(transformedNews);
+      setLastUpdate(new Date());
+      setError(null); // Clear error on success
     }
-  }, [apiNews.length]);
+  } catch (err) {
+    console.error("Error fetching crypto news:", err);
+    setError("Failed to fetch latest news. Showing sample data.");
+    
+    // Fallback: use sample data if API fails
+    if (apiNews.length === 0) {
+      setApiNews(getSampleNews());
+    }
+  } finally {
+    setIsLoading(false);
+  }
+}, [apiNews.length]);
 
   // Auto-detect category from text
   const detectCategory = (text) => {
