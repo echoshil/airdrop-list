@@ -98,7 +98,6 @@ const NewsAggregator = () => {
     
     if (lowerText.match(/airdrop|claim|snapshot|distribution|reward/i)) return "airdrop";
     if (lowerText.match(/defi|lending|yield|stake|liquidity/i)) return "defi";
-    if (lowerText.match(/defi|lending|yield|stake|liquidity/i)) return "defi";
     if (lowerText.match(/game|play to earn|p2e|metaverse/i)) return "gamefi";
     if (lowerText.match(/layer 2|l2|rollup|zk|optimistic|arbitrum|polygon/i)) return "layer2";
     if (lowerText.match(/nft|non-fungible|opensea|collectible/i)) return "nft";
@@ -248,7 +247,6 @@ const NewsAggregator = () => {
   };
 
   // Delete manual news
-  const deleteNews = (newsId) => {
   const deleteNews = (newsId) => {
     const updated = news.filter((item) => item.id !== newsId);
     setNews(updated);
@@ -673,4 +671,3 @@ const NewsAggregator = () => {
 };
 
 export default NewsAggregator;
-
