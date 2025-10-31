@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import LoginPage from "./LoginPage";
-import TrackerPage from "./TrackerPage";
+import TrackerPageFullScreen from "./TrackerPageFullScreen";
 import { AnimatePresence, motion } from "framer-motion";
 
 function App() {
@@ -21,7 +21,7 @@ function App() {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <TrackerPage onLogout={() => setIsLoggedIn(false)} />
+          <TrackerPageFullScreen onLogout={() => setIsLoggedIn(false)} />
         </motion.div>
       ) : (
         <motion.div
@@ -39,3 +39,4 @@ function App() {
 }
 
 export default App;
+
