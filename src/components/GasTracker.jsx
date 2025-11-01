@@ -56,10 +56,27 @@ const GasTracker = () => {
         ethGasData = await fetchGasFromRPC("ethereum");
       }
 
-      // Fetch BSC gas prices (BSC doesn't support V2, use RPC directly as it's more reliable)
+      // Fetch BSC gas prices with enhanced accuracy
       let bscGasData = { slow: 0, average: 0, fast: 0 };
-      bscGasData = await fetchGasFromRPC("bsc");
-      console.log("✅ BSC gas fetched from RPC:", bscGasData);
+      try {
+        // Try BNB48 Club Gas Tracker API first (most accurate for BSC)
+        const bnb48Response = await fetch('https://www.bnb48.club/api/gasprice');
+        const bnb48Result = await bnb48Response.json();
+        
+        if (bnb48Result && bnb48Result.result) {
+          bscGasData = {
+            slow: parseFloat(bnb48Result.result.SafeGasPrice),
+            average: parseFloat(bnb48Result.result.ProposeGasPrice),
+            fast: parseFloat(bnb48Result.result.FastGasPrice),
+          };
+          console.log("✅ BSC gas fetched from BNB48 API:", bscGasData);
+        } else {
+          throw new Error("Invalid BNB48 response");
+        }
+      } catch (err) {
+        console.warn("⚠️ BNB48 API failed, using enhanced RPC method:", err.message);
+        bscGasData = await fetchBSCGasEnhanced();
+      }
 
       // Fetch Polygon gas prices (using Polygon Gas Station API - free and accurate)
       let polygonGasData = { slow: 0, average: 0, fast: 0 };
@@ -111,6 +128,60 @@ const GasTracker = () => {
     } catch (err) {
       console.error("❌ Error fetching gas prices:", err);
       setLoading(false);
+    }
+  };
+
+  // Enhanced BSC gas fetching with multiple sources
+  const fetchBSCGasEnhanced = async () => {
+    try {
+      const { JsonRpcProvider, formatUnits } = await import("ethers");
+      
+      const rpcUrls = [
+        "https://bsc-dataseed1.binance.org",
+        "https://bsc-dataseed2.binance.org",
+        "https://bsc-dataseed3.binance.org",
+        "https://bsc-dataseed4.binance.org",
+        "https://rpc.ankr.com/bsc",
+      ];
+      
+      const gasPrices = [];
+      
+      // Query multiple RPCs for more accurate data
+      for (const rpc of rpcUrls.slice(0, 4)) {
+        try {
+          const provider = new JsonRpcProvider(rpc);
+          const feeData = await provider.getFeeData();
+          
+          if (feeData.gasPrice) {
+            const gasGwei = parseFloat(formatUnits(feeData.gasPrice, "gwei"));
+            gasPrices.push(gasGwei);
+            console.log(`📊 BSC RPC ${rpc}: ${gasGwei} Gwei`);
+          }
+        } catch (err) {
+          console.warn(`⚠️ BSC RPC ${rpc} failed:`, err.message);
+          continue;
+        }
+      }
+      
+      if (gasPrices.length > 0) {
+        // Calculate average from multiple sources
+        const avgGas = gasPrices.reduce((a, b) => a + b, 0) / gasPrices.length;
+        
+        const result = {
+          slow: parseFloat((avgGas * 0.8).toFixed(2)),
+          average: parseFloat(avgGas.toFixed(2)),
+          fast: parseFloat((avgGas * 1.25).toFixed(2)),
+        };
+        
+        console.log(`✅ BSC gas calculated from ${gasPrices.length} sources:`, result);
+        return result;
+      }
+      
+      // If all fail, return reasonable defaults for BSC
+      return { slow: 3, average: 5, fast: 7 };
+    } catch (err) {
+      console.error("❌ Error in BSC enhanced fetch:", err);
+      return { slow: 3, average: 5, fast: 7 };
     }
   };
 
@@ -362,4 +433,3 @@ const GasTracker = () => {
 };
 
 export default GasTracker;
-
