@@ -102,7 +102,16 @@ function TrackerPage({ onLogout }) {
     try {
       const res = await fetch(GOOGLE_SCRIPT_URL + "?action=read");
       const data = await res.json();
-      if (Array.isArray(data)) setProjects(data);
+      if (Array.isArray(data)) {
+        // Parse tags from JSON string back to array
+        const parsedData = data.map(project => ({
+          ...project,
+          tags: typeof project.tags === 'string' 
+            ? (project.tags.trim() ? JSON.parse(project.tags) : [])
+            : (project.tags || [])
+        }));
+        setProjects(parsedData);
+      }
     } catch {
       alert("⚠️ Gagal memuat data dari Google Sheets");
     }
@@ -117,11 +126,16 @@ function TrackerPage({ onLogout }) {
     if (!formData.name) return alert("Nama project wajib diisi!");
     try {
       setLoading(true);
+      // Convert tags array to JSON string for Google Sheets
+      const dataToSend = {
+        ...formData,
+        tags: JSON.stringify(formData.tags || [])
+      };
       const res = await fetch(GOOGLE_SCRIPT_URL, {
         method: "POST",
         mode: "cors",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(dataToSend),
       });
       const text = await res.text();
       if (text.toLowerCase().includes("ok")) {
@@ -226,17 +240,19 @@ function TrackerPage({ onLogout }) {
 
   // Toggle tag selection in form
   const toggleTag = (tagId) => {
-    setSelectedTags((prev) =>
-      prev.includes(tagId)
+    setSelectedTags((prev) => {
+      const newTags = prev.includes(tagId)
         ? prev.filter((t) => t !== tagId)
-        : [...prev, tagId]
-    );
-    setFormData((prev) => ({
-      ...prev,
-      tags: selectedTags.includes(tagId)
-        ? selectedTags.filter((t) => t !== tagId)
-        : [...selectedTags, tagId],
-    }));
+        : [...prev, tagId];
+      
+      // Update formData with the new tags
+      setFormData((prevForm) => ({
+        ...prevForm,
+        tags: newTags,
+      }));
+      
+      return newTags;
+    });
   };
 
   // === BULK BALANCE CHECK ===
@@ -728,4 +744,5 @@ function TrackerPage({ onLogout }) {
 }
 
 export default TrackerPage;
+
 
