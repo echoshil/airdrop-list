@@ -20,97 +20,72 @@ const GasTracker = () => {
   const [historicalData, setHistoricalData] = useState([]);
   const [selectedChain, setSelectedChain] = useState("ethereum");
   const [isExpanded, setIsExpanded] = useState(true);
+  const [lastUpdate, setLastUpdate] = useState(null);
 
   const fetchGasPrices = async () => {
     try {
       setLoading(true);
-      const { JsonRpcProvider, formatUnits } = await import("ethers");
-
-      // Fetch Ethereum gas with multiple fallback RPCs
-      let ethGasGwei = 0;
-      const ethRPCs = [
-        "https://eth.llamarpc.com",
-        "https://rpc.ankr.com/eth",
-        "https://ethereum.publicnode.com"
-      ];
       
-      for (const rpc of ethRPCs) {
-        try {
-          const ethProvider = new JsonRpcProvider(rpc);
-          const ethGasPrice = await ethProvider.getFeeData();
-          if (ethGasPrice.gasPrice) {
-            ethGasGwei = parseFloat(formatUnits(ethGasPrice.gasPrice, "gwei"));
-            console.log(`✅ Ethereum gas fetched from ${rpc}: ${ethGasGwei} Gwei`);
-            break;
-          }
-        } catch (err) {
-          console.warn(`⚠️ Failed to fetch Ethereum from ${rpc}:`, err.message);
-          continue;
+      // Get API keys from environment
+      const etherscanKey = import.meta.env.VITE_ETHERSCAN_API_KEY;
+      const bscscanKey = import.meta.env.VITE_BSCSCAN_API_KEY;
+      const polygonscanKey = import.meta.env.VITE_POLYGONSCAN_API_KEY;
+
+      // Fetch Ethereum gas prices (using Etherscan V2 API)
+      let ethGasData = { slow: 0, average: 0, fast: 0 };
+      try {
+        const ethResponse = await fetch(
+          `https://api.etherscan.io/v2/api?chainid=1&module=gastracker&action=gasoracle&apikey=${etherscanKey}`
+        );
+        const ethResult = await ethResponse.json();
+        
+        if (ethResult.status === "1" && ethResult.result) {
+          // Etherscan V2 returns decimal Gwei values, convert to proper display format
+          const baseFee = parseFloat(ethResult.result.suggestBaseFee);
+          ethGasData = {
+            slow: parseFloat((baseFee * 0.95).toFixed(2)),
+            average: parseFloat((baseFee * 1.0).toFixed(2)),
+            fast: parseFloat((baseFee * 1.15).toFixed(2)),
+          };
+          console.log("✅ Ethereum gas fetched from Etherscan API V2:", ethGasData);
+        } else {
+          throw new Error("Invalid Etherscan response");
         }
+      } catch (err) {
+        console.warn("⚠️ Etherscan API failed, using RPC fallback:", err.message);
+        ethGasData = await fetchGasFromRPC("ethereum");
       }
 
-      // Fetch BSC gas with multiple fallback RPCs
-      let bscGasGwei = 0;
-      const bscRPCs = [
-        "https://bsc-dataseed1.binance.org",
-        "https://bsc-dataseed.binance.org",
-        "https://rpc.ankr.com/bsc"
-      ];
-      
-      for (const rpc of bscRPCs) {
-        try {
-          const bscProvider = new JsonRpcProvider(rpc);
-          const bscGasPrice = await bscProvider.getFeeData();
-          if (bscGasPrice.gasPrice) {
-            bscGasGwei = parseFloat(formatUnits(bscGasPrice.gasPrice, "gwei"));
-            console.log(`✅ BSC gas fetched from ${rpc}: ${bscGasGwei} Gwei`);
-            break;
-          }
-        } catch (err) {
-          console.warn(`⚠️ Failed to fetch BSC from ${rpc}:`, err.message);
-          continue;
-        }
-      }
+      // Fetch BSC gas prices (BSC doesn't support V2, use RPC directly as it's more reliable)
+      let bscGasData = { slow: 0, average: 0, fast: 0 };
+      bscGasData = await fetchGasFromRPC("bsc");
+      console.log("✅ BSC gas fetched from RPC:", bscGasData);
 
-      // Fetch Polygon gas
-      let polygonGasGwei = 0;
-      const polygonRPCs = [
-        "https://polygon-rpc.com",
-        "https://rpc.ankr.com/polygon",
-        "https://polygon.llamarpc.com"
-      ];
-      
-      for (const rpc of polygonRPCs) {
-        try {
-          const polygonProvider = new JsonRpcProvider(rpc);
-          const polygonGasPrice = await polygonProvider.getFeeData();
-          if (polygonGasPrice.gasPrice) {
-            polygonGasGwei = parseFloat(formatUnits(polygonGasPrice.gasPrice, "gwei"));
-            console.log(`✅ Polygon gas fetched from ${rpc}: ${polygonGasGwei} Gwei`);
-            break;
-          }
-        } catch (err) {
-          console.warn(`⚠️ Failed to fetch Polygon from ${rpc}:`, err.message);
-          continue;
+      // Fetch Polygon gas prices (using Polygon Gas Station API - free and accurate)
+      let polygonGasData = { slow: 0, average: 0, fast: 0 };
+      try {
+        const polygonResponse = await fetch("https://gasstation.polygon.technology/v2");
+        const polygonResult = await polygonResponse.json();
+        
+        if (polygonResult && polygonResult.safeLow) {
+          polygonGasData = {
+            slow: Math.round(parseFloat(polygonResult.safeLow.maxFee)),
+            average: Math.round(parseFloat(polygonResult.standard.maxFee)),
+            fast: Math.round(parseFloat(polygonResult.fast.maxFee)),
+          };
+          console.log("✅ Polygon gas fetched from Gas Station API:", polygonGasData);
+        } else {
+          throw new Error("Invalid Polygon Gas Station response");
         }
+      } catch (err) {
+        console.warn("⚠️ Polygon Gas Station API failed, using RPC fallback:", err.message);
+        polygonGasData = await fetchGasFromRPC("polygon");
       }
 
       setGasData({
-        ethereum: {
-          slow: Math.max(1, Math.floor(ethGasGwei * 0.9)),
-          average: Math.max(1, Math.floor(ethGasGwei)),
-          fast: Math.max(1, Math.floor(ethGasGwei * 1.2)),
-        },
-        bsc: {
-          slow: Math.max(1, Math.floor(bscGasGwei * 0.9)),
-          average: Math.max(1, Math.floor(bscGasGwei)),
-          fast: Math.max(1, Math.floor(bscGasGwei * 1.2)),
-        },
-        polygon: {
-          slow: Math.max(1, Math.floor(polygonGasGwei * 0.9)),
-          average: Math.max(1, Math.floor(polygonGasGwei)),
-          fast: Math.max(1, Math.floor(polygonGasGwei * 1.2)),
-        },
+        ethereum: ethGasData,
+        bsc: bscGasData,
+        polygon: polygonGasData,
       });
 
       const timestamp = new Date().toLocaleTimeString("en-US", {
@@ -123,14 +98,15 @@ const GasTracker = () => {
           ...prev,
           {
             time: timestamp,
-            ethereum: Math.max(1, Math.floor(ethGasGwei)),
-            bsc: Math.max(1, Math.floor(bscGasGwei)),
-            polygon: Math.max(1, Math.floor(polygonGasGwei)),
+            ethereum: ethGasData.average,
+            bsc: bscGasData.average,
+            polygon: polygonGasData.average,
           },
         ];
         return newData.slice(-20);
       });
 
+      setLastUpdate(new Date());
       setLoading(false);
     } catch (err) {
       console.error("❌ Error fetching gas prices:", err);
@@ -138,9 +114,61 @@ const GasTracker = () => {
     }
   };
 
+  // RPC fallback function
+  const fetchGasFromRPC = async (chain) => {
+    try {
+      const { JsonRpcProvider, formatUnits } = await import("ethers");
+      
+      const rpcUrls = {
+        ethereum: [
+          "https://eth.llamarpc.com",
+          "https://rpc.ankr.com/eth",
+          "https://ethereum.publicnode.com"
+        ],
+        bsc: [
+          "https://bsc-dataseed1.binance.org",
+          "https://bsc-dataseed.binance.org",
+          "https://rpc.ankr.com/bsc"
+        ],
+        polygon: [
+          "https://polygon-rpc.com",
+          "https://rpc.ankr.com/polygon",
+          "https://polygon.llamarpc.com"
+        ]
+      };
+
+      for (const rpc of rpcUrls[chain]) {
+        try {
+          const provider = new JsonRpcProvider(rpc);
+          const feeData = await provider.getFeeData();
+          
+          if (feeData.gasPrice) {
+            const gasGwei = parseFloat(formatUnits(feeData.gasPrice, "gwei"));
+            const gasData = {
+              slow: Math.max(1, Math.round(gasGwei * 0.85)),
+              average: Math.max(1, Math.round(gasGwei)),
+              fast: Math.max(1, Math.round(gasGwei * 1.15)),
+            };
+            console.log(`✅ ${chain} gas fetched from RPC ${rpc}:`, gasData);
+            return gasData;
+          }
+        } catch (err) {
+          console.warn(`⚠️ RPC ${rpc} failed:`, err.message);
+          continue;
+        }
+      }
+      
+      // If all RPCs fail, return default values
+      return { slow: 1, average: 1, fast: 1 };
+    } catch (err) {
+      console.error(`❌ Error fetching ${chain} from RPC:`, err);
+      return { slow: 1, average: 1, fast: 1 };
+    }
+  };
+
   useEffect(() => {
     fetchGasPrices();
-    const interval = setInterval(fetchGasPrices, 30000);
+    const interval = setInterval(fetchGasPrices, 15000); // Update every 15 seconds for real-time
     return () => clearInterval(interval);
   }, []);
 
@@ -156,21 +184,21 @@ const GasTracker = () => {
         color: "text-green-400",
         bg: "bg-green-600/20",
         icon: TrendingDown,
-        text: "Excellent time to transact!",
+        text: "Waktu terbaik untuk transaksi!",
       };
     } else if (avgGas <= threshold.medium) {
       return {
         color: "text-yellow-400",
         bg: "bg-yellow-600/20",
         icon: AlertCircle,
-        text: "Moderate gas prices",
+        text: "Biaya gas sedang",
       };
     } else {
       return {
         color: "text-red-400",
         bg: "bg-red-600/20",
         icon: TrendingUp,
-        text: "High gas - wait if possible",
+        text: "Gas tinggi - tunggu jika memungkinkan",
       };
     }
   };
@@ -193,7 +221,7 @@ const GasTracker = () => {
           </h2>
           <div className="flex items-center gap-3">
             <div className="text-sm text-gray-400">
-              {loading ? "🔄 Updating..." : "✅ Live"}
+              {loading ? "🔄 Memperbarui..." : "✅ Live Data"}
             </div>
             <button 
               className="text-gray-400 hover:text-white transition"
@@ -228,9 +256,9 @@ const GasTracker = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             {["slow", "average", "fast"].map((speed) => {
               const speedLabels = {
-                slow: { label: "🐢 Slow", desc: "Lower cost" },
-                average: { label: "⚡ Average", desc: "Balanced" },
-                fast: { label: "🚀 Fast", desc: "Quick confirm" },
+                slow: { label: "🐢 Lambat", desc: "Biaya rendah" },
+                average: { label: "⚡ Rata-rata", desc: "Seimbang" },
+                fast: { label: "🚀 Cepat", desc: "Konfirmasi cepat" },
               };
 
               return (
@@ -264,7 +292,7 @@ const GasTracker = () => {
                 <div>
                   <div className={`font-semibold ${rec.color}`}>{rec.text}</div>
                   <div className="text-sm text-gray-400">
-                    Current average: {gasData[selectedChain].average} Gwei
+                    Rata-rata saat ini: {gasData[selectedChain].average} Gwei
                   </div>
                 </div>
               </div>
@@ -275,7 +303,7 @@ const GasTracker = () => {
           {historicalData.length > 1 && (
             <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700">
               <h3 className="text-lg font-semibold text-gray-300 mb-4">
-                📊 Gas Price Trend (Last 30 mins)
+                📊 Tren Harga Gas (Real-time)
               </h3>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={historicalData}>
@@ -324,7 +352,8 @@ const GasTracker = () => {
 
           {/* Info Footer */}
           <div className="mt-4 text-xs text-gray-500 text-center">
-            ℹ️ Prices update automatically every 30 seconds
+            ℹ️ Data diperbarui otomatis setiap 15 detik dari API resmi | 
+            {lastUpdate && ` Terakhir update: ${lastUpdate.toLocaleTimeString('id-ID')}`}
           </div>
         </div>
       )}
