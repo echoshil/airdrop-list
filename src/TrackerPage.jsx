@@ -102,17 +102,48 @@ function TrackerPage({ onLogout }) {
     try {
       const res = await fetch(GOOGLE_SCRIPT_URL + "?action=read");
       const data = await res.json();
+      console.log("Raw data from Google Sheets:", data);
+      
       if (Array.isArray(data)) {
-        // Parse tags from JSON string back to array
-        const parsedData = data.map(project => ({
-          ...project,
-          tags: typeof project.tags === 'string' 
-            ? (project.tags.trim() ? JSON.parse(project.tags) : [])
-            : (project.tags || [])
-        }));
+        // Parse tags from JSON string back to array with better error handling
+        const parsedData = data.map(project => {
+          let parsedTags = [];
+          
+          // Handle tags parsing
+          if (project.tags) {
+            if (typeof project.tags === 'string') {
+              const trimmed = project.tags.trim();
+              if (trimmed) {
+                try {
+                  // Try to parse as JSON
+                  parsedTags = JSON.parse(trimmed);
+                  // Ensure it's an array
+                  if (!Array.isArray(parsedTags)) {
+                    parsedTags = [parsedTags];
+                  }
+                } catch (e) {
+                  console.error("Failed to parse tags for project:", project.name, "tags value:", project.tags);
+                  // If parsing fails, treat as empty array
+                  parsedTags = [];
+                }
+              }
+            } else if (Array.isArray(project.tags)) {
+              parsedTags = project.tags;
+            }
+          }
+          
+          return {
+            ...project,
+            tags: parsedTags,
+            notes: project.notes || ""
+          };
+        });
+        
+        console.log("Parsed data with tags:", parsedData);
         setProjects(parsedData);
       }
-    } catch {
+    } catch (error) {
+      console.error("Fetch error:", error);
       alert("⚠️ Gagal memuat data dari Google Sheets");
     }
   };
@@ -223,9 +254,18 @@ function TrackerPage({ onLogout }) {
       const matchesSearch = (p.name || "")
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
+      
+      // Debug logging for tag filtering
+      const hasTags = p.tags && Array.isArray(p.tags);
       const matchesTags =
         filterTag === "all" ||
-        (p.tags && Array.isArray(p.tags) && p.tags.includes(filterTag));
+        (hasTags && p.tags.includes(filterTag));
+      
+      // Log when filtering by specific tag
+      if (filterTag !== "all") {
+        console.log(`Project: ${p.name}, Tags: ${JSON.stringify(p.tags)}, FilterTag: ${filterTag}, Matches: ${matchesTags}`);
+      }
+      
       return matchesSearch && matchesTags;
     })
     .sort((a, b) => {
@@ -744,5 +784,6 @@ function TrackerPage({ onLogout }) {
 }
 
 export default TrackerPage;
+
 
 
