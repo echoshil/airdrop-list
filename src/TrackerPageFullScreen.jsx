@@ -126,7 +126,16 @@ function TrackerPageFullScreen({ onLogout }) {
     try {
       const res = await fetch(GOOGLE_SCRIPT_URL + "?action=read");
       const data = await res.json();
-      if (Array.isArray(data)) setProjects(data);
+      if (Array.isArray(data)) {
+        // Parse tags from JSON string back to array
+        const parsedData = data.map(project => ({
+          ...project,
+          tags: typeof project.tags === 'string' 
+            ? (project.tags.trim() ? JSON.parse(project.tags) : [])
+            : (project.tags || [])
+        }));
+        setProjects(parsedData);
+      }
     } catch {
       console.log("Failed to load projects");
     }
@@ -141,11 +150,16 @@ function TrackerPageFullScreen({ onLogout }) {
     if (!formData.name) return alert("Nama project wajib diisi!");
     try {
       setLoading(true);
+      // Convert tags array to JSON string for Google Sheets
+      const dataToSend = {
+        ...formData,
+        tags: JSON.stringify(formData.tags || [])
+      };
       const res = await fetch(GOOGLE_SCRIPT_URL, {
         method: "POST",
         mode: "cors",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(dataToSend),
       });
       const text = await res.text();
       if (text.toLowerCase().includes("ok")) {
@@ -250,17 +264,19 @@ function TrackerPageFullScreen({ onLogout }) {
 
   // Toggle tag
   const toggleTag = (tagId) => {
-    setSelectedTags((prev) =>
-      prev.includes(tagId)
+    setSelectedTags((prev) => {
+      const newTags = prev.includes(tagId)
         ? prev.filter((t) => t !== tagId)
-        : [...prev, tagId]
-    );
-    setFormData((prev) => ({
-      ...prev,
-      tags: selectedTags.includes(tagId)
-        ? selectedTags.filter((t) => t !== tagId)
-        : [...selectedTags, tagId],
-    }));
+        : [...prev, tagId];
+      
+      // Update formData with the new tags
+      setFormData((prevForm) => ({
+        ...prevForm,
+        tags: newTags,
+      }));
+      
+      return newTags;
+    });
   };
 
   // Check balances
@@ -818,5 +834,6 @@ function TrackerPageFullScreen({ onLogout }) {
 }
 
 export default TrackerPageFullScreen;
+
 
 
