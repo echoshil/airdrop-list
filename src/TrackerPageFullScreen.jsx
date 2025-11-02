@@ -423,10 +423,10 @@ function TrackerPageFullScreen({ onLogout }) {
                       setActiveView(item.id);
                       if (isMobile) setSidebarOpen(false);
                     }}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ease-in-out border ${
                       activeView === item.id
-                        ? "bg-gradient-to-r from-cyan-600/20 to-purple-600/20 border border-cyan-500/50 text-white shadow-lg"
-                        : "text-gray-400 hover:bg-gray-800 hover:text-white"
+                        ? "bg-gradient-to-r from-cyan-600/20 to-purple-600/20 border-cyan-500/50 text-white shadow-lg"
+                        : "border-transparent text-gray-400 hover:bg-gray-800 hover:text-white"
                     }`}
                   >
                     <Icon size={20} className={activeView === item.id ? item.color : ""} />
@@ -597,7 +597,7 @@ function TrackerPageFullScreen({ onLogout }) {
                 </button>
               </div>
 
-              <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                 {displayedProjects.map((p, i) => (
                   <div
                     key={i}
@@ -980,4 +980,5 @@ function TrackerPageFullScreen({ onLogout }) {
 }
 
 export default TrackerPageFullScreen;
+
 
