@@ -18,6 +18,7 @@ import {
   StickyNote,
   Filter,
   X,
+  Trash2,
 } from "lucide-react";
 import {
   LineChart,
@@ -209,6 +210,37 @@ function TrackerPage({ onLogout }) {
       fetchProjects();
     } catch (err) {
       console.error("Gagal update daily:", err);
+    }
+  };
+
+  // === DELETE PROJECT ===
+  const deleteProject = async (name) => {
+    const confirmDelete = window.confirm(`Apakah Anda yakin ingin menghapus project "${name}"?`);
+    if (!confirmDelete) return;
+    
+    try {
+      setLoading(true);
+      const res = await fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        mode: "cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "delete",
+          name: name,
+        }),
+      });
+      const text = await res.text();
+      if (text.toLowerCase().includes("ok") || text.toLowerCase().includes("deleted")) {
+        alert("✅ Project berhasil dihapus!");
+        fetchProjects();
+      } else {
+        alert("⚠️ Gagal menghapus project!");
+      }
+    } catch (err) {
+      console.error("Error deleting project:", err);
+      alert("❌ Gagal menghapus project!");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -542,12 +574,22 @@ function TrackerPage({ onLogout }) {
             key={i}
             className="relative bg-gray-900/70 backdrop-blur-md p-5 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all shadow-lg fade-in"
           >
-            <button
-              onClick={() => toggleDaily(p.name, p.daily)}
-              className="absolute top-3 right-3 text-cyan-400 hover:scale-110 transition"
-            >
-              {p.daily === "CHECKED" ? <CheckSquare size={20} /> : <Square size={20} />}
-            </button>
+            <div className="absolute top-3 right-3 flex gap-2">
+              <button
+                onClick={() => toggleDaily(p.name, p.daily)}
+                className="text-cyan-400 hover:scale-110 transition"
+                title="Toggle Daily Check"
+              >
+                {p.daily === "CHECKED" ? <CheckSquare size={20} /> : <Square size={20} />}
+              </button>
+              <button
+                onClick={() => deleteProject(p.name)}
+                className="text-red-400 hover:text-red-500 hover:scale-110 transition"
+                title="Hapus Project"
+              >
+                <Trash2 size={20} />
+              </button>
+            </div>
 
             <h3 className="text-lg font-bold text-cyan-400 mb-3 mt-4">{p.name}</h3>
 
@@ -784,6 +826,7 @@ function TrackerPage({ onLogout }) {
 }
 
 export default TrackerPage;
+
 
 
 
