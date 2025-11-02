@@ -25,6 +25,7 @@ import {
   Calculator,
   Newspaper,
   LayoutDashboard,
+  Trash2,
 } from "lucide-react";
 import {
   LineChart,
@@ -90,9 +91,8 @@ function TrackerPageFullScreen({ onLogout }) {
   const [selectedTags, setSelectedTags] = useState([]);
   const [filterTag, setFilterTag] = useState("all");
   
-  // Sidebar state
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activeView, setActiveView] = useState("projects"); // projects, analytics, gas, roi, news
+  const [activeView, setActiveView] = useState("projects");
   const [isMobile, setIsMobile] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -108,7 +108,6 @@ function TrackerPageFullScreen({ onLogout }) {
     tags: [],
   });
 
-  // Detect mobile
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024);
@@ -121,7 +120,6 @@ function TrackerPageFullScreen({ onLogout }) {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Fetch projects
   const fetchProjects = async () => {
     try {
       const res = await fetch(GOOGLE_SCRIPT_URL + "?action=read");
@@ -129,25 +127,20 @@ function TrackerPageFullScreen({ onLogout }) {
       console.log("Raw data from Google Sheets:", data);
       
       if (Array.isArray(data)) {
-        // Parse tags from JSON string back to array with better error handling
         const parsedData = data.map(project => {
           let parsedTags = [];
           
-          // Handle tags parsing
           if (project.tags) {
             if (typeof project.tags === 'string') {
               const trimmed = project.tags.trim();
               if (trimmed) {
                 try {
-                  // Try to parse as JSON
                   parsedTags = JSON.parse(trimmed);
-                  // Ensure it's an array
                   if (!Array.isArray(parsedTags)) {
                     parsedTags = [parsedTags];
                   }
                 } catch (e) {
                   console.error("Failed to parse tags for project:", project.name, "tags value:", project.tags);
-                  // If parsing fails, treat as empty array
                   parsedTags = [];
                 }
               }
@@ -176,12 +169,10 @@ function TrackerPageFullScreen({ onLogout }) {
     fetchProjects();
   }, []);
 
-  // Add project
   const addProject = async () => {
     if (!formData.name) return alert("Nama project wajib diisi!");
     try {
       setLoading(true);
-      // Convert tags array to JSON string for Google Sheets
       const dataToSend = {
         ...formData,
         tags: JSON.stringify(formData.tags || [])
@@ -216,7 +207,6 @@ function TrackerPageFullScreen({ onLogout }) {
     }
   };
 
-  // Toggle daily check
   const toggleDaily = async (name, current) => {
     const next = current === "CHECKED" ? "UNCHECKED" : "CHECKED";
     try {
@@ -236,7 +226,36 @@ function TrackerPageFullScreen({ onLogout }) {
     }
   };
 
-  // Fetch market
+  const deleteProject = async (name) => {
+    const confirmDelete = window.confirm(`Apakah Anda yakin ingin menghapus project "${name}"?`);
+    if (!confirmDelete) return;
+    
+    try {
+      setLoading(true);
+      const res = await fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        mode: "cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "delete",
+          name: name,
+        }),
+      });
+      const text = await res.text();
+      if (text.toLowerCase().includes("ok") || text.toLowerCase().includes("deleted")) {
+        alert("✅ Project berhasil dihapus!");
+        fetchProjects();
+      } else {
+        alert("⚠️ Gagal menghapus project!");
+      }
+    } catch (err) {
+      console.error("Error deleting project:", err);
+      alert("❌ Gagal menghapus project!");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchMarket = async () => {
     try {
       const res = await fetch(
@@ -249,7 +268,6 @@ function TrackerPageFullScreen({ onLogout }) {
     }
   };
 
-  // Auto refresh timer
   useEffect(() => {
     fetchMarket();
     const refreshInterval = setInterval(() => {
@@ -272,20 +290,17 @@ function TrackerPageFullScreen({ onLogout }) {
   const progressColor =
     timer > 40 ? "#22c55e" : timer > 20 ? "#facc15" : "#ef4444";
 
-  // Filter projects
   const filteredProjects = projects
     .filter((p) => {
       const matchesSearch = (p.name || "")
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
       
-      // Debug logging for tag filtering
       const hasTags = p.tags && Array.isArray(p.tags);
       const matchesTags =
         filterTag === "all" ||
         (hasTags && p.tags.includes(filterTag));
       
-      // Log when filtering by specific tag
       if (filterTag !== "all") {
         console.log(`Project: ${p.name}, Tags: ${JSON.stringify(p.tags)}, FilterTag: ${filterTag}, Matches: ${matchesTags}`);
       }
@@ -302,14 +317,12 @@ function TrackerPageFullScreen({ onLogout }) {
     ? filteredProjects
     : filteredProjects.slice(0, 3);
 
-  // Toggle tag
   const toggleTag = (tagId) => {
     setSelectedTags((prev) => {
       const newTags = prev.includes(tagId)
         ? prev.filter((t) => t !== tagId)
         : [...prev, tagId];
       
-      // Update formData with the new tags
       setFormData((prevForm) => ({
         ...prevForm,
         tags: newTags,
@@ -319,7 +332,6 @@ function TrackerPageFullScreen({ onLogout }) {
     });
   };
 
-  // Check balances
   const checkBalances = async () => {
     const list = addresses.split(/[\n,\s]+/).filter(Boolean);
     if (list.length === 0) return alert("Masukkan address wallet!");
@@ -366,7 +378,6 @@ function TrackerPageFullScreen({ onLogout }) {
     }
   };
 
-  // Sidebar menu items
   const sidebarMenuItems = [
     { id: "projects", label: "Projects", icon: LayoutDashboard, color: "text-cyan-400" },
     { id: "analytics", label: "Analytics", icon: Activity, color: "text-purple-400" },
@@ -379,7 +390,6 @@ function TrackerPageFullScreen({ onLogout }) {
     <div className="min-h-screen text-white relative overflow-hidden bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
       <NeonParticles />
 
-      {/* SIDEBAR NAVIGATION */}
       <div
         className={`fixed top-0 left-0 h-full bg-gray-900/95 backdrop-blur-md border-r border-gray-700 z-50 transition-all duration-300 ${
           sidebarOpen ? "w-64" : "w-0"
@@ -387,7 +397,6 @@ function TrackerPageFullScreen({ onLogout }) {
       >
         {sidebarOpen && (
           <div className="h-full flex flex-col">
-            {/* Sidebar Header */}
             <div className="p-4 border-b border-gray-700 flex justify-between items-center">
               <h2 className="text-lg font-bold bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
                 🚀 Airdrop Tracker
@@ -400,7 +409,6 @@ function TrackerPageFullScreen({ onLogout }) {
               </button>
             </div>
 
-            {/* Navigation Menu */}
             <div className="flex-1 p-3 space-y-2">
               {sidebarMenuItems.map((item) => {
                 const Icon = item.icon;
@@ -424,7 +432,6 @@ function TrackerPageFullScreen({ onLogout }) {
               })}
             </div>
 
-            {/* Sidebar Footer */}
             <div className="p-4 border-t border-gray-700">
               <button
                 onClick={onLogout}
@@ -438,7 +445,6 @@ function TrackerPageFullScreen({ onLogout }) {
         )}
       </div>
 
-      {/* Mobile Sidebar Toggle Button */}
       {!sidebarOpen && (
         <button
           onClick={() => setSidebarOpen(true)}
@@ -448,13 +454,11 @@ function TrackerPageFullScreen({ onLogout }) {
         </button>
       )}
 
-      {/* MAIN CONTENT AREA */}
       <div
         className={`min-h-screen transition-all duration-300 ${
           sidebarOpen && !isMobile ? "ml-64" : "ml-0"
         }`}
       >
-        {/* TOP HEADER BAR */}
         <div className="sticky top-0 z-30 bg-gray-900/90 backdrop-blur-md border-b border-gray-700 px-6 py-4">
           <div className="flex flex-wrap justify-between items-center gap-4">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
@@ -514,12 +518,9 @@ function TrackerPageFullScreen({ onLogout }) {
           </div>
         </div>
 
-        {/* CONTENT VIEWS */}
         <div className="p-6">
-          {/* PROJECTS VIEW */}
           {activeView === "projects" && (
             <div className="space-y-8">
-              {/* FORM INPUT */}
               <div className="bg-gray-900/60 backdrop-blur-md p-6 rounded-2xl border border-gray-700 shadow-lg">
                 <h2 className="text-xl font-semibold mb-4 text-cyan-300">
                   ➕ Tambah Project Baru
@@ -591,19 +592,28 @@ function TrackerPageFullScreen({ onLogout }) {
                 </button>
               </div>
 
-              {/* PROJECT LIST */}
               <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {displayedProjects.map((p, i) => (
                   <div
                     key={i}
                     className="relative bg-gray-900/70 backdrop-blur-md p-5 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all shadow-lg"
                   >
-                    <button
-                      onClick={() => toggleDaily(p.name, p.daily)}
-                      className="absolute top-3 right-3 text-cyan-400 hover:scale-110 transition"
-                    >
-                      {p.daily === "CHECKED" ? <CheckSquare size={20} /> : <Square size={20} />}
-                    </button>
+                    <div className="absolute top-3 right-3 flex gap-2">
+                      <button
+                        onClick={() => toggleDaily(p.name, p.daily)}
+                        className="text-cyan-400 hover:scale-110 transition"
+                        title="Toggle Daily Check"
+                      >
+                        {p.daily === "CHECKED" ? <CheckSquare size={20} /> : <Square size={20} />}
+                      </button>
+                      <button
+                        onClick={() => deleteProject(p.name)}
+                        className="text-red-400 hover:text-red-500 hover:scale-110 transition"
+                        title="Hapus Project"
+                      >
+                        <Trash2 size={20} />
+                      </button>
+                    </div>
 
                     <h3 className="text-lg font-bold text-cyan-400 mb-3 mt-4">{p.name}</h3>
 
@@ -661,7 +671,6 @@ function TrackerPageFullScreen({ onLogout }) {
                 </div>
               )}
 
-              {/* LIVE MARKET */}
               <div className="bg-gray-900/60 backdrop-blur-md p-6 rounded-2xl border border-gray-700 shadow-lg">
                 <h2 className="text-2xl font-bold mb-4 text-center bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
                   📈 Live Crypto Market
@@ -727,7 +736,6 @@ function TrackerPageFullScreen({ onLogout }) {
                 </div>
               </div>
 
-              {/* BULK WALLET CHECKER */}
               <div className="bg-gray-900/60 backdrop-blur-md p-6 rounded-2xl border border-gray-700 shadow-lg">
                 <h2 className="text-2xl font-bold mb-4 text-center bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
                   💰 Bulk Wallet Balance Checker
@@ -828,7 +836,6 @@ function TrackerPageFullScreen({ onLogout }) {
             </div>
           )}
 
-          {/* ANALYTICS VIEW - FULL SCREEN */}
           {activeView === "analytics" && (
             <div className="max-w-7xl mx-auto">
               <AnalyticsDashboard 
@@ -839,21 +846,18 @@ function TrackerPageFullScreen({ onLogout }) {
             </div>
           )}
 
-          {/* GAS TRACKER VIEW - FULL SCREEN */}
           {activeView === "gas" && (
             <div className="max-w-7xl mx-auto">
               <GasTracker />
             </div>
           )}
 
-          {/* ROI CALCULATOR VIEW - FULL SCREEN */}
           {activeView === "roi" && (
             <div className="max-w-7xl mx-auto">
               <ROICalculator />
             </div>
           )}
 
-          {/* NEWS FEED VIEW - FULL SCREEN */}
           {activeView === "news" && (
             <div className="max-w-7xl mx-auto">
               <NewsAggregator />
@@ -862,7 +866,6 @@ function TrackerPageFullScreen({ onLogout }) {
         </div>
       </div>
 
-      {/* Mobile Overlay */}
       {isMobile && sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40"
@@ -874,7 +877,5 @@ function TrackerPageFullScreen({ onLogout }) {
 }
 
 export default TrackerPageFullScreen;
-
-
 
 
