@@ -59,23 +59,12 @@ const GasTracker = () => {
       // Fetch BSC gas prices with enhanced accuracy
       let bscGasData = { slow: 0, average: 0, fast: 0 };
       try {
-        // Try BNB48 Club Gas Tracker API first (most accurate for BSC)
-        const bnb48Response = await fetch('https://www.bnb48.club/api/gasprice');
-        const bnb48Result = await bnb48Response.json();
-        
-        if (bnb48Result && bnb48Result.result) {
-          bscGasData = {
-            slow: parseFloat(bnb48Result.result.SafeGasPrice),
-            average: parseFloat(bnb48Result.result.ProposeGasPrice),
-            fast: parseFloat(bnb48Result.result.FastGasPrice),
-          };
-          console.log("✅ BSC gas fetched from BNB48 API:", bscGasData);
-        } else {
-          throw new Error("Invalid BNB48 response");
-        }
-      } catch (err) {
-        console.warn("⚠️ BNB48 API failed, using enhanced RPC method:", err.message);
+        // Skip BNB48 Club API due to CORS - use enhanced RPC method directly
+        console.log("📡 Fetching BSC gas using enhanced RPC method...");
         bscGasData = await fetchBSCGasEnhanced();
+      } catch (err) {
+        console.warn("⚠️ BSC enhanced RPC failed, using simple fallback:", err.message);
+        bscGasData = { slow: 3, average: 5, fast: 7 };
       }
 
       // Fetch Polygon gas prices (using Polygon Gas Station API - free and accurate)
