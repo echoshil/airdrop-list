@@ -596,35 +596,45 @@ function TrackerPageFullScreen({ onLogout }) {
                 {displayedProjects.map((p, i) => (
                   <div
                     key={i}
-                    className="relative bg-gray-900/70 backdrop-blur-md p-5 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all shadow-lg"
+                    className="group relative bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-xl p-6 rounded-3xl border border-gray-700/50 hover:border-cyan-500/50 transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-cyan-500/10 hover:-translate-y-1"
                   >
-                    <div className="absolute top-3 right-3 flex gap-2">
-                      <button
-                        onClick={() => toggleDaily(p.name, p.daily)}
-                        className="text-cyan-400 hover:scale-110 transition"
-                        title="Toggle Daily Check"
-                      >
-                        {p.daily === "CHECKED" ? <CheckSquare size={20} /> : <Square size={20} />}
-                      </button>
-                      <button
-                        onClick={() => deleteProject(p.name)}
-                        className="text-red-400 hover:text-red-500 hover:scale-110 transition"
-                        title="Hapus Project"
-                      >
-                        <Trash2 size={20} />
-                      </button>
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 pr-16">
+                          {p.name}
+                        </h3>
+                      </div>
+                      
+                      <div className="flex gap-2 absolute top-4 right-4">
+                        <button
+                          onClick={() => toggleDaily(p.name, p.daily)}
+                          className={`p-2 rounded-lg transition-all duration-200 ${
+                            p.daily === "CHECKED"
+                              ? "bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30"
+                              : "bg-gray-700/50 text-gray-400 hover:bg-gray-700 hover:text-cyan-400"
+                          }`}
+                          title="Toggle Daily Check"
+                        >
+                          {p.daily === "CHECKED" ? <CheckSquare size={18} /> : <Square size={18} />}
+                        </button>
+                        <button
+                          onClick={() => deleteProject(p.name)}
+                          className="p-2 rounded-lg bg-gray-700/50 text-gray-400 hover:bg-red-500/20 hover:text-red-400 transition-all duration-200"
+                          title="Hapus Project"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
                     </div>
 
-                    <h3 className="text-lg font-bold text-cyan-400 mb-3 mt-4">{p.name}</h3>
-
                     {p.tags && Array.isArray(p.tags) && p.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mb-3">
+                      <div className="flex flex-wrap gap-2 mb-4">
                         {p.tags.map((tagId) => {
                           const tag = AVAILABLE_TAGS.find((t) => t.id === tagId);
                           return tag ? (
                             <span
                               key={tagId}
-                              className={`${tag.color} text-white text-xs px-2 py-0.5 rounded-full font-semibold`}
+                              className={`${tag.color} text-white text-xs px-3 py-1 rounded-full font-semibold shadow-lg`}
                             >
                               {tag.label}
                             </span>
@@ -634,27 +644,100 @@ function TrackerPageFullScreen({ onLogout }) {
                     )}
 
                     {p.notes && (
-                      <div className="mb-3 p-2 bg-gray-800/50 rounded-lg border border-gray-700">
-                        <p className="flex items-start gap-2 text-sm text-gray-300">
-                          <StickyNote size={14} className="mt-0.5 text-yellow-400 flex-shrink-0" />
-                          <span className="italic">{p.notes}</span>
+                      <div className="mb-4 p-3 bg-gradient-to-br from-yellow-500/10 to-orange-500/10 rounded-xl border border-yellow-500/20">
+                        <p className="flex items-start gap-2 text-sm text-gray-200">
+                          <StickyNote size={16} className="mt-0.5 text-yellow-400 flex-shrink-0" />
+                          <span className="italic leading-relaxed">{p.notes}</span>
                         </p>
                       </div>
                     )}
 
-                    {p.twitter && <p className="flex items-center gap-2 text-blue-400 text-sm mb-1"><Twitter size={16}/><span>{hideData?"••••":p.twitter}</span></p>}
-                    {p.discord && <p className="flex items-center gap-2 text-indigo-400 text-sm mb-1"><MessageCircle size={16}/><span>{hideData?"••••":p.discord}</span></p>}
-                    {p.telegram && <p className="flex items-center gap-2 text-sky-400 text-sm mb-1"><Send size={16}/><span>{hideData?"••••":p.telegram}</span></p>}
-                    {p.wallet && <p className="flex items-center gap-2 text-yellow-400 break-all text-sm mb-1"><Wallet size={16}/><span>{hideData?"••••":p.wallet}</span></p>}
-                    {p.email && <p className="flex items-center gap-2 text-pink-400 text-sm mb-1"><Mail size={16}/><span>{hideData?"••••":p.email}</span></p>}
-                    {p.github && <p className="flex items-center gap-2 text-gray-300 text-sm mb-1"><Github size={16}/><span>{hideData?"••••":p.github}</span></p>}
-                    {p.website && (
-                      <p className="flex items-center gap-2 text-blue-400 text-sm mb-1">
-                        <Globe size={16}/>
-                        <a href={p.website} target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-300 break-all">
-                          {p.website}
-                        </a>
-                      </p>
+                    <div className="border-t border-gray-700/50 my-4"></div>
+
+                    <div className="space-y-3">
+                      {p.twitter && (
+                        <div className="flex items-center gap-3 group/item hover:bg-blue-500/5 p-2 rounded-lg transition-colors">
+                          <div className="p-1.5 bg-blue-500/10 rounded-lg group-hover/item:bg-blue-500/20 transition-colors">
+                            <Twitter size={14} className="text-blue-400"/>
+                          </div>
+                          <span className="text-sm text-gray-300 font-mono truncate">{hideData ? "••••••" : p.twitter}</span>
+                        </div>
+                      )}
+                      
+                      {p.discord && (
+                        <div className="flex items-center gap-3 group/item hover:bg-indigo-500/5 p-2 rounded-lg transition-colors">
+                          <div className="p-1.5 bg-indigo-500/10 rounded-lg group-hover/item:bg-indigo-500/20 transition-colors">
+                            <MessageCircle size={14} className="text-indigo-400"/>
+                          </div>
+                          <span className="text-sm text-gray-300 font-mono truncate">{hideData ? "••••••" : p.discord}</span>
+                        </div>
+                      )}
+                      
+                      {p.telegram && (
+                        <div className="flex items-center gap-3 group/item hover:bg-sky-500/5 p-2 rounded-lg transition-colors">
+                          <div className="p-1.5 bg-sky-500/10 rounded-lg group-hover/item:bg-sky-500/20 transition-colors">
+                            <Send size={14} className="text-sky-400"/>
+                          </div>
+                          <span className="text-sm text-gray-300 font-mono truncate">{hideData ? "••••••" : p.telegram}</span>
+                        </div>
+                      )}
+                      
+                      {p.wallet && (
+                        <div className="flex items-center gap-3 group/item hover:bg-yellow-500/5 p-2 rounded-lg transition-colors">
+                          <div className="p-1.5 bg-yellow-500/10 rounded-lg group-hover/item:bg-yellow-500/20 transition-colors">
+                            <Wallet size={14} className="text-yellow-400"/>
+                          </div>
+                          <span className="text-xs text-gray-300 font-mono break-all">{hideData ? "••••••••••••••" : p.wallet}</span>
+                        </div>
+                      )}
+                      
+                      {p.email && (
+                        <div className="flex items-center gap-3 group/item hover:bg-pink-500/5 p-2 rounded-lg transition-colors">
+                          <div className="p-1.5 bg-pink-500/10 rounded-lg group-hover/item:bg-pink-500/20 transition-colors">
+                            <Mail size={14} className="text-pink-400"/>
+                          </div>
+                          <span className="text-sm text-gray-300 font-mono truncate">{hideData ? "••••••" : p.email}</span>
+                        </div>
+                      )}
+                      
+                      {p.github && (
+                        <div className="flex items-center gap-3 group/item hover:bg-gray-500/5 p-2 rounded-lg transition-colors">
+                          <div className="p-1.5 bg-gray-500/10 rounded-lg group-hover/item:bg-gray-500/20 transition-colors">
+                            <Github size={14} className="text-gray-300"/>
+                          </div>
+                          <span className="text-sm text-gray-300 font-mono truncate">{hideData ? "••••••" : p.github}</span>
+                        </div>
+                      )}
+                      
+                      {p.website && (
+                        <div className="flex items-center gap-3 group/item hover:bg-blue-500/5 p-2 rounded-lg transition-colors">
+                          <div className="p-1.5 bg-blue-500/10 rounded-lg group-hover/item:bg-blue-500/20 transition-colors">
+                            <Globe size={14} className="text-blue-400"/>
+                          </div>
+                          <a 
+                            href={p.website} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-sm text-blue-400 hover:text-blue-300 underline truncate transition-colors"
+                          >
+                            {p.website}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+
+                    {p.lastupdate && (
+                      <div className="mt-4 pt-3 border-t border-gray-700/30">
+                        <p className="text-xs text-gray-500 text-center">
+                          Last update: {new Date(p.lastupdate).toLocaleDateString('id-ID', { 
+                            day: 'numeric', 
+                            month: 'short', 
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
                     )}
                   </div>
                 ))}
@@ -877,5 +960,3 @@ function TrackerPageFullScreen({ onLogout }) {
 }
 
 export default TrackerPageFullScreen;
-
-
