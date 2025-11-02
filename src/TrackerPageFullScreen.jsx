@@ -26,6 +26,7 @@ import {
   Newspaper,
   LayoutDashboard,
   Trash2,
+  Zap,
 } from "lucide-react";
 import {
   LineChart,
@@ -100,6 +101,7 @@ function TrackerPageFullScreen({ onLogout }) {
     twitter: "",
     discord: "",
     telegram: "",
+    farcaster: "",
     wallet: "",
     email: "",
     github: "",
@@ -191,6 +193,7 @@ function TrackerPageFullScreen({ onLogout }) {
           twitter: "",
           discord: "",
           telegram: "",
+          farcaster: "",
           wallet: "",
           email: "",
           github: "",
@@ -384,6 +387,7 @@ function TrackerPageFullScreen({ onLogout }) {
     { id: "gas", label: "Gas Tracker", icon: Fuel, color: "text-orange-400" },
     { id: "roi", label: "ROI Calculator", icon: Calculator, color: "text-green-400" },
     { id: "news", label: "News Feed", icon: Newspaper, color: "text-yellow-400" },
+    { id: "balance", label: "Balance Checker", icon: Wallet, color: "text-blue-400" },
   ];
 
   return (
@@ -459,22 +463,23 @@ function TrackerPageFullScreen({ onLogout }) {
           sidebarOpen && !isMobile ? "ml-64" : "ml-0"
         }`}
       >
-        <div className="sticky top-0 z-30 bg-gray-900/90 backdrop-blur-md border-b border-gray-700 px-6 py-4">
-          <div className="flex flex-wrap justify-between items-center gap-4">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+        <div className="sticky top-0 z-30 bg-gray-900/90 backdrop-blur-md border-b border-gray-700 px-4 md:px-6 py-3 md:py-4">
+          <div className="flex flex-wrap justify-between items-center gap-3 md:gap-4">
+            <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
               {activeView === "projects" && "📦 My Projects"}
               {activeView === "analytics" && "📊 Analytics Dashboard"}
               {activeView === "gas" && "⛽ Gas Tracker"}
               {activeView === "roi" && "💹 ROI Calculator"}
               {activeView === "news" && "📰 News Feed"}
+              {activeView === "balance" && "💰 Balance Checker"}
             </h1>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 md:gap-3 flex-wrap">
               {activeView === "projects" && (
                 <>
                   <div className="relative">
-                    <button className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg transition text-sm">
-                      <Filter size={16} />
+                    <button className="flex items-center gap-1 md:gap-2 bg-gray-800 hover:bg-gray-700 px-2 md:px-4 py-1.5 md:py-2 rounded-lg transition text-xs md:text-sm">
+                      <Filter size={14} />
                       <select
                         value={filterTag}
                         onChange={(e) => setFilterTag(e.target.value)}
@@ -495,22 +500,22 @@ function TrackerPageFullScreen({ onLogout }) {
                     placeholder="🔍 Search..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 w-48 text-sm"
+                    className="px-2 md:px-3 py-1.5 md:py-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 w-28 md:w-48 text-xs md:text-sm"
                   />
 
                   <button
                     onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-                    className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-lg text-sm"
+                    className="flex items-center gap-1 md:gap-2 bg-gray-800 hover:bg-gray-700 px-2 md:px-3 py-1.5 md:py-2 rounded-lg text-xs md:text-sm"
                   >
-                    <ArrowUpDown size={16} />
-                    {sortOrder === "asc" ? "A-Z" : "Z-A"}
+                    <ArrowUpDown size={14} />
+                    <span className="hidden sm:inline">{sortOrder === "asc" ? "A-Z" : "Z-A"}</span>
                   </button>
 
                   <button
                     onClick={() => setHideData(!hideData)}
-                    className="bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-lg flex items-center gap-2 text-sm"
+                    className="bg-gray-800 hover:bg-gray-700 px-2 md:px-3 py-1.5 md:py-2 rounded-lg flex items-center gap-1 md:gap-2 text-xs md:text-sm"
                   >
-                    {hideData ? <Eye size={18} /> : <EyeOff size={18} />}
+                    {hideData ? <Eye size={16} /> : <EyeOff size={16} />}
                   </button>
                 </>
               )}
@@ -521,12 +526,12 @@ function TrackerPageFullScreen({ onLogout }) {
         <div className="p-6">
           {activeView === "projects" && (
             <div className="space-y-8">
-              <div className="bg-gray-900/60 backdrop-blur-md p-6 rounded-2xl border border-gray-700 shadow-lg">
-                <h2 className="text-xl font-semibold mb-4 text-cyan-300">
+              <div className="bg-gray-900/60 backdrop-blur-md p-4 md:p-6 rounded-2xl border border-gray-700 shadow-lg">
+                <h2 className="text-lg md:text-xl font-semibold mb-4 text-cyan-300">
                   ➕ Tambah Project Baru
                 </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                  {["name", "twitter", "discord", "telegram", "wallet", "email", "github", "website"].map(
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {["name", "twitter", "discord", "telegram", "farcaster", "wallet", "email", "github", "website"].map(
                     (field) => (
                       <input
                         key={field}
@@ -536,7 +541,7 @@ function TrackerPageFullScreen({ onLogout }) {
                         onChange={(e) =>
                           setFormData({ ...formData, [field]: e.target.value })
                         }
-                        className="p-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white w-full"
+                        className="p-2 md:p-3 text-sm md:text-base rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white w-full"
                       />
                     )
                   )}
@@ -682,6 +687,15 @@ function TrackerPageFullScreen({ onLogout }) {
                         </div>
                       )}
                       
+                      {p.farcaster && (
+                        <div className="flex items-center gap-3 group/item hover:bg-purple-500/5 p-2 rounded-lg transition-colors">
+                          <div className="p-1.5 bg-purple-500/10 rounded-lg group-hover/item:bg-purple-500/20 transition-colors">
+                            <Zap size={14} className="text-purple-400"/>
+                          </div>
+                          <span className="text-sm text-gray-300 font-mono truncate">{hideData ? "••••••" : p.farcaster}</span>
+                        </div>
+                      )}
+                      
                       {p.wallet && (
                         <div className="flex items-center gap-3 group/item hover:bg-yellow-500/5 p-2 rounded-lg transition-colors">
                           <div className="p-1.5 bg-yellow-500/10 rounded-lg group-hover/item:bg-yellow-500/20 transition-colors">
@@ -818,7 +832,11 @@ function TrackerPageFullScreen({ onLogout }) {
                   ))}
                 </div>
               </div>
+            </div>
+          )}
 
+          {activeView === "balance" && (
+            <div className="max-w-7xl mx-auto">
               <div className="bg-gray-900/60 backdrop-blur-md p-6 rounded-2xl border border-gray-700 shadow-lg">
                 <h2 className="text-2xl font-bold mb-4 text-center bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
                   💰 Bulk Wallet Balance Checker
@@ -829,7 +847,7 @@ function TrackerPageFullScreen({ onLogout }) {
                     <button
                       key={net}
                       onClick={() => setSelectedNetwork(net)}
-                      className={`px-4 py-2 rounded-lg ${
+                      className={`px-4 py-2 rounded-lg text-sm md:text-base transition ${
                         selectedNetwork === net
                           ? "bg-cyan-600"
                           : "bg-gray-800 hover:bg-gray-700"
@@ -842,17 +860,17 @@ function TrackerPageFullScreen({ onLogout }) {
 
                 <textarea
                   className="w-full bg-gray-800 p-3 rounded-lg border border-gray-700 text-white resize-none focus:border-cyan-400 focus:outline-none"
-                  placeholder="Paste wallet addresses (one per line)"
-                  rows="6"
+                  placeholder="Paste wallet addresses (one per line)&#10;Example:&#10;0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb&#10;0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
+                  rows="8"
                   value={addresses}
                   onChange={(e) => setAddresses(e.target.value)}
                 ></textarea>
 
-                <div className="flex items-center justify-between mt-4">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4">
                   <button
                     onClick={checkBalances}
                     disabled={balanceLoading}
-                    className={`px-6 py-2 rounded-lg font-semibold transition ${
+                    className={`w-full sm:w-auto px-6 py-3 rounded-lg font-semibold transition ${
                       balanceLoading
                         ? "bg-gray-600 cursor-not-allowed"
                         : "bg-green-600 hover:bg-green-700"
@@ -862,7 +880,7 @@ function TrackerPageFullScreen({ onLogout }) {
                   </button>
                   {balances.length > 0 && (
                     <span className="text-sm text-gray-400">
-                      Total: {balances.length} address(es)
+                      Total: {balances.length} address(es) checked
                     </span>
                   )}
                 </div>
@@ -878,37 +896,39 @@ function TrackerPageFullScreen({ onLogout }) {
                         Clear
                       </button>
                     </div>
-                    <table className="w-full text-left text-sm">
-                      <thead>
-                        <tr className="text-cyan-400 border-b border-gray-700">
-                          <th className="p-2">#</th>
-                          <th className="p-2">Address</th>
-                          <th className="p-2 text-right">Balance</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {balances.map((b, i) => (
-                          <tr key={i} className="border-b border-gray-700 hover:bg-gray-700/30">
-                            <td className="p-2 text-gray-400">{i + 1}</td>
-                            <td className="p-2 break-all font-mono text-xs">{b.address}</td>
-                            <td className={`p-2 text-right font-semibold ${
-                              b.balance.includes('Error') || b.balance.includes('Invalid') 
-                                ? 'text-red-400' 
-                                : parseFloat(b.balance) > 0 
-                                ? 'text-green-400' 
-                                : 'text-gray-400'
-                            }`}>
-                              {b.balance.includes('Error') || b.balance.includes('Invalid') 
-                                ? b.balance 
-                                : `${b.balance} ${selectedNetwork === 'BSC' ? 'BNB' : selectedNetwork === 'Polygon' ? 'MATIC' : 'ETH'}`
-                              }
-                            </td>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm">
+                        <thead>
+                          <tr className="text-cyan-400 border-b border-gray-700">
+                            <th className="p-2">#</th>
+                            <th className="p-2">Address</th>
+                            <th className="p-2 text-right">Balance</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {balances.map((b, i) => (
+                            <tr key={i} className="border-b border-gray-700 hover:bg-gray-700/30">
+                              <td className="p-2 text-gray-400">{i + 1}</td>
+                              <td className="p-2 break-all font-mono text-xs">{b.address}</td>
+                              <td className={`p-2 text-right font-semibold ${
+                                b.balance.includes('Error') || b.balance.includes('Invalid') 
+                                  ? 'text-red-400' 
+                                  : parseFloat(b.balance) > 0 
+                                  ? 'text-green-400' 
+                                  : 'text-gray-400'
+                              }`}>
+                                {b.balance.includes('Error') || b.balance.includes('Invalid') 
+                                  ? b.balance 
+                                  : `${b.balance} ${selectedNetwork === 'BSC' ? 'BNB' : selectedNetwork === 'Polygon' ? 'MATIC' : 'ETH'}`
+                                }
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                     <div className="mt-3 text-xs text-gray-400 text-right">
-                      Total: {balances
+                      Total Balance: {balances
                         .filter(b => !b.balance.includes('Error') && !b.balance.includes('Invalid'))
                         .reduce((sum, b) => sum + parseFloat(b.balance), 0)
                         .toFixed(6)} {selectedNetwork === 'BSC' ? 'BNB' : selectedNetwork === 'Polygon' ? 'MATIC' : 'ETH'}
@@ -960,3 +980,4 @@ function TrackerPageFullScreen({ onLogout }) {
 }
 
 export default TrackerPageFullScreen;
+
