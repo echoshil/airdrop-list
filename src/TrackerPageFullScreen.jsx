@@ -389,6 +389,7 @@ function TrackerPageFullScreen({ onLogout }) {
 
   const sidebarMenuItems = [
     { id: "projects", label: "Projects", icon: LayoutDashboard, color: "text-cyan-400" },
+    { id: "trading", label: "Trading", icon: Zap, color: "text-green-500" },
     { id: "analytics", label: "Analytics", icon: Activity, color: "text-purple-400" },
     { id: "gas", label: "Gas Tracker", icon: Fuel, color: "text-orange-400" },
     { id: "roi", label: "ROI Calculator", icon: Calculator, color: "text-green-400" },
@@ -473,6 +474,7 @@ function TrackerPageFullScreen({ onLogout }) {
           <div className="flex flex-wrap justify-between items-center gap-3 md:gap-4">
             <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
               {activeView === "projects" && "📦 My Projects"}
+              {activeView === "trading" && "⚡ DeDoo Trading Platform"}
               {activeView === "analytics" && "📊 Analytics Dashboard"}
               {activeView === "gas" && "⛽ Gas Tracker"}
               {activeView === "roi" && "💹 ROI Calculator"}
@@ -545,6 +547,77 @@ function TrackerPageFullScreen({ onLogout }) {
         </div>
 
         <div className="p-6">
+          {activeView === "trading" && (
+            <div className="max-w-full mx-auto">
+              <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-xl p-6 rounded-3xl border border-gray-700/50 shadow-2xl">
+                <div className="mb-6 text-center">
+                  <h2 className="text-3xl font-bold bg-gradient-to-r from-green-400 via-blue-500 to-purple-500 bg-clip-text text-transparent mb-2">
+                    ⚡ DeDoo Trading Platform
+                  </h2>
+                  <p className="text-gray-400 text-sm">
+                    Trade crypto with lightning speed & zero fees
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="bg-gradient-to-br from-green-500/10 to-emerald-600/10 p-4 rounded-xl border border-green-500/30">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="p-2 bg-green-500/20 rounded-lg">
+                        <Zap className="text-green-400" size={20} />
+                      </div>
+                      <h3 className="text-green-400 font-semibold">Lightning Fast</h3>
+                    </div>
+                    <p className="text-gray-300 text-sm">Execute trades in milliseconds with our optimized engine</p>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-blue-500/10 to-cyan-600/10 p-4 rounded-xl border border-blue-500/30">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="p-2 bg-blue-500/20 rounded-lg">
+                        <Wallet className="text-blue-400" size={20} />
+                      </div>
+                      <h3 className="text-blue-400 font-semibold">Low Fees</h3>
+                    </div>
+                    <p className="text-gray-300 text-sm">Trade with minimal fees and maximum profit potential</p>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-purple-500/10 to-pink-600/10 p-4 rounded-xl border border-purple-500/30">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="p-2 bg-purple-500/20 rounded-lg">
+                        <Activity className="text-purple-400" size={20} />
+                      </div>
+                      <h3 className="text-purple-400 font-semibold">Real-time Data</h3>
+                    </div>
+                    <p className="text-gray-300 text-sm">Get live market data and advanced trading charts</p>
+                  </div>
+                </div>
+
+                <div className="relative w-full" style={{ height: 'calc(100vh - 350px)', minHeight: '600px' }}>
+                  <div className="absolute inset-0 rounded-xl overflow-hidden border-2 border-gray-700/50 shadow-2xl">
+                    <iframe
+                      src="https://trade.dedoo.xyz/"
+                      className="w-full h-full"
+                      title="DeDoo Trading Platform"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      loading="lazy"
+                    />
+                  </div>
+                </div>
+                
+                <div className="mt-6 flex items-center justify-center gap-3 text-sm text-gray-400">
+                  <Globe size={16} />
+                  <a 
+                    href="https://trade.dedoo.xyz/" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-cyan-400 hover:text-cyan-300 underline transition"
+                  >
+                    Open in New Tab →
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeView === "projects" && (
             <div className="space-y-8">
               <div className="bg-gray-900/60 backdrop-blur-md p-4 md:p-6 rounded-2xl border border-gray-700 shadow-lg">
@@ -1001,4 +1074,3 @@ function TrackerPageFullScreen({ onLogout }) {
 }
 
 export default TrackerPageFullScreen;
-
