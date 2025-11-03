@@ -401,30 +401,6 @@ function TrackerPageFullScreen({ onLogout }) {
     <div className="min-h-screen text-white relative overflow-hidden bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
       <NeonParticles />
 
-      {/* RUNNING TEXT ANIMATION */}
-      <style>{`
-        @keyframes scroll-left {
-          0% {
-            transform: translateX(100%);
-          }
-          100% {
-            transform: translateX(-100%);
-          }
-        }
-        
-        .animate-scroll {
-          animation: scroll-left 20s linear infinite;
-        }
-        
-        .running-text {
-          text-shadow: 
-            0 0 10px rgba(6, 182, 212, 0.8),
-            0 0 20px rgba(6, 182, 212, 0.6),
-            0 0 30px rgba(6, 182, 212, 0.4),
-            0 0 40px rgba(139, 92, 246, 0.3);
-        }
-      `}</style>
-
       <div
         className={`fixed top-0 left-0 h-full bg-gray-900/95 backdrop-blur-md border-r border-gray-700 z-50 transition-all duration-300 ${
           sidebarOpen ? "w-64" : "w-0"
@@ -666,32 +642,6 @@ function TrackerPageFullScreen({ onLogout }) {
 
           {activeView === "projects" && (
             <div className="space-y-8">
-              {/* RUNNING TEXT BANNER */}
-              <div className="relative overflow-hidden bg-gradient-to-r from-gray-900/80 via-gray-800/80 to-gray-900/80 backdrop-blur-md rounded-2xl border border-gray-700/50 py-6">
-                <div className="flex whitespace-nowrap">
-                  <div className="animate-scroll">
-                    <span className="text-5xl md:text-6xl font-black running-text bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent mx-8">
-                      My Projects 🚀
-                    </span>
-                    <span className="text-5xl md:text-6xl font-black running-text bg-gradient-to-r from-green-400 via-blue-500 to-purple-600 bg-clip-text text-transparent mx-8">
-                      Track Your Airdrops ✨
-                    </span>
-                    <span className="text-5xl md:text-6xl font-black running-text bg-gradient-to-r from-pink-400 via-red-500 to-yellow-500 bg-clip-text text-transparent mx-8">
-                      Stay Updated 📊
-                    </span>
-                    <span className="text-5xl md:text-6xl font-black running-text bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent mx-8">
-                      My Projects 🚀
-                    </span>
-                    <span className="text-5xl md:text-6xl font-black running-text bg-gradient-to-r from-green-400 via-blue-500 to-purple-600 bg-clip-text text-transparent mx-8">
-                      Track Your Airdrops ✨
-                    </span>
-                    <span className="text-5xl md:text-6xl font-black running-text bg-gradient-to-r from-pink-400 via-red-500 to-yellow-500 bg-clip-text text-transparent mx-8">
-                      Stay Updated 📊
-                    </span>
-                  </div>
-                </div>
-              </div>
-
               <div className="bg-gray-900/60 backdrop-blur-md p-4 md:p-6 rounded-2xl border border-gray-700 shadow-lg">
                 <h2 className="text-lg md:text-xl font-semibold mb-4 text-cyan-300">
                   ➕ Tambah Project Baru
