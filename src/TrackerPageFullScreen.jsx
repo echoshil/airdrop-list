@@ -491,11 +491,15 @@ function TrackerPageFullScreen({ onLogout }) {
                       <select
                         value={filterTag}
                         onChange={(e) => setFilterTag(e.target.value)}
-                        className="bg-transparent text-white outline-none cursor-pointer"
+                        className="bg-gray-800 text-white outline-none cursor-pointer border-none appearance-none pr-2"
+                        style={{
+                          WebkitAppearance: 'none',
+                          MozAppearance: 'none'
+                        }}
                       >
-                        <option value="all">All Tags</option>
+                        <option value="all" className="bg-gray-800 text-white">All Tags</option>
                         {AVAILABLE_TAGS.map((tag) => (
-                          <option key={tag.id} value={tag.id}>
+                          <option key={tag.id} value={tag.id} className="bg-gray-800 text-white">
                             {tag.label}
                           </option>
                         ))}
@@ -509,11 +513,15 @@ function TrackerPageFullScreen({ onLogout }) {
                       <select
                         value={filterDaily}
                         onChange={(e) => setFilterDaily(e.target.value)}
-                        className="bg-transparent text-white outline-none cursor-pointer"
+                        className="bg-gray-800 text-white outline-none cursor-pointer border-none appearance-none pr-2"
+                        style={{
+                          WebkitAppearance: 'none',
+                          MozAppearance: 'none'
+                        }}
                       >
-                        <option value="all">All Projects</option>
-                        <option value="checked">✅ Daily Checked</option>
-                        <option value="unchecked">⬜ Daily Unchecked</option>
+                        <option value="all" className="bg-gray-800 text-white">All Projects</option>
+                        <option value="checked" className="bg-gray-800 text-white">✅ Daily Checked</option>
+                        <option value="unchecked" className="bg-gray-800 text-white">⬜ Daily Unchecked</option>
                       </select>
                     </button>
                   </div>
@@ -546,53 +554,65 @@ function TrackerPageFullScreen({ onLogout }) {
           </div>
         </div>
 
-        <div className="p-6">
+        <div className="p-4 md:p-6">
           {activeView === "trading" && (
-            <div className="max-w-full mx-auto">
-              <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-xl p-6 rounded-3xl border border-gray-700/50 shadow-2xl">
-                <div className="mb-6 text-center">
-                  <h2 className="text-3xl font-bold bg-gradient-to-r from-green-400 via-blue-500 to-purple-500 bg-clip-text text-transparent mb-2">
-                    ⚡ DeDoo Trading Platform
+            <div className="max-w-full mx-auto space-y-6">
+              {/* HEADER BESAR */}
+              <div className="text-center py-8 bg-gradient-to-br from-gray-900/60 to-gray-800/60 backdrop-blur-md rounded-3xl border border-gray-700/50">
+                <div className="flex items-center justify-center gap-4 mb-3">
+                  <Zap className="text-green-400" size={48} />
+                  <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-green-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">
+                    DeDoo Trading Platform
                   </h2>
-                  <p className="text-gray-400 text-sm">
-                    Trade crypto with lightning speed & zero fees
+                </div>
+                <p className="text-gray-300 text-lg">
+                  Trade crypto with lightning speed & zero fees
+                </p>
+              </div>
+
+              {/* 3 FEATURE CARDS */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-gradient-to-br from-green-500/20 to-emerald-600/20 p-6 rounded-2xl border-2 border-green-500/40 hover:border-green-400/60 transition-all shadow-xl hover:shadow-green-500/20">
+                  <div className="flex items-center gap-4 mb-3">
+                    <div className="p-3 bg-green-500/30 rounded-xl">
+                      <Zap className="text-green-300" size={28} />
+                    </div>
+                    <h3 className="text-xl font-bold text-green-300">Lightning Fast</h3>
+                  </div>
+                  <p className="text-gray-200 text-base leading-relaxed">
+                    Execute trades in milliseconds with our optimized engine
                   </p>
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  <div className="bg-gradient-to-br from-green-500/10 to-emerald-600/10 p-4 rounded-xl border border-green-500/30">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="p-2 bg-green-500/20 rounded-lg">
-                        <Zap className="text-green-400" size={20} />
-                      </div>
-                      <h3 className="text-green-400 font-semibold">Lightning Fast</h3>
+
+                <div className="bg-gradient-to-br from-blue-500/20 to-cyan-600/20 p-6 rounded-2xl border-2 border-blue-500/40 hover:border-blue-400/60 transition-all shadow-xl hover:shadow-blue-500/20">
+                  <div className="flex items-center gap-4 mb-3">
+                    <div className="p-3 bg-blue-500/30 rounded-xl">
+                      <Wallet className="text-blue-300" size={28} />
                     </div>
-                    <p className="text-gray-300 text-sm">Execute trades in milliseconds with our optimized engine</p>
+                    <h3 className="text-xl font-bold text-blue-300">Low Fees</h3>
                   </div>
-                  
-                  <div className="bg-gradient-to-br from-blue-500/10 to-cyan-600/10 p-4 rounded-xl border border-blue-500/30">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="p-2 bg-blue-500/20 rounded-lg">
-                        <Wallet className="text-blue-400" size={20} />
-                      </div>
-                      <h3 className="text-blue-400 font-semibold">Low Fees</h3>
-                    </div>
-                    <p className="text-gray-300 text-sm">Trade with minimal fees and maximum profit potential</p>
-                  </div>
-                  
-                  <div className="bg-gradient-to-br from-purple-500/10 to-pink-600/10 p-4 rounded-xl border border-purple-500/30">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="p-2 bg-purple-500/20 rounded-lg">
-                        <Activity className="text-purple-400" size={20} />
-                      </div>
-                      <h3 className="text-purple-400 font-semibold">Real-time Data</h3>
-                    </div>
-                    <p className="text-gray-300 text-sm">Get live market data and advanced trading charts</p>
-                  </div>
+                  <p className="text-gray-200 text-base leading-relaxed">
+                    Trade with minimal fees and maximum profit potential
+                  </p>
                 </div>
 
-                <div className="relative w-full" style={{ height: 'calc(100vh - 350px)', minHeight: '600px' }}>
-                  <div className="absolute inset-0 rounded-xl overflow-hidden border-2 border-gray-700/50 shadow-2xl">
+                <div className="bg-gradient-to-br from-purple-500/20 to-pink-600/20 p-6 rounded-2xl border-2 border-purple-500/40 hover:border-purple-400/60 transition-all shadow-xl hover:shadow-purple-500/20">
+                  <div className="flex items-center gap-4 mb-3">
+                    <div className="p-3 bg-purple-500/30 rounded-xl">
+                      <Activity className="text-purple-300" size={28} />
+                    </div>
+                    <h3 className="text-xl font-bold text-purple-300">Real-time Data</h3>
+                  </div>
+                  <p className="text-gray-200 text-base leading-relaxed">
+                    Get live market data and advanced trading charts
+                  </p>
+                </div>
+              </div>
+
+              {/* IFRAME CONTAINER */}
+              <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-xl p-6 rounded-3xl border-2 border-gray-700/50 shadow-2xl">
+                <div className="relative w-full" style={{ height: 'calc(100vh - 450px)', minHeight: '650px' }}>
+                  <div className="absolute inset-0 rounded-2xl overflow-hidden border-2 border-gray-600/50 shadow-2xl">
                     <iframe
                       src="https://trade.dedoo.xyz/"
                       className="w-full h-full"
@@ -602,16 +622,18 @@ function TrackerPageFullScreen({ onLogout }) {
                     />
                   </div>
                 </div>
-                
-                <div className="mt-6 flex items-center justify-center gap-3 text-sm text-gray-400">
-                  <Globe size={16} />
+
+                {/* OPEN IN NEW TAB BUTTON */}
+                <div className="mt-6 flex items-center justify-center">
                   <a 
                     href="https://trade.dedoo.xyz/" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-cyan-400 hover:text-cyan-300 underline transition"
+                    className="flex items-center gap-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 px-8 py-3 rounded-xl font-semibold text-white shadow-lg hover:shadow-cyan-500/50 transition-all transform hover:scale-105"
                   >
-                    Open in New Tab →
+                    <Globe size={20} />
+                    <span>Open in New Tab</span>
+                    <ExternalLink size={20} />
                   </a>
                 </div>
               </div>
