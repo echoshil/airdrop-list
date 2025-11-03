@@ -91,6 +91,7 @@ function TrackerPageFullScreen({ onLogout }) {
   const [balanceLoading, setBalanceLoading] = useState(false);
   const [selectedTags, setSelectedTags] = useState([]);
   const [filterTag, setFilterTag] = useState("all");
+  const [filterDaily, setFilterDaily] = useState("all");
   
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeView, setActiveView] = useState("projects");
@@ -304,11 +305,16 @@ function TrackerPageFullScreen({ onLogout }) {
         filterTag === "all" ||
         (hasTags && p.tags.includes(filterTag));
       
+      const matchesDaily =
+        filterDaily === "all" ||
+        (filterDaily === "checked" && p.daily === "CHECKED") ||
+        (filterDaily === "unchecked" && p.daily !== "CHECKED");
+      
       if (filterTag !== "all") {
         console.log(`Project: ${p.name}, Tags: ${JSON.stringify(p.tags)}, FilterTag: ${filterTag}, Matches: ${matchesTags}`);
       }
       
-      return matchesSearch && matchesTags;
+      return matchesSearch && matchesTags && matchesDaily;
     })
     .sort((a, b) => {
       const A = (a.name || "").toLowerCase();
@@ -479,7 +485,7 @@ function TrackerPageFullScreen({ onLogout }) {
                 <>
                   <div className="relative">
                     <button className="flex items-center gap-1 md:gap-2 bg-gray-800 hover:bg-gray-700 px-2 md:px-4 py-1.5 md:py-2 rounded-lg transition text-xs md:text-sm">
-                      <Filter size={14} />
+                      <Tag size={14} />
                       <select
                         value={filterTag}
                         onChange={(e) => setFilterTag(e.target.value)}
@@ -491,6 +497,21 @@ function TrackerPageFullScreen({ onLogout }) {
                             {tag.label}
                           </option>
                         ))}
+                      </select>
+                    </button>
+                  </div>
+
+                  <div className="relative">
+                    <button className="flex items-center gap-1 md:gap-2 bg-gray-800 hover:bg-gray-700 px-2 md:px-4 py-1.5 md:py-2 rounded-lg transition text-xs md:text-sm">
+                      <CheckSquare size={14} />
+                      <select
+                        value={filterDaily}
+                        onChange={(e) => setFilterDaily(e.target.value)}
+                        className="bg-transparent text-white outline-none cursor-pointer"
+                      >
+                        <option value="all">All Projects</option>
+                        <option value="checked">✅ Daily Checked</option>
+                        <option value="unchecked">⬜ Daily Unchecked</option>
                       </select>
                     </button>
                   </div>
@@ -980,3 +1001,4 @@ function TrackerPageFullScreen({ onLogout }) {
 }
 
 export default TrackerPageFullScreen;
+
