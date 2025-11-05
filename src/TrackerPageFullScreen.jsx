@@ -89,6 +89,9 @@ function TrackerPageFullScreen({ onLogout }) {
   const [addresses, setAddresses] = useState("");
   const [balances, setBalances] = useState([]);
   const [balanceLoading, setBalanceLoading] = useState(false);
+  const [customRpcUrl, setCustomRpcUrl] = useState("");
+  const [checkType, setCheckType] = useState("native");
+  const [tokenContractAddress, setTokenContractAddress] = useState("");
   const [selectedTags, setSelectedTags] = useState([]);
   const [filterTag, setFilterTag] = useState("all");
   const [filterDaily, setFilterDaily] = useState("all");
@@ -381,6 +384,113 @@ function TrackerPageFullScreen({ onLogout }) {
     } catch (err) {
       console.error("Provider error:", err);
       alert(`⚠️ Gagal terhubung ke ${selectedNetwork} network. Coba lagi!`);
+    } finally {
+      setBalances(result);
+      setBalanceLoading(false);
+    }
+  };
+
+  const checkEVMBalances = async () => {
+    const list = addresses.split(/[\n,\s]+/).filter(Boolean);
+    if (list.length === 0) return alert("Masukkan address wallet!");
+    
+    if (!customRpcUrl) return alert("Masukkan RPC URL!");
+    
+    if (checkType === "token" && !tokenContractAddress) {
+      return alert("Masukkan contract address token!");
+    }
+    
+    setBalanceLoading(true);
+    setBalances([]);
+    const result = [];
+    
+    try {
+      const provider = new ethers.JsonRpcProvider(customRpcUrl);
+      
+      if (checkType === "native") {
+        for (const addr of list) {
+          try {
+            if (!ethers.isAddress(addr)) {
+              result.push({ 
+                address: addr, 
+                balance: "❌ Invalid Address" 
+              });
+              continue;
+            }
+            
+            const checksumAddr = ethers.getAddress(addr);
+            const bal = await provider.getBalance(checksumAddr);
+            const formattedBalance = parseFloat(ethers.formatEther(bal)).toFixed(6);
+            
+            result.push({ 
+              address: checksumAddr, 
+              balance: formattedBalance 
+            });
+          } catch (err) {
+            console.error(`Error checking ${addr}:`, err);
+            result.push({ 
+              address: addr, 
+              balance: "❌ Error" 
+            });
+          }
+        }
+      } else if (checkType === "token") {
+        if (!ethers.isAddress(tokenContractAddress)) {
+          alert("❌ Invalid token contract address!");
+          setBalanceLoading(false);
+          return;
+        }
+        
+        const tokenABI = [
+          "function balanceOf(address owner) view returns (uint256)",
+          "function decimals() view returns (uint8)",
+          "function symbol() view returns (string)"
+        ];
+        
+        try {
+          const tokenContract = new ethers.Contract(tokenContractAddress, tokenABI, provider);
+          const decimals = await tokenContract.decimals();
+          const symbol = await tokenContract.symbol();
+          
+          for (const addr of list) {
+            try {
+              if (!ethers.isAddress(addr)) {
+                result.push({ 
+                  address: addr, 
+                  balance: "❌ Invalid Address",
+                  symbol: symbol 
+                });
+                continue;
+              }
+              
+              const checksumAddr = ethers.getAddress(addr);
+              const bal = await tokenContract.balanceOf(checksumAddr);
+              const formattedBalance = parseFloat(ethers.formatUnits(bal, decimals)).toFixed(6);
+              
+              result.push({ 
+                address: checksumAddr, 
+                balance: formattedBalance,
+                symbol: symbol
+              });
+            } catch (err) {
+              console.error(`Error checking ${addr}:`, err);
+              result.push({ 
+                address: addr, 
+                balance: "❌ Error",
+                symbol: symbol
+              });
+            }
+          }
+        } catch (err) {
+          console.error("Token contract error:", err);
+          alert("⚠️ Gagal membaca token contract. Pastikan contract address benar!");
+          setBalanceLoading(false);
+          return;
+        }
+      }
+    } catch (err) {
+      console.error("Provider error:", err);
+      alert("⚠️ Gagal terhubung ke RPC URL. Pastikan URL benar dan mendukung jaringan EVM!");
     } finally {
       setBalances(result);
       setBalanceLoading(false);
@@ -952,10 +1062,150 @@ function TrackerPageFullScreen({ onLogout }) {
           )}
 
           {activeView === "balance" && (
-            <div className="max-w-7xl mx-auto">
+            <div className="max-w-7xl mx-auto space-y-6">
+              {/* EVM Native & Tokens Balance Checker */}
+              <div className="bg-gray-900/60 backdrop-blur-md p-6 rounded-2xl border border-gray-700 shadow-lg">
+                <h2 className="text-2xl font-bold mb-6 text-center bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
+                  🔷 EVM Native & Tokens Balance Checker
+                </h2>
+
+                <div className="space-y-4">
+                  {/* RPC URL Input */}
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">Input RPC URL</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. https://1.rpc.thirdweb.com"
+                      value={customRpcUrl}
+                      onChange={(e) => setCustomRpcUrl(e.target.value)}
+                      className="w-full bg-gray-800 p-3 rounded-lg border border-gray-700 text-white focus:border-cyan-400 focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Check Type Dropdown */}
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">Select Check Type</label>
+                    <select
+                      value={checkType}
+                      onChange={(e) => setCheckType(e.target.value)}
+                      className="w-full bg-gray-800 p-3 rounded-lg border border-gray-700 text-white focus:border-cyan-400 focus:outline-none cursor-pointer"
+                    >
+                      <option value="native">Check Native Balance</option>
+                      <option value="token">Check Token Balance</option>
+                    </select>
+                  </div>
+
+                  {/* Token Contract Address (only show if checkType is token) */}
+                  {checkType === "token" && (
+                    <div>
+                      <label className="block text-sm text-gray-400 mb-2">Token Contract Address</label>
+                      <input
+                        type="text"
+                        placeholder="0xabc...def"
+                        value={tokenContractAddress}
+                        onChange={(e) => setTokenContractAddress(e.target.value)}
+                        className="w-full bg-gray-800 p-3 rounded-lg border border-gray-700 text-white focus:border-cyan-400 focus:outline-none"
+                      />
+                    </div>
+                  )}
+
+                  {/* Wallet Addresses Input */}
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">Wallet Addresses (one per line)</label>
+                    <textarea
+                      className="w-full bg-gray-800 p-3 rounded-lg border border-gray-700 text-white resize-none focus:border-cyan-400 focus:outline-none"
+                      placeholder="Paste wallet addresses (one per line)&#10;Example:&#10;0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb&#10;0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
+                      rows="6"
+                      value={addresses}
+                      onChange={(e) => setAddresses(e.target.value)}
+                    ></textarea>
+                  </div>
+
+                  {/* Check Balance Button */}
+                  <button
+                    onClick={checkEVMBalances}
+                    disabled={balanceLoading}
+                    className={`w-full py-3 rounded-lg font-semibold text-lg transition ${
+                      balanceLoading
+                        ? "bg-gray-600 cursor-not-allowed"
+                        : "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
+                    }`}
+                  >
+                    {balanceLoading ? "⏳ Checking..." : "Check Balance"}
+                  </button>
+                </div>
+
+                {/* Results Table */}
+                {balances.length > 0 && (
+                  <div className="mt-6 bg-gray-800 rounded-lg p-4 overflow-x-auto">
+                    <div className="flex justify-between items-center mb-3">
+                      <h3 className="text-cyan-400 font-semibold">
+                        Results - {checkType === "native" ? "Native Balance" : "Token Balance"}
+                      </h3>
+                      <button
+                        onClick={() => setBalances([])}
+                        className="text-xs bg-red-600 hover:bg-red-700 px-3 py-1 rounded"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm">
+                        <thead>
+                          <tr className="text-cyan-400 border-b border-gray-700">
+                            <th className="p-2">#</th>
+                            <th className="p-2">Address</th>
+                            <th className="p-2 text-right">Balance</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {balances.map((b, i) => (
+                            <tr key={i} className="border-b border-gray-700 hover:bg-gray-700/30">
+                              <td className="p-2 text-gray-400">{i + 1}</td>
+                              <td className="p-2 break-all font-mono text-xs">{b.address}</td>
+                              <td className={`p-2 text-right font-semibold ${
+                                b.balance.includes('Error') || b.balance.includes('Invalid') 
+                                  ? 'text-red-400' 
+                                  : parseFloat(b.balance) > 0 
+                                  ? 'text-green-400' 
+                                  : 'text-gray-400'
+                              }`}>
+                                {b.balance.includes('Error') || b.balance.includes('Invalid') 
+                                  ? b.balance 
+                                  : checkType === "token" 
+                                  ? `${b.balance} ${b.symbol || 'TOKEN'}`
+                                  : `${b.balance} Native`
+                                }
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    {checkType === "native" && (
+                      <div className="mt-3 text-xs text-gray-400 text-right">
+                        Total Balance: {balances
+                          .filter(b => !b.balance.includes('Error') && !b.balance.includes('Invalid'))
+                          .reduce((sum, b) => sum + parseFloat(b.balance), 0)
+                          .toFixed(6)} Native
+                      </div>
+                    )}
+                    {checkType === "token" && balances[0]?.symbol && (
+                      <div className="mt-3 text-xs text-gray-400 text-right">
+                        Total Balance: {balances
+                          .filter(b => !b.balance.includes('Error') && !b.balance.includes('Invalid'))
+                          .reduce((sum, b) => sum + parseFloat(b.balance), 0)
+                          .toFixed(6)} {balances[0].symbol}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Default Network Balance Checker */}
               <div className="bg-gray-900/60 backdrop-blur-md p-6 rounded-2xl border border-gray-700 shadow-lg">
                 <h2 className="text-2xl font-bold mb-4 text-center bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
-                  💰 Bulk Wallet Balance Checker
+                  💰 Quick Network Balance Checker
                 </h2>
 
                 <div className="flex flex-wrap justify-center gap-3 mb-4">
@@ -1096,3 +1346,4 @@ function TrackerPageFullScreen({ onLogout }) {
 }
 
 export default TrackerPageFullScreen;
+
