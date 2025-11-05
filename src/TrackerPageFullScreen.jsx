@@ -1087,7 +1087,10 @@ function TrackerPageFullScreen({ onLogout }) {
                     <label className="block text-sm text-gray-400 mb-2">Select Check Type</label>
                     <select
                       value={checkType}
-                      onChange={(e) => setCheckType(e.target.value)}
+                      onChange={(e) => {
+                        setCheckType(e.target.value);
+                        setBalances([]);
+                      }}
                       className="w-full bg-gray-800 p-3 rounded-lg border border-gray-700 text-white focus:border-cyan-400 focus:outline-none cursor-pointer"
                     >
                       <option value="native">Check Native Balance</option>
@@ -1096,7 +1099,7 @@ function TrackerPageFullScreen({ onLogout }) {
                   </div>
 
                   {/* Token Contract Address (only show if checkType is token) */}
-                  {checkType === "token" && (
+                  {checkType === "token" ? (
                     <div>
                       <label className="block text-sm text-gray-400 mb-2">Token Contract Address</label>
                       <input
@@ -1107,7 +1110,7 @@ function TrackerPageFullScreen({ onLogout }) {
                         className="w-full bg-gray-800 p-3 rounded-lg border border-gray-700 text-white focus:border-cyan-400 focus:outline-none"
                       />
                     </div>
-                  )}
+                  ) : null}
 
                   {/* Wallet Addresses Input */}
                   <div>
@@ -1346,4 +1349,3 @@ function TrackerPageFullScreen({ onLogout }) {
 }
 
 export default TrackerPageFullScreen;
-
