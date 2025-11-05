@@ -42,6 +42,7 @@ import AnalyticsDashboard from "./components/AnalyticsDashboard";
 import GasTracker from "./components/GasTracker";
 import ROICalculator from "./components/ROICalculator";
 import NewsAggregator from "./components/NewsAggregator";
+import MultisendTool from "./components/MultisendTool";
 
 const GOOGLE_SCRIPT_URL = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
 
@@ -513,6 +514,7 @@ function TrackerPageFullScreen({ onLogout }) {
     { id: "roi", label: "ROI Calculator", icon: Calculator, color: "text-green-400" },
     { id: "news", label: "News Feed", icon: Newspaper, color: "text-yellow-400" },
     { id: "balance", label: "Balance Checker", icon: Wallet, color: "text-blue-400" },
+    { id: "multisend", label: "Multisend", icon: Send, color: "text-pink-400" },
   ];
 
   return (
@@ -598,6 +600,7 @@ function TrackerPageFullScreen({ onLogout }) {
               {activeView === "roi" && "💹 ROI Calculator"}
               {activeView === "news" && "📰 News Feed"}
               {activeView === "balance" && "💰 Balance Checker"}
+              {activeView === "multisend" && "🚀 Multisend Native & Tokens"}
             </h1>
 
             <div className="flex items-center gap-2 md:gap-3 flex-wrap">
@@ -695,6 +698,7 @@ function TrackerPageFullScreen({ onLogout }) {
                     <div className="p-3 bg-green-500/30 rounded-xl">
                       <Zap className="text-green-300" size={28} />
                     </div>
+
                     <h3 className="text-xl font-bold text-green-300">Lightning Fast</h3>
                   </div>
                   <p className="text-gray-200 text-base leading-relaxed">
@@ -1343,6 +1347,12 @@ function TrackerPageFullScreen({ onLogout }) {
               <NewsAggregator />
             </div>
           )}
+
+          {activeView === "multisend" && (
+            <div className="max-w-7xl mx-auto">
+              <MultisendTool />
+            </div>
+          )}
         </div>
       </div>
 
@@ -1357,4 +1367,3 @@ function TrackerPageFullScreen({ onLogout }) {
 }
 
 export default TrackerPageFullScreen;
-
