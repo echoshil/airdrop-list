@@ -85,13 +85,21 @@ function TrackerPageFullScreen({ onLogout }) {
   const [timer, setTimer] = useState(60);
   const [progress, setProgress] = useState(100);
   const [showDexList, setShowDexList] = useState(false);
-  const [selectedNetwork, setSelectedNetwork] = useState("Ethereum");
-  const [addresses, setAddresses] = useState("");
-  const [balances, setBalances] = useState([]);
-  const [balanceLoading, setBalanceLoading] = useState(false);
+  
+  // State untuk EVM Native & Tokens Balance Checker
+  const [evmAddresses, setEvmAddresses] = useState("");
+  const [evmBalances, setEvmBalances] = useState([]);
+  const [evmBalanceLoading, setEvmBalanceLoading] = useState(false);
   const [customRpcUrl, setCustomRpcUrl] = useState("");
   const [checkType, setCheckType] = useState("native");
   const [tokenContractAddress, setTokenContractAddress] = useState("");
+  
+  // State untuk Quick Network Balance Checker
+  const [selectedNetwork, setSelectedNetwork] = useState("Ethereum");
+  const [quickAddresses, setQuickAddresses] = useState("");
+  const [quickBalances, setQuickBalances] = useState([]);
+  const [quickBalanceLoading, setQuickBalanceLoading] = useState(false);
+  
   const [selectedTags, setSelectedTags] = useState([]);
   const [filterTag, setFilterTag] = useState("all");
   const [filterDaily, setFilterDaily] = useState("all");
@@ -345,11 +353,11 @@ function TrackerPageFullScreen({ onLogout }) {
   };
 
   const checkBalances = async () => {
-    const list = addresses.split(/[\n,\s]+/).filter(Boolean);
+    const list = quickAddresses.split(/[\n,\s]+/).filter(Boolean);
     if (list.length === 0) return alert("Masukkan address wallet!");
     
-    setBalanceLoading(true);
-    setBalances([]);
+    setQuickBalanceLoading(true);
+    setQuickBalances([]);
     const result = [];
     
     try {
@@ -385,13 +393,13 @@ function TrackerPageFullScreen({ onLogout }) {
       console.error("Provider error:", err);
       alert(`⚠️ Gagal terhubung ke ${selectedNetwork} network. Coba lagi!`);
     } finally {
-      setBalances(result);
-      setBalanceLoading(false);
+      setQuickBalances(result);
+      setQuickBalanceLoading(false);
     }
   };
 
   const checkEVMBalances = async () => {
-    const list = addresses.split(/[\n,\s]+/).filter(Boolean);
+    const list = evmAddresses.split(/[\n,\s]+/).filter(Boolean);
     if (list.length === 0) return alert("Masukkan address wallet!");
     
     if (!customRpcUrl) return alert("Masukkan RPC URL!");
@@ -400,8 +408,8 @@ function TrackerPageFullScreen({ onLogout }) {
       return alert("Masukkan contract address token!");
     }
     
-    setBalanceLoading(true);
-    setBalances([]);
+    setEvmBalanceLoading(true);
+    setEvmBalances([]);
     const result = [];
     
     try {
@@ -437,7 +445,7 @@ function TrackerPageFullScreen({ onLogout }) {
       } else if (checkType === "token") {
         if (!ethers.isAddress(tokenContractAddress)) {
           alert("❌ Invalid token contract address!");
-          setBalanceLoading(false);
+          setEvmBalanceLoading(false);
           return;
         }
         
@@ -484,7 +492,7 @@ function TrackerPageFullScreen({ onLogout }) {
         } catch (err) {
           console.error("Token contract error:", err);
           alert("⚠️ Gagal membaca token contract. Pastikan contract address benar!");
-          setBalanceLoading(false);
+          setEvmBalanceLoading(false);
           return;
         }
       }
@@ -492,8 +500,8 @@ function TrackerPageFullScreen({ onLogout }) {
       console.error("Provider error:", err);
       alert("⚠️ Gagal terhubung ke RPC URL. Pastikan URL benar dan mendukung jaringan EVM!");
     } finally {
-      setBalances(result);
-      setBalanceLoading(false);
+      setEvmBalances(result);
+      setEvmBalanceLoading(false);
     }
   };
 
@@ -1089,7 +1097,7 @@ function TrackerPageFullScreen({ onLogout }) {
                       value={checkType}
                       onChange={(e) => {
                         setCheckType(e.target.value);
-                        setBalances([]);
+                        setEvmBalances([]);
                       }}
                       className="w-full bg-gray-800 p-3 rounded-lg border border-gray-700 text-white focus:border-cyan-400 focus:outline-none cursor-pointer"
                     >
@@ -1119,34 +1127,34 @@ function TrackerPageFullScreen({ onLogout }) {
                       className="w-full bg-gray-800 p-3 rounded-lg border border-gray-700 text-white resize-none focus:border-cyan-400 focus:outline-none"
                       placeholder="Paste wallet addresses (one per line)&#10;Example:&#10;0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb&#10;0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
                       rows="6"
-                      value={addresses}
-                      onChange={(e) => setAddresses(e.target.value)}
+                      value={evmAddresses}
+                      onChange={(e) => setEvmAddresses(e.target.value)}
                     ></textarea>
                   </div>
 
                   {/* Check Balance Button */}
                   <button
                     onClick={checkEVMBalances}
-                    disabled={balanceLoading}
+                    disabled={evmBalanceLoading}
                     className={`w-full py-3 rounded-lg font-semibold text-lg transition ${
-                      balanceLoading
+                      evmBalanceLoading
                         ? "bg-gray-600 cursor-not-allowed"
                         : "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
                     }`}
                   >
-                    {balanceLoading ? "⏳ Checking..." : "Check Balance"}
+                    {evmBalanceLoading ? "⏳ Checking..." : "Check Balance"}
                   </button>
                 </div>
 
                 {/* Results Table */}
-                {balances.length > 0 && (
+                {evmBalances.length > 0 && (
                   <div className="mt-6 bg-gray-800 rounded-lg p-4 overflow-x-auto">
                     <div className="flex justify-between items-center mb-3">
                       <h3 className="text-cyan-400 font-semibold">
                         Results - {checkType === "native" ? "Native Balance" : "Token Balance"}
                       </h3>
                       <button
-                        onClick={() => setBalances([])}
+                        onClick={() => setEvmBalances([])}
                         className="text-xs bg-red-600 hover:bg-red-700 px-3 py-1 rounded"
                       >
                         Clear
@@ -1162,7 +1170,7 @@ function TrackerPageFullScreen({ onLogout }) {
                           </tr>
                         </thead>
                         <tbody>
-                          {balances.map((b, i) => (
+                          {evmBalances.map((b, i) => (
                             <tr key={i} className="border-b border-gray-700 hover:bg-gray-700/30">
                               <td className="p-2 text-gray-400">{i + 1}</td>
                               <td className="p-2 break-all font-mono text-xs">{b.address}</td>
@@ -1187,18 +1195,18 @@ function TrackerPageFullScreen({ onLogout }) {
                     </div>
                     {checkType === "native" && (
                       <div className="mt-3 text-xs text-gray-400 text-right">
-                        Total Balance: {balances
+                        Total Balance: {evmBalances
                           .filter(b => !b.balance.includes('Error') && !b.balance.includes('Invalid'))
                           .reduce((sum, b) => sum + parseFloat(b.balance), 0)
                           .toFixed(6)} Native
                       </div>
                     )}
-                    {checkType === "token" && balances[0]?.symbol && (
+                    {checkType === "token" && evmBalances[0]?.symbol && (
                       <div className="mt-3 text-xs text-gray-400 text-right">
-                        Total Balance: {balances
+                        Total Balance: {evmBalances
                           .filter(b => !b.balance.includes('Error') && !b.balance.includes('Invalid'))
                           .reduce((sum, b) => sum + parseFloat(b.balance), 0)
-                          .toFixed(6)} {balances[0].symbol}
+                          .toFixed(6)} {evmBalances[0].symbol}
                       </div>
                     )}
                   </div>
@@ -1231,35 +1239,35 @@ function TrackerPageFullScreen({ onLogout }) {
                   className="w-full bg-gray-800 p-3 rounded-lg border border-gray-700 text-white resize-none focus:border-cyan-400 focus:outline-none"
                   placeholder="Paste wallet addresses (one per line)&#10;Example:&#10;0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb&#10;0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
                   rows="8"
-                  value={addresses}
-                  onChange={(e) => setAddresses(e.target.value)}
+                  value={quickAddresses}
+                  onChange={(e) => setQuickAddresses(e.target.value)}
                 ></textarea>
 
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4">
                   <button
                     onClick={checkBalances}
-                    disabled={balanceLoading}
+                    disabled={quickBalanceLoading}
                     className={`w-full sm:w-auto px-6 py-3 rounded-lg font-semibold transition ${
-                      balanceLoading
+                      quickBalanceLoading
                         ? "bg-gray-600 cursor-not-allowed"
                         : "bg-green-600 hover:bg-green-700"
                     }`}
                   >
-                    {balanceLoading ? "⏳ Checking..." : "✅ Check Balance"}
+                    {quickBalanceLoading ? "⏳ Checking..." : "✅ Check Balance"}
                   </button>
-                  {balances.length > 0 && (
+                  {quickBalances.length > 0 && (
                     <span className="text-sm text-gray-400">
-                      Total: {balances.length} address(es) checked
+                      Total: {quickBalances.length} address(es) checked
                     </span>
                   )}
                 </div>
 
-                {balances.length > 0 && (
+                {quickBalances.length > 0 && (
                   <div className="mt-6 bg-gray-800 rounded-lg p-4 overflow-x-auto">
                     <div className="flex justify-between items-center mb-3">
                       <h3 className="text-cyan-400 font-semibold">Results - {selectedNetwork}</h3>
                       <button
-                        onClick={() => setBalances([])}
+                        onClick={() => setQuickBalances([])}
                         className="text-xs bg-red-600 hover:bg-red-700 px-3 py-1 rounded"
                       >
                         Clear
@@ -1275,7 +1283,7 @@ function TrackerPageFullScreen({ onLogout }) {
                           </tr>
                         </thead>
                         <tbody>
-                          {balances.map((b, i) => (
+                          {quickBalances.map((b, i) => (
                             <tr key={i} className="border-b border-gray-700 hover:bg-gray-700/30">
                               <td className="p-2 text-gray-400">{i + 1}</td>
                               <td className="p-2 break-all font-mono text-xs">{b.address}</td>
@@ -1297,7 +1305,7 @@ function TrackerPageFullScreen({ onLogout }) {
                       </table>
                     </div>
                     <div className="mt-3 text-xs text-gray-400 text-right">
-                      Total Balance: {balances
+                      Total Balance: {quickBalances
                         .filter(b => !b.balance.includes('Error') && !b.balance.includes('Invalid'))
                         .reduce((sum, b) => sum + parseFloat(b.balance), 0)
                         .toFixed(6)} {selectedNetwork === 'BSC' ? 'BNB' : selectedNetwork === 'Polygon' ? 'MATIC' : 'ETH'}
@@ -1312,7 +1320,7 @@ function TrackerPageFullScreen({ onLogout }) {
             <div className="max-w-7xl mx-auto">
               <AnalyticsDashboard 
                 projects={projects} 
-                balances={balances}
+                balances={quickBalances}
                 selectedNetwork={selectedNetwork}
               />
             </div>
@@ -1349,3 +1357,4 @@ function TrackerPageFullScreen({ onLogout }) {
 }
 
 export default TrackerPageFullScreen;
+
