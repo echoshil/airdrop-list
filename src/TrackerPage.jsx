@@ -572,7 +572,7 @@ function TrackerPage({ onLogout }) {
         {displayedProjects.map((p, i) => (
           <div
             key={i}
-            className="relative bg-gray-900/70 backdrop-blur-md p-5 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all shadow-lg fade-in"
+            className="relative card p-5 fade-in"
           >
             <div className="absolute top-3 right-3 flex gap-2">
               <button
@@ -826,7 +826,3 @@ function TrackerPage({ onLogout }) {
 }
 
 export default TrackerPage;
-
-
-
-
