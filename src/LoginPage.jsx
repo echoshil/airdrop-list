@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { LogIn } from "lucide-react";
 import { motion } from "framer-motion";
 import NeonParticles from "./NeonParticles";
 
@@ -15,76 +16,47 @@ const LoginPage = ({ onLogin }) => {
       localStorage.setItem("isLoggedIn", "true");
       onLogin();
     } else {
-      setError("Invalid username and/or password! Please try again.");
+      setError("❌ Username atau password salah!");
     }
   };
 
   return (
-    <div className="relative flex items-center justify-center min-h-screen bg-[#030b2a] text-white overflow-hidden font-sans">
+    <div className="relative flex items-center justify-center min-h-screen text-white overflow-hidden">
       <NeonParticles />
 
-      {/* Error bar */}
-      {error && (
-        <motion.div
-          initial={{ y: -40, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="absolute top-6 left-6 bg-[#08103a] text-[#ffdf5b] px-4 py-2 text-sm rounded-md flex items-center border-l-4 border-[#ffd43b] shadow-md"
-        >
-          {error}
-        </motion.div>
-      )}
-
-      {/* Login Box */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.6 }}
-        className="relative z-10 bg-[#0a1138] p-10 rounded-3xl shadow-[0_0_40px_rgba(0,0,0,0.6)] w-[90%] max-w-sm text-center border border-[#121b50]"
+        className="relative z-10 bg-gray-900 bg-opacity-80 p-8 rounded-2xl shadow-lg border border-gray-700 w-[90%] max-w-md text-center"
       >
-        <h1 className="text-3xl font-bold mb-10">
-          <span className="text-[#5ad3ff]">Airdrop</span>{" "}
-          <span className="text-[#ff6bd6]">Tracker Login</span>
+        <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+          🚀 Airdrop Tracker Login
         </h1>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Username Field */}
-          <div className="text-left">
-            <label className="block text-[#ffdf5b] text-sm mb-2">
-              Username
-            </label>
-            <input
-              type="text"
-              value={form.username}
-              onChange={(e) =>
-                setForm({ ...form, username: e.target.value })
-              }
-              placeholder="Username"
-              className="w-full bg-[#0f1852] text-[#ffdf5b] placeholder-[#ffdf5b]/60 px-4 py-3 rounded-md border border-[#19205c] focus:border-[#5ad3ff] outline-none text-sm"
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            type="text"
+            placeholder="Username"
+            value={form.username}
+            onChange={(e) => setForm({ ...form, username: e.target.value })}
+            className="w-full p-3 rounded bg-gray-800 border border-gray-700 focus:border-cyan-400 outline-none"
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={form.password}
+            onChange={(e) => setForm({ ...form, password: e.target.value })}
+            className="w-full p-3 rounded bg-gray-800 border border-gray-700 focus:border-cyan-400 outline-none"
+          />
 
-          {/* Password Field */}
-          <div className="text-left">
-            <label className="block text-[#ffdf5b] text-sm mb-2">
-              Password
-            </label>
-            <input
-              type="password"
-              value={form.password}
-              onChange={(e) =>
-                setForm({ ...form, password: e.target.value })
-              }
-              placeholder="Password"
-              className="w-full bg-[#0f1852] text-[#ffdf5b] placeholder-[#ffdf5b]/60 px-4 py-3 rounded-md border border-[#19205c] focus:border-[#5ad3ff] outline-none text-sm"
-            />
-          </div>
+          {error && <p className="text-red-400 text-sm">{error}</p>}
 
-          {/* Login Button */}
           <button
             type="submit"
-            className="w-full mt-4 bg-[#ffdf5b] hover:bg-[#ffd43b] text-[#0a1138] font-bold tracking-wide py-3 rounded-md uppercase transition-all duration-200"
+            className="w-full bg-gradient-to-r from-cyan-600 to-purple-600 hover:opacity-90 py-3 rounded-lg font-semibold flex items-center justify-center gap-2"
           >
-            LOGIN
+            <LogIn size={18} /> Login
           </button>
         </form>
       </motion.div>
