@@ -25,8 +25,6 @@ import {
   Calculator,
   Newspaper,
   LayoutDashboard,
-  Trash2,
-  Zap,
 } from "lucide-react";
 import {
   LineChart,
@@ -92,8 +90,9 @@ function TrackerPageFullScreen({ onLogout }) {
   const [selectedTags, setSelectedTags] = useState([]);
   const [filterTag, setFilterTag] = useState("all");
   
+  // Sidebar state
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activeView, setActiveView] = useState("projects");
+  const [activeView, setActiveView] = useState("projects"); // projects, analytics, gas, roi, news
   const [isMobile, setIsMobile] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -101,7 +100,6 @@ function TrackerPageFullScreen({ onLogout }) {
     twitter: "",
     discord: "",
     telegram: "",
-    farcaster: "",
     wallet: "",
     email: "",
     github: "",
@@ -110,6 +108,7 @@ function TrackerPageFullScreen({ onLogout }) {
     tags: [],
   });
 
+  // Detect mobile
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024);
@@ -122,6 +121,7 @@ function TrackerPageFullScreen({ onLogout }) {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  // Fetch projects
   const fetchProjects = async () => {
     try {
       const res = await fetch(GOOGLE_SCRIPT_URL + "?action=read");
@@ -129,20 +129,25 @@ function TrackerPageFullScreen({ onLogout }) {
       console.log("Raw data from Google Sheets:", data);
       
       if (Array.isArray(data)) {
+        // Parse tags from JSON string back to array with better error handling
         const parsedData = data.map(project => {
           let parsedTags = [];
           
+          // Handle tags parsing
           if (project.tags) {
             if (typeof project.tags === 'string') {
               const trimmed = project.tags.trim();
               if (trimmed) {
                 try {
+                  // Try to parse as JSON
                   parsedTags = JSON.parse(trimmed);
+                  // Ensure it's an array
                   if (!Array.isArray(parsedTags)) {
                     parsedTags = [parsedTags];
                   }
                 } catch (e) {
                   console.error("Failed to parse tags for project:", project.name, "tags value:", project.tags);
+                  // If parsing fails, treat as empty array
                   parsedTags = [];
                 }
               }
@@ -171,10 +176,12 @@ function TrackerPageFullScreen({ onLogout }) {
     fetchProjects();
   }, []);
 
+  // Add project
   const addProject = async () => {
     if (!formData.name) return alert("Nama project wajib diisi!");
     try {
       setLoading(true);
+      // Convert tags array to JSON string for Google Sheets
       const dataToSend = {
         ...formData,
         tags: JSON.stringify(formData.tags || [])
@@ -193,7 +200,6 @@ function TrackerPageFullScreen({ onLogout }) {
           twitter: "",
           discord: "",
           telegram: "",
-          farcaster: "",
           wallet: "",
           email: "",
           github: "",
@@ -210,6 +216,7 @@ function TrackerPageFullScreen({ onLogout }) {
     }
   };
 
+  // Toggle daily check
   const toggleDaily = async (name, current) => {
     const next = current === "CHECKED" ? "UNCHECKED" : "CHECKED";
     try {
@@ -229,36 +236,7 @@ function TrackerPageFullScreen({ onLogout }) {
     }
   };
 
-  const deleteProject = async (name) => {
-    const confirmDelete = window.confirm(`Apakah Anda yakin ingin menghapus project "${name}"?`);
-    if (!confirmDelete) return;
-    
-    try {
-      setLoading(true);
-      const res = await fetch(GOOGLE_SCRIPT_URL, {
-        method: "POST",
-        mode: "cors",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({
-          action: "delete",
-          name: name,
-        }),
-      });
-      const text = await res.text();
-      if (text.toLowerCase().includes("ok") || text.toLowerCase().includes("deleted")) {
-        alert("✅ Project berhasil dihapus!");
-        fetchProjects();
-      } else {
-        alert("⚠️ Gagal menghapus project!");
-      }
-    } catch (err) {
-      console.error("Error deleting project:", err);
-      alert("❌ Gagal menghapus project!");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Fetch market
   const fetchMarket = async () => {
     try {
       const res = await fetch(
@@ -271,6 +249,7 @@ function TrackerPageFullScreen({ onLogout }) {
     }
   };
 
+  // Auto refresh timer
   useEffect(() => {
     fetchMarket();
     const refreshInterval = setInterval(() => {
@@ -293,17 +272,20 @@ function TrackerPageFullScreen({ onLogout }) {
   const progressColor =
     timer > 40 ? "#22c55e" : timer > 20 ? "#facc15" : "#ef4444";
 
+  // Filter projects
   const filteredProjects = projects
     .filter((p) => {
       const matchesSearch = (p.name || "")
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
       
+      // Debug logging for tag filtering
       const hasTags = p.tags && Array.isArray(p.tags);
       const matchesTags =
         filterTag === "all" ||
         (hasTags && p.tags.includes(filterTag));
       
+      // Log when filtering by specific tag
       if (filterTag !== "all") {
         console.log(`Project: ${p.name}, Tags: ${JSON.stringify(p.tags)}, FilterTag: ${filterTag}, Matches: ${matchesTags}`);
       }
@@ -320,12 +302,14 @@ function TrackerPageFullScreen({ onLogout }) {
     ? filteredProjects
     : filteredProjects.slice(0, 3);
 
+  // Toggle tag
   const toggleTag = (tagId) => {
     setSelectedTags((prev) => {
       const newTags = prev.includes(tagId)
         ? prev.filter((t) => t !== tagId)
         : [...prev, tagId];
       
+      // Update formData with the new tags
       setFormData((prevForm) => ({
         ...prevForm,
         tags: newTags,
@@ -335,6 +319,7 @@ function TrackerPageFullScreen({ onLogout }) {
     });
   };
 
+  // Check balances
   const checkBalances = async () => {
     const list = addresses.split(/[\n,\s]+/).filter(Boolean);
     if (list.length === 0) return alert("Masukkan address wallet!");
@@ -381,19 +366,20 @@ function TrackerPageFullScreen({ onLogout }) {
     }
   };
 
+  // Sidebar menu items
   const sidebarMenuItems = [
     { id: "projects", label: "Projects", icon: LayoutDashboard, color: "text-cyan-400" },
     { id: "analytics", label: "Analytics", icon: Activity, color: "text-purple-400" },
     { id: "gas", label: "Gas Tracker", icon: Fuel, color: "text-orange-400" },
     { id: "roi", label: "ROI Calculator", icon: Calculator, color: "text-green-400" },
     { id: "news", label: "News Feed", icon: Newspaper, color: "text-yellow-400" },
-    { id: "balance", label: "Balance Checker", icon: Wallet, color: "text-blue-400" },
   ];
 
   return (
     <div className="min-h-screen text-white relative overflow-hidden bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
       <NeonParticles />
 
+      {/* SIDEBAR NAVIGATION */}
       <div
         className={`fixed top-0 left-0 h-full bg-gray-900/95 backdrop-blur-md border-r border-gray-700 z-50 transition-all duration-300 ${
           sidebarOpen ? "w-64" : "w-0"
@@ -401,6 +387,7 @@ function TrackerPageFullScreen({ onLogout }) {
       >
         {sidebarOpen && (
           <div className="h-full flex flex-col">
+            {/* Sidebar Header */}
             <div className="p-4 border-b border-gray-700 flex justify-between items-center">
               <h2 className="text-lg font-bold bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
                 🚀 Airdrop Tracker
@@ -413,6 +400,7 @@ function TrackerPageFullScreen({ onLogout }) {
               </button>
             </div>
 
+            {/* Navigation Menu */}
             <div className="flex-1 p-3 space-y-2">
               {sidebarMenuItems.map((item) => {
                 const Icon = item.icon;
@@ -423,10 +411,10 @@ function TrackerPageFullScreen({ onLogout }) {
                       setActiveView(item.id);
                       if (isMobile) setSidebarOpen(false);
                     }}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ease-in-out border ${
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
                       activeView === item.id
-                        ? "bg-gradient-to-r from-cyan-600/20 to-purple-600/20 border-cyan-500/50 text-white shadow-lg"
-                        : "border-transparent text-gray-400 hover:bg-gray-800 hover:text-white"
+                        ? "bg-gradient-to-r from-cyan-600/20 to-purple-600/20 border border-cyan-500/50 text-white shadow-lg"
+                        : "text-gray-400 hover:bg-gray-800 hover:text-white"
                     }`}
                   >
                     <Icon size={20} className={activeView === item.id ? item.color : ""} />
@@ -436,6 +424,7 @@ function TrackerPageFullScreen({ onLogout }) {
               })}
             </div>
 
+            {/* Sidebar Footer */}
             <div className="p-4 border-t border-gray-700">
               <button
                 onClick={onLogout}
@@ -449,6 +438,7 @@ function TrackerPageFullScreen({ onLogout }) {
         )}
       </div>
 
+      {/* Mobile Sidebar Toggle Button */}
       {!sidebarOpen && (
         <button
           onClick={() => setSidebarOpen(true)}
@@ -458,28 +448,29 @@ function TrackerPageFullScreen({ onLogout }) {
         </button>
       )}
 
+      {/* MAIN CONTENT AREA */}
       <div
         className={`min-h-screen transition-all duration-300 ${
           sidebarOpen && !isMobile ? "ml-64" : "ml-0"
         }`}
       >
-        <div className="sticky top-0 z-30 bg-gray-900/90 backdrop-blur-md border-b border-gray-700 px-4 md:px-6 py-3 md:py-4">
-          <div className="flex flex-wrap justify-between items-center gap-3 md:gap-4">
-            <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+        {/* TOP HEADER BAR */}
+        <div className="sticky top-0 z-30 bg-gray-900/90 backdrop-blur-md border-b border-gray-700 px-6 py-4">
+          <div className="flex flex-wrap justify-between items-center gap-4">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
               {activeView === "projects" && "📦 My Projects"}
               {activeView === "analytics" && "📊 Analytics Dashboard"}
               {activeView === "gas" && "⛽ Gas Tracker"}
               {activeView === "roi" && "💹 ROI Calculator"}
               {activeView === "news" && "📰 News Feed"}
-              {activeView === "balance" && "💰 Balance Checker"}
             </h1>
 
-            <div className="flex items-center gap-2 md:gap-3 flex-wrap">
+            <div className="flex items-center gap-3">
               {activeView === "projects" && (
                 <>
                   <div className="relative">
-                    <button className="flex items-center gap-1 md:gap-2 bg-gray-800 hover:bg-gray-700 px-2 md:px-4 py-1.5 md:py-2 rounded-lg transition text-xs md:text-sm">
-                      <Filter size={14} />
+                    <button className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg transition text-sm">
+                      <Filter size={16} />
                       <select
                         value={filterTag}
                         onChange={(e) => setFilterTag(e.target.value)}
@@ -500,22 +491,22 @@ function TrackerPageFullScreen({ onLogout }) {
                     placeholder="🔍 Search..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="px-2 md:px-3 py-1.5 md:py-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 w-28 md:w-48 text-xs md:text-sm"
+                    className="px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 w-48 text-sm"
                   />
 
                   <button
                     onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-                    className="flex items-center gap-1 md:gap-2 bg-gray-800 hover:bg-gray-700 px-2 md:px-3 py-1.5 md:py-2 rounded-lg text-xs md:text-sm"
+                    className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-lg text-sm"
                   >
-                    <ArrowUpDown size={14} />
-                    <span className="hidden sm:inline">{sortOrder === "asc" ? "A-Z" : "Z-A"}</span>
+                    <ArrowUpDown size={16} />
+                    {sortOrder === "asc" ? "A-Z" : "Z-A"}
                   </button>
 
                   <button
                     onClick={() => setHideData(!hideData)}
-                    className="bg-gray-800 hover:bg-gray-700 px-2 md:px-3 py-1.5 md:py-2 rounded-lg flex items-center gap-1 md:gap-2 text-xs md:text-sm"
+                    className="bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-lg flex items-center gap-2 text-sm"
                   >
-                    {hideData ? <Eye size={16} /> : <EyeOff size={16} />}
+                    {hideData ? <Eye size={18} /> : <EyeOff size={18} />}
                   </button>
                 </>
               )}
@@ -523,15 +514,18 @@ function TrackerPageFullScreen({ onLogout }) {
           </div>
         </div>
 
+        {/* CONTENT VIEWS */}
         <div className="p-6">
+          {/* PROJECTS VIEW */}
           {activeView === "projects" && (
             <div className="space-y-8">
-              <div className="bg-gray-900/60 backdrop-blur-md p-4 md:p-6 rounded-2xl border border-gray-700 shadow-lg">
-                <h2 className="text-lg md:text-xl font-semibold mb-4 text-cyan-300">
+              {/* FORM INPUT */}
+              <div className="bg-gray-900/60 backdrop-blur-md p-6 rounded-2xl border border-gray-700 shadow-lg">
+                <h2 className="text-xl font-semibold mb-4 text-cyan-300">
                   ➕ Tambah Project Baru
                 </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {["name", "twitter", "discord", "telegram", "farcaster", "wallet", "email", "github", "website"].map(
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  {["name", "twitter", "discord", "telegram", "wallet", "email", "github", "website"].map(
                     (field) => (
                       <input
                         key={field}
@@ -541,7 +535,7 @@ function TrackerPageFullScreen({ onLogout }) {
                         onChange={(e) =>
                           setFormData({ ...formData, [field]: e.target.value })
                         }
-                        className="p-2 md:p-3 text-sm md:text-base rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white w-full"
+                        className="p-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white w-full"
                       />
                     )
                   )}
@@ -597,49 +591,30 @@ function TrackerPageFullScreen({ onLogout }) {
                 </button>
               </div>
 
-              <div className="flex flex-wrap justify-center gap-6 max-w-6xl mx-auto">
+              {/* PROJECT LIST */}
+              <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {displayedProjects.map((p, i) => (
                   <div
                     key={i}
-                    className="group relative bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-xl p-6 rounded-3xl border border-gray-700/50 hover:border-cyan-500/50 transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-cyan-500/10 hover:-translate-y-1 w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] max-w-sm"
+                    className="relative bg-gray-900/70 backdrop-blur-md p-5 rounded-2xl border border-gray-700 hover:border-cyan-500 transition-all shadow-lg"
                   >
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex-1">
-                        <h3 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 pr-16">
-                          {p.name}
-                        </h3>
-                      </div>
-                      
-                      <div className="flex gap-2 absolute top-4 right-4">
-                        <button
-                          onClick={() => toggleDaily(p.name, p.daily)}
-                          className={`p-2 rounded-lg transition-all duration-200 ${
-                            p.daily === "CHECKED"
-                              ? "bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30"
-                              : "bg-gray-700/50 text-gray-400 hover:bg-gray-700 hover:text-cyan-400"
-                          }`}
-                          title="Toggle Daily Check"
-                        >
-                          {p.daily === "CHECKED" ? <CheckSquare size={18} /> : <Square size={18} />}
-                        </button>
-                        <button
-                          onClick={() => deleteProject(p.name)}
-                          className="p-2 rounded-lg bg-gray-700/50 text-gray-400 hover:bg-red-500/20 hover:text-red-400 transition-all duration-200"
-                          title="Hapus Project"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </div>
+                    <button
+                      onClick={() => toggleDaily(p.name, p.daily)}
+                      className="absolute top-3 right-3 text-cyan-400 hover:scale-110 transition"
+                    >
+                      {p.daily === "CHECKED" ? <CheckSquare size={20} /> : <Square size={20} />}
+                    </button>
+
+                    <h3 className="text-lg font-bold text-cyan-400 mb-3 mt-4">{p.name}</h3>
 
                     {p.tags && Array.isArray(p.tags) && p.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-4">
+                      <div className="flex flex-wrap gap-1 mb-3">
                         {p.tags.map((tagId) => {
                           const tag = AVAILABLE_TAGS.find((t) => t.id === tagId);
                           return tag ? (
                             <span
                               key={tagId}
-                              className={`${tag.color} text-white text-xs px-3 py-1 rounded-full font-semibold shadow-lg`}
+                              className={`${tag.color} text-white text-xs px-2 py-0.5 rounded-full font-semibold`}
                             >
                               {tag.label}
                             </span>
@@ -649,109 +624,27 @@ function TrackerPageFullScreen({ onLogout }) {
                     )}
 
                     {p.notes && (
-                      <div className="mb-4 p-3 bg-gradient-to-br from-yellow-500/10 to-orange-500/10 rounded-xl border border-yellow-500/20">
-                        <p className="flex items-start gap-2 text-sm text-gray-200">
-                          <StickyNote size={16} className="mt-0.5 text-yellow-400 flex-shrink-0" />
-                          <span className="italic leading-relaxed">{p.notes}</span>
+                      <div className="mb-3 p-2 bg-gray-800/50 rounded-lg border border-gray-700">
+                        <p className="flex items-start gap-2 text-sm text-gray-300">
+                          <StickyNote size={14} className="mt-0.5 text-yellow-400 flex-shrink-0" />
+                          <span className="italic">{p.notes}</span>
                         </p>
                       </div>
                     )}
 
-                    <div className="border-t border-gray-700/50 my-4"></div>
-
-                    <div className="space-y-3">
-                      {p.twitter && (
-                        <div className="flex items-center gap-3 group/item hover:bg-blue-500/5 p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 bg-blue-500/10 rounded-lg group-hover/item:bg-blue-500/20 transition-colors">
-                            <Twitter size={14} className="text-blue-400"/>
-                          </div>
-                          <span className="text-sm text-gray-300 font-mono truncate">{hideData ? "••••••" : p.twitter}</span>
-                        </div>
-                      )}
-                      
-                      {p.discord && (
-                        <div className="flex items-center gap-3 group/item hover:bg-indigo-500/5 p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 bg-indigo-500/10 rounded-lg group-hover/item:bg-indigo-500/20 transition-colors">
-                            <MessageCircle size={14} className="text-indigo-400"/>
-                          </div>
-                          <span className="text-sm text-gray-300 font-mono truncate">{hideData ? "••••••" : p.discord}</span>
-                        </div>
-                      )}
-                      
-                      {p.telegram && (
-                        <div className="flex items-center gap-3 group/item hover:bg-sky-500/5 p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 bg-sky-500/10 rounded-lg group-hover/item:bg-sky-500/20 transition-colors">
-                            <Send size={14} className="text-sky-400"/>
-                          </div>
-                          <span className="text-sm text-gray-300 font-mono truncate">{hideData ? "••••••" : p.telegram}</span>
-                        </div>
-                      )}
-                      
-                      {p.farcaster && (
-                        <div className="flex items-center gap-3 group/item hover:bg-purple-500/5 p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 bg-purple-500/10 rounded-lg group-hover/item:bg-purple-500/20 transition-colors">
-                            <Zap size={14} className="text-purple-400"/>
-                          </div>
-                          <span className="text-sm text-gray-300 font-mono truncate">{hideData ? "••••••" : p.farcaster}</span>
-                        </div>
-                      )}
-                      
-                      {p.wallet && (
-                        <div className="flex items-center gap-3 group/item hover:bg-yellow-500/5 p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 bg-yellow-500/10 rounded-lg group-hover/item:bg-yellow-500/20 transition-colors">
-                            <Wallet size={14} className="text-yellow-400"/>
-                          </div>
-                          <span className="text-xs text-gray-300 font-mono break-all">{hideData ? "••••••••••••••" : p.wallet}</span>
-                        </div>
-                      )}
-                      
-                      {p.email && (
-                        <div className="flex items-center gap-3 group/item hover:bg-pink-500/5 p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 bg-pink-500/10 rounded-lg group-hover/item:bg-pink-500/20 transition-colors">
-                            <Mail size={14} className="text-pink-400"/>
-                          </div>
-                          <span className="text-sm text-gray-300 font-mono truncate">{hideData ? "••••••" : p.email}</span>
-                        </div>
-                      )}
-                      
-                      {p.github && (
-                        <div className="flex items-center gap-3 group/item hover:bg-gray-500/5 p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 bg-gray-500/10 rounded-lg group-hover/item:bg-gray-500/20 transition-colors">
-                            <Github size={14} className="text-gray-300"/>
-                          </div>
-                          <span className="text-sm text-gray-300 font-mono truncate">{hideData ? "••••••" : p.github}</span>
-                        </div>
-                      )}
-                      
-                      {p.website && (
-                        <div className="flex items-center gap-3 group/item hover:bg-blue-500/5 p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 bg-blue-500/10 rounded-lg group-hover/item:bg-blue-500/20 transition-colors">
-                            <Globe size={14} className="text-blue-400"/>
-                          </div>
-                          <a 
-                            href={p.website} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="text-sm text-blue-400 hover:text-blue-300 underline truncate transition-colors"
-                          >
-                            {p.website}
-                          </a>
-                        </div>
-                      )}
-                    </div>
-
-                    {p.lastupdate && (
-                      <div className="mt-4 pt-3 border-t border-gray-700/30">
-                        <p className="text-xs text-gray-500 text-center">
-                          Last update: {new Date(p.lastupdate).toLocaleDateString('id-ID', { 
-                            day: 'numeric', 
-                            month: 'short', 
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </p>
-                      </div>
+                    {p.twitter && <p className="flex items-center gap-2 text-blue-400 text-sm mb-1"><Twitter size={16}/><span>{hideData?"••••":p.twitter}</span></p>}
+                    {p.discord && <p className="flex items-center gap-2 text-indigo-400 text-sm mb-1"><MessageCircle size={16}/><span>{hideData?"••••":p.discord}</span></p>}
+                    {p.telegram && <p className="flex items-center gap-2 text-sky-400 text-sm mb-1"><Send size={16}/><span>{hideData?"••••":p.telegram}</span></p>}
+                    {p.wallet && <p className="flex items-center gap-2 text-yellow-400 break-all text-sm mb-1"><Wallet size={16}/><span>{hideData?"••••":p.wallet}</span></p>}
+                    {p.email && <p className="flex items-center gap-2 text-pink-400 text-sm mb-1"><Mail size={16}/><span>{hideData?"••••":p.email}</span></p>}
+                    {p.github && <p className="flex items-center gap-2 text-gray-300 text-sm mb-1"><Github size={16}/><span>{hideData?"••••":p.github}</span></p>}
+                    {p.website && (
+                      <p className="flex items-center gap-2 text-blue-400 text-sm mb-1">
+                        <Globe size={16}/>
+                        <a href={p.website} target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-300 break-all">
+                          {p.website}
+                        </a>
+                      </p>
                     )}
                   </div>
                 ))}
@@ -768,6 +661,7 @@ function TrackerPageFullScreen({ onLogout }) {
                 </div>
               )}
 
+              {/* LIVE MARKET */}
               <div className="bg-gray-900/60 backdrop-blur-md p-6 rounded-2xl border border-gray-700 shadow-lg">
                 <h2 className="text-2xl font-bold mb-4 text-center bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
                   📈 Live Crypto Market
@@ -832,11 +726,8 @@ function TrackerPageFullScreen({ onLogout }) {
                   ))}
                 </div>
               </div>
-            </div>
-          )}
 
-          {activeView === "balance" && (
-            <div className="max-w-7xl mx-auto">
+              {/* BULK WALLET CHECKER */}
               <div className="bg-gray-900/60 backdrop-blur-md p-6 rounded-2xl border border-gray-700 shadow-lg">
                 <h2 className="text-2xl font-bold mb-4 text-center bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
                   💰 Bulk Wallet Balance Checker
@@ -847,7 +738,7 @@ function TrackerPageFullScreen({ onLogout }) {
                     <button
                       key={net}
                       onClick={() => setSelectedNetwork(net)}
-                      className={`px-4 py-2 rounded-lg text-sm md:text-base transition ${
+                      className={`px-4 py-2 rounded-lg ${
                         selectedNetwork === net
                           ? "bg-cyan-600"
                           : "bg-gray-800 hover:bg-gray-700"
@@ -860,17 +751,17 @@ function TrackerPageFullScreen({ onLogout }) {
 
                 <textarea
                   className="w-full bg-gray-800 p-3 rounded-lg border border-gray-700 text-white resize-none focus:border-cyan-400 focus:outline-none"
-                  placeholder="Paste wallet addresses (one per line)&#10;Example:&#10;0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb&#10;0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
-                  rows="8"
+                  placeholder="Paste wallet addresses (one per line)"
+                  rows="6"
                   value={addresses}
                   onChange={(e) => setAddresses(e.target.value)}
                 ></textarea>
 
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4">
+                <div className="flex items-center justify-between mt-4">
                   <button
                     onClick={checkBalances}
                     disabled={balanceLoading}
-                    className={`w-full sm:w-auto px-6 py-3 rounded-lg font-semibold transition ${
+                    className={`px-6 py-2 rounded-lg font-semibold transition ${
                       balanceLoading
                         ? "bg-gray-600 cursor-not-allowed"
                         : "bg-green-600 hover:bg-green-700"
@@ -880,7 +771,7 @@ function TrackerPageFullScreen({ onLogout }) {
                   </button>
                   {balances.length > 0 && (
                     <span className="text-sm text-gray-400">
-                      Total: {balances.length} address(es) checked
+                      Total: {balances.length} address(es)
                     </span>
                   )}
                 </div>
@@ -896,39 +787,37 @@ function TrackerPageFullScreen({ onLogout }) {
                         Clear
                       </button>
                     </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-sm">
-                        <thead>
-                          <tr className="text-cyan-400 border-b border-gray-700">
-                            <th className="p-2">#</th>
-                            <th className="p-2">Address</th>
-                            <th className="p-2 text-right">Balance</th>
+                    <table className="w-full text-left text-sm">
+                      <thead>
+                        <tr className="text-cyan-400 border-b border-gray-700">
+                          <th className="p-2">#</th>
+                          <th className="p-2">Address</th>
+                          <th className="p-2 text-right">Balance</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {balances.map((b, i) => (
+                          <tr key={i} className="border-b border-gray-700 hover:bg-gray-700/30">
+                            <td className="p-2 text-gray-400">{i + 1}</td>
+                            <td className="p-2 break-all font-mono text-xs">{b.address}</td>
+                            <td className={`p-2 text-right font-semibold ${
+                              b.balance.includes('Error') || b.balance.includes('Invalid') 
+                                ? 'text-red-400' 
+                                : parseFloat(b.balance) > 0 
+                                ? 'text-green-400' 
+                                : 'text-gray-400'
+                            }`}>
+                              {b.balance.includes('Error') || b.balance.includes('Invalid') 
+                                ? b.balance 
+                                : `${b.balance} ${selectedNetwork === 'BSC' ? 'BNB' : selectedNetwork === 'Polygon' ? 'MATIC' : 'ETH'}`
+                              }
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {balances.map((b, i) => (
-                            <tr key={i} className="border-b border-gray-700 hover:bg-gray-700/30">
-                              <td className="p-2 text-gray-400">{i + 1}</td>
-                              <td className="p-2 break-all font-mono text-xs">{b.address}</td>
-                              <td className={`p-2 text-right font-semibold ${
-                                b.balance.includes('Error') || b.balance.includes('Invalid') 
-                                  ? 'text-red-400' 
-                                  : parseFloat(b.balance) > 0 
-                                  ? 'text-green-400' 
-                                  : 'text-gray-400'
-                              }`}>
-                                {b.balance.includes('Error') || b.balance.includes('Invalid') 
-                                  ? b.balance 
-                                  : `${b.balance} ${selectedNetwork === 'BSC' ? 'BNB' : selectedNetwork === 'Polygon' ? 'MATIC' : 'ETH'}`
-                                }
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                        ))}
+                      </tbody>
+                    </table>
                     <div className="mt-3 text-xs text-gray-400 text-right">
-                      Total Balance: {balances
+                      Total: {balances
                         .filter(b => !b.balance.includes('Error') && !b.balance.includes('Invalid'))
                         .reduce((sum, b) => sum + parseFloat(b.balance), 0)
                         .toFixed(6)} {selectedNetwork === 'BSC' ? 'BNB' : selectedNetwork === 'Polygon' ? 'MATIC' : 'ETH'}
@@ -939,6 +828,7 @@ function TrackerPageFullScreen({ onLogout }) {
             </div>
           )}
 
+          {/* ANALYTICS VIEW - FULL SCREEN */}
           {activeView === "analytics" && (
             <div className="max-w-7xl mx-auto">
               <AnalyticsDashboard 
@@ -949,18 +839,21 @@ function TrackerPageFullScreen({ onLogout }) {
             </div>
           )}
 
+          {/* GAS TRACKER VIEW - FULL SCREEN */}
           {activeView === "gas" && (
             <div className="max-w-7xl mx-auto">
               <GasTracker />
             </div>
           )}
 
+          {/* ROI CALCULATOR VIEW - FULL SCREEN */}
           {activeView === "roi" && (
             <div className="max-w-7xl mx-auto">
               <ROICalculator />
             </div>
           )}
 
+          {/* NEWS FEED VIEW - FULL SCREEN */}
           {activeView === "news" && (
             <div className="max-w-7xl mx-auto">
               <NewsAggregator />
@@ -969,6 +862,7 @@ function TrackerPageFullScreen({ onLogout }) {
         </div>
       </div>
 
+      {/* Mobile Overlay */}
       {isMobile && sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40"
@@ -980,3 +874,7 @@ function TrackerPageFullScreen({ onLogout }) {
 }
 
 export default TrackerPageFullScreen;
+
+
+
+
