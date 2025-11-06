@@ -764,11 +764,20 @@ function TrackerPageFullScreen({ onLogout }) {
 
           {activeView === "projects" && (
             <div className="space-y-8">
-              <div className="bg-gray-900/60 backdrop-blur-md p-4 md:p-6 rounded-2xl border border-gray-700 shadow-lg">
-                <h2 className="text-lg md:text-xl font-semibold mb-4 text-cyan-300">
-                  ➕ Tambah Project Baru
+              <div className="p-4 md:p-8 rounded-3xl" style={{
+                background: "linear-gradient(135deg, #e8f1f8 0%, #dae7f3 100%)",
+                boxShadow: "20px 20px 60px #c5d4e0, -20px -20px 60px #ffffff"
+              }}>
+                <h2 className="text-xl md:text-2xl font-bold mb-6 text-gray-700 flex items-center gap-3">
+                  <div className="p-2 rounded-xl" style={{
+                    background: "#e8f1f8",
+                    boxShadow: "inset 6px 6px 12px #c5d4e0, inset -6px -6px 12px #ffffff"
+                  }}>
+                    ➕
+                  </div>
+                  Tambah Project Baru
                 </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {["name", "twitter", "discord", "telegram", "farcaster", "wallet", "email", "github", "website"].map(
                     (field) => (
                       <input
@@ -779,14 +788,24 @@ function TrackerPageFullScreen({ onLogout }) {
                         onChange={(e) =>
                           setFormData({ ...formData, [field]: e.target.value })
                         }
-                        className="p-2 md:p-3 text-sm md:text-base rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white w-full"
+                        className="p-3 md:p-4 text-sm md:text-base rounded-2xl outline-none text-gray-700 placeholder-gray-400 transition-all duration-300 w-full"
+                        style={{
+                          background: "#e8f1f8",
+                          boxShadow: "inset 6px 6px 12px #c5d4e0, inset -6px -6px 12px #ffffff"
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.boxShadow = "inset 8px 8px 16px #c5d4e0, inset -8px -8px 16px #ffffff";
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.boxShadow = "inset 6px 6px 12px #c5d4e0, inset -6px -6px 12px #ffffff";
+                        }}
                       />
                     )
                   )}
                 </div>
 
-                <div className="mt-3">
-                  <label className="flex items-center gap-2 text-sm text-gray-400 mb-2">
+                <div className="mt-4">
+                  <label className="flex items-center gap-2 text-sm text-gray-600 mb-2 font-medium">
                     <StickyNote size={16} />
                     Notes
                   </label>
@@ -794,27 +813,44 @@ function TrackerPageFullScreen({ onLogout }) {
                     placeholder="Add notes..."
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    className="w-full p-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white resize-none"
-                    rows="2"
+                    className="w-full p-3 rounded-2xl text-gray-700 placeholder-gray-400 resize-none outline-none transition-all duration-300"
+                    rows="3"
+                    style={{
+                      background: "#e8f1f8",
+                      boxShadow: "inset 6px 6px 12px #c5d4e0, inset -6px -6px 12px #ffffff"
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.boxShadow = "inset 8px 8px 16px #c5d4e0, inset -8px -8px 16px #ffffff";
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.boxShadow = "inset 6px 6px 12px #c5d4e0, inset -6px -6px 12px #ffffff";
+                    }}
                   ></textarea>
                 </div>
 
-                <div className="mt-3">
-                  <label className="flex items-center gap-2 text-sm text-gray-400 mb-2">
+                <div className="mt-4">
+                  <label className="flex items-center gap-2 text-sm text-gray-600 mb-3 font-medium">
                     <Tag size={16} />
                     Select Tags
                   </label>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-3">
                     {AVAILABLE_TAGS.map((tag) => (
                       <button
                         key={tag.id}
                         type="button"
                         onClick={() => toggleTag(tag.id)}
-                        className={`px-3 py-1 rounded-full text-xs font-semibold transition ${
-                          selectedTags.includes(tag.id) || (formData.tags && formData.tags.includes(tag.id))
-                            ? `${tag.color} text-white`
-                            : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                        }`}
+                        className="px-4 py-2 rounded-full text-xs font-semibold transition-all duration-300"
+                        style={{
+                          background: selectedTags.includes(tag.id) || (formData.tags && formData.tags.includes(tag.id))
+                            ? `linear-gradient(135deg, ${tag.color.replace('bg-', '#')}, ${tag.color.replace('bg-', '#')})`
+                            : "#e8f1f8",
+                          boxShadow: selectedTags.includes(tag.id) || (formData.tags && formData.tags.includes(tag.id))
+                            ? "inset 4px 4px 8px #c5d4e0, inset -4px -4px 8px #ffffff"
+                            : "6px 6px 12px #c5d4e0, -6px -6px 12px #ffffff",
+                          color: selectedTags.includes(tag.id) || (formData.tags && formData.tags.includes(tag.id))
+                            ? "white"
+                            : "#64748b"
+                        }}
                       >
                         {tag.label}
                       </button>
@@ -825,13 +861,24 @@ function TrackerPageFullScreen({ onLogout }) {
                 <button
                   onClick={addProject}
                   disabled={loading}
-                  className={`mt-4 px-6 py-2 rounded-lg shadow-md transition-all ${
-                    loading
-                      ? "bg-gray-600 cursor-not-allowed"
-                      : "bg-green-600 hover:bg-green-700"
-                  }`}
+                  className="mt-6 px-8 py-3 rounded-2xl font-semibold text-gray-700 transition-all duration-300 active:scale-95"
+                  style={{
+                    background: "#e8f1f8",
+                    boxShadow: loading ? "inset 4px 4px 8px #c5d4e0, inset -4px -4px 8px #ffffff" : "8px 8px 16px #c5d4e0, -8px -8px 16px #ffffff",
+                    cursor: loading ? "not-allowed" : "pointer",
+                    opacity: loading ? 0.6 : 1
+                  }}
+                  onMouseDown={(e) => {
+                    if (!loading) e.currentTarget.style.boxShadow = "inset 4px 4px 8px #c5d4e0, inset -4px -4px 8px #ffffff";
+                  }}
+                  onMouseUp={(e) => {
+                    if (!loading) e.currentTarget.style.boxShadow = "8px 8px 16px #c5d4e0, -8px -8px 16px #ffffff";
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!loading) e.currentTarget.style.boxShadow = "8px 8px 16px #c5d4e0, -8px -8px 16px #ffffff";
+                  }}
                 >
-                  {loading ? "Loading..." : "+ Tambah Project"}
+                  {loading ? "Loading..." : "✨ Tambah Project"}
                 </button>
               </div>
 
@@ -839,30 +886,60 @@ function TrackerPageFullScreen({ onLogout }) {
                 {displayedProjects.map((p, i) => (
                   <div
                     key={i}
-                    className="group relative card p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-500/10 hover:-translate-y-1 w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] max-w-sm"
+                    className="group relative p-6 transition-all duration-500 w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] max-w-sm rounded-3xl"
+                    style={{
+                      background: "linear-gradient(135deg, #e8f1f8 0%, #dae7f3 100%)",
+                      boxShadow: "15px 15px 40px #c5d4e0, -15px -15px 40px #ffffff",
+                      transition: "all 0.5s ease"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "translateY(-8px) scale(1.02)";
+                      e.currentTarget.style.boxShadow = "20px 20px 50px #b8c9d9, -20px -20px 50px #ffffff";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "translateY(0) scale(1)";
+                      e.currentTarget.style.boxShadow = "15px 15px 40px #c5d4e0, -15px -15px 40px #ffffff";
+                    }}
                   >
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
-                        <h3 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 pr-16">
+                        <h3 className="text-xl font-bold text-gray-700 mb-2 pr-20">
                           {p.name}
                         </h3>
                       </div>
                       
-                      <div className="flex gap-2 absolute top-4 right-4">
+                      <div className="flex gap-2 absolute top-5 right-5">
                         <button
                           onClick={() => toggleDaily(p.name, p.daily)}
-                          className={`p-2 rounded-lg transition-all duration-200 ${
-                            p.daily === "CHECKED"
-                              ? "bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30"
-                              : "bg-gray-700/50 text-gray-400 hover:bg-gray-700 hover:text-cyan-400"
-                          }`}
+                          className="p-2 rounded-xl transition-all duration-300"
+                          style={{
+                            background: "#e8f1f8",
+                            boxShadow: p.daily === "CHECKED" 
+                              ? "inset 4px 4px 8px #c5d4e0, inset -4px -4px 8px #ffffff"
+                              : "4px 4px 8px #c5d4e0, -4px -4px 8px #ffffff",
+                            color: p.daily === "CHECKED" ? "#06b6d4" : "#94a3b8"
+                          }}
                           title="Toggle Daily Check"
                         >
                           {p.daily === "CHECKED" ? <CheckSquare size={18} /> : <Square size={18} />}
                         </button>
                         <button
                           onClick={() => deleteProject(p.name)}
-                          className="p-2 rounded-lg bg-gray-700/50 text-gray-400 hover:bg-red-500/20 hover:text-red-400 transition-all duration-200"
+                          className="p-2 rounded-xl transition-all duration-300"
+                          style={{
+                            background: "#e8f1f8",
+                            boxShadow: "4px 4px 8px #c5d4e0, -4px -4px 8px #ffffff",
+                            color: "#ef4444"
+                          }}
+                          onMouseDown={(e) => {
+                            e.currentTarget.style.boxShadow = "inset 3px 3px 6px #c5d4e0, inset -3px -3px 6px #ffffff";
+                          }}
+                          onMouseUp={(e) => {
+                            e.currentTarget.style.boxShadow = "4px 4px 8px #c5d4e0, -4px -4px 8px #ffffff";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.boxShadow = "4px 4px 8px #c5d4e0, -4px -4px 8px #ffffff";
+                          }}
                           title="Hapus Project"
                         >
                           <Trash2 size={18} />
@@ -877,7 +954,11 @@ function TrackerPageFullScreen({ onLogout }) {
                           return tag ? (
                             <span
                               key={tagId}
-                              className={`${tag.color} text-white text-xs px-3 py-1 rounded-full font-semibold shadow-lg`}
+                              className="text-white text-xs px-3 py-1.5 rounded-full font-semibold"
+                              style={{
+                                background: `linear-gradient(135deg, ${tag.color.replace('bg-', '#')}, ${tag.color.replace('bg-', '#')})`,
+                                boxShadow: "4px 4px 10px rgba(0,0,0,0.2), -2px -2px 8px rgba(255,255,255,0.5)"
+                              }}
                             >
                               {tag.label}
                             </span>
@@ -887,90 +968,143 @@ function TrackerPageFullScreen({ onLogout }) {
                     )}
 
                     {p.notes && (
-                      <div className="mb-4 p-3 bg-gradient-to-br from-yellow-500/10 to-orange-500/10 rounded-xl border border-yellow-500/20">
-                        <p className="flex items-start gap-2 text-sm text-gray-200">
-                          <StickyNote size={16} className="mt-0.5 text-yellow-400 flex-shrink-0" />
+                      <div className="mb-4 p-3 rounded-2xl" style={{
+                        background: "linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)",
+                        boxShadow: "inset 4px 4px 8px #e5d4a0, inset -4px -4px 8px #fffef0"
+                      }}>
+                        <p className="flex items-start gap-2 text-sm text-gray-700">
+                          <StickyNote size={16} className="mt-0.5 text-amber-600 flex-shrink-0" />
                           <span className="italic leading-relaxed">{p.notes}</span>
                         </p>
                       </div>
                     )}
 
-                    <div className="border-t border-gray-700/50 my-4"></div>
+                    <div className="h-px my-4" style={{
+                      background: "linear-gradient(90deg, transparent, #c5d4e0, transparent)"
+                    }}></div>
 
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       {p.twitter && (
-                        <div className="flex items-center gap-3 group/item hover:bg-blue-500/5 p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 bg-blue-500/10 rounded-lg group-hover/item:bg-blue-500/20 transition-colors">
-                            <Twitter size={14} className="text-blue-400"/>
+                        <div className="flex items-center gap-3 p-2 rounded-xl transition-all duration-300" style={{
+                          background: "#e8f1f8",
+                          boxShadow: "inset 3px 3px 6px #d4e3ee, inset -3px -3px 6px #fcffff"
+                        }}>
+                          <div className="p-1.5 rounded-lg" style={{
+                            background: "#e8f1f8",
+                            boxShadow: "3px 3px 6px #c5d4e0, -3px -3px 6px #ffffff"
+                          }}>
+                            <Twitter size={14} className="text-blue-500"/>
                           </div>
-                          <span className="text-sm text-gray-300 font-mono truncate">{hideData ? "••••••" : p.twitter}</span>
+                          <span className="text-sm text-gray-600 font-mono truncate">{hideData ? "••••••" : p.twitter}</span>
                         </div>
                       )}
                       
                       {p.discord && (
-                        <div className="flex items-center gap-3 group/item hover:bg-indigo-500/5 p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 bg-indigo-500/10 rounded-lg group-hover/item:bg-indigo-500/20 transition-colors">
-                            <MessageCircle size={14} className="text-indigo-400"/>
+                        <div className="flex items-center gap-3 p-2 rounded-xl transition-all duration-300" style={{
+                          background: "#e8f1f8",
+                          boxShadow: "inset 3px 3px 6px #d4e3ee, inset -3px -3px 6px #fcffff"
+                        }}>
+                          <div className="p-1.5 rounded-lg" style={{
+                            background: "#e8f1f8",
+                            boxShadow: "3px 3px 6px #c5d4e0, -3px -3px 6px #ffffff"
+                          }}>
+                            <MessageCircle size={14} className="text-indigo-500"/>
                           </div>
-                          <span className="text-sm text-gray-300 font-mono truncate">{hideData ? "••••••" : p.discord}</span>
+                          <span className="text-sm text-gray-600 font-mono truncate">{hideData ? "••••••" : p.discord}</span>
                         </div>
                       )}
                       
                       {p.telegram && (
-                        <div className="flex items-center gap-3 group/item hover:bg-sky-500/5 p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 bg-sky-500/10 rounded-lg group-hover/item:bg-sky-500/20 transition-colors">
-                            <Send size={14} className="text-sky-400"/>
+                        <div className="flex items-center gap-3 p-2 rounded-xl transition-all duration-300" style={{
+                          background: "#e8f1f8",
+                          boxShadow: "inset 3px 3px 6px #d4e3ee, inset -3px -3px 6px #fcffff"
+                        }}>
+                          <div className="p-1.5 rounded-lg" style={{
+                            background: "#e8f1f8",
+                            boxShadow: "3px 3px 6px #c5d4e0, -3px -3px 6px #ffffff"
+                          }}>
+                            <Send size={14} className="text-sky-500"/>
                           </div>
-                          <span className="text-sm text-gray-300 font-mono truncate">{hideData ? "••••••" : p.telegram}</span>
+                          <span className="text-sm text-gray-600 font-mono truncate">{hideData ? "••••••" : p.telegram}</span>
                         </div>
                       )}
                       
                       {p.farcaster && (
-                        <div className="flex items-center gap-3 group/item hover:bg-purple-500/5 p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 bg-purple-500/10 rounded-lg group-hover/item:bg-purple-500/20 transition-colors">
-                            <Zap size={14} className="text-purple-400"/>
+                        <div className="flex items-center gap-3 p-2 rounded-xl transition-all duration-300" style={{
+                          background: "#e8f1f8",
+                          boxShadow: "inset 3px 3px 6px #d4e3ee, inset -3px -3px 6px #fcffff"
+                        }}>
+                          <div className="p-1.5 rounded-lg" style={{
+                            background: "#e8f1f8",
+                            boxShadow: "3px 3px 6px #c5d4e0, -3px -3px 6px #ffffff"
+                          }}>
+                            <Zap size={14} className="text-purple-500"/>
                           </div>
-                          <span className="text-sm text-gray-300 font-mono truncate">{hideData ? "••••••" : p.farcaster}</span>
+                          <span className="text-sm text-gray-600 font-mono truncate">{hideData ? "••••••" : p.farcaster}</span>
                         </div>
                       )}
                       
                       {p.wallet && (
-                        <div className="flex items-center gap-3 group/item hover:bg-yellow-500/5 p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 bg-yellow-500/10 rounded-lg group-hover/item:bg-yellow-500/20 transition-colors">
-                            <Wallet size={14} className="text-yellow-400"/>
+                        <div className="flex items-center gap-3 p-2 rounded-xl transition-all duration-300" style={{
+                          background: "#e8f1f8",
+                          boxShadow: "inset 3px 3px 6px #d4e3ee, inset -3px -3px 6px #fcffff"
+                        }}>
+                          <div className="p-1.5 rounded-lg" style={{
+                            background: "#e8f1f8",
+                            boxShadow: "3px 3px 6px #c5d4e0, -3px -3px 6px #ffffff"
+                          }}>
+                            <Wallet size={14} className="text-yellow-600"/>
                           </div>
-                          <span className="text-xs text-gray-300 font-mono break-all">{hideData ? "••••••••••••••" : p.wallet}</span>
+                          <span className="text-xs text-gray-600 font-mono break-all">{hideData ? "••••••••••••••" : p.wallet}</span>
                         </div>
                       )}
                       
                       {p.email && (
-                        <div className="flex items-center gap-3 group/item hover:bg-pink-500/5 p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 bg-pink-500/10 rounded-lg group-hover/item:bg-pink-500/20 transition-colors">
-                            <Mail size={14} className="text-pink-400"/>
+                        <div className="flex items-center gap-3 p-2 rounded-xl transition-all duration-300" style={{
+                          background: "#e8f1f8",
+                          boxShadow: "inset 3px 3px 6px #d4e3ee, inset -3px -3px 6px #fcffff"
+                        }}>
+                          <div className="p-1.5 rounded-lg" style={{
+                            background: "#e8f1f8",
+                            boxShadow: "3px 3px 6px #c5d4e0, -3px -3px 6px #ffffff"
+                          }}>
+                            <Mail size={14} className="text-pink-500"/>
                           </div>
-                          <span className="text-sm text-gray-300 font-mono truncate">{hideData ? "••••••" : p.email}</span>
+                          <span className="text-sm text-gray-600 font-mono truncate">{hideData ? "••••••" : p.email}</span>
                         </div>
                       )}
                       
                       {p.github && (
-                        <div className="flex items-center gap-3 group/item hover:bg-gray-500/5 p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 bg-gray-500/10 rounded-lg group-hover/item:bg-gray-500/20 transition-colors">
-                            <Github size={14} className="text-gray-300"/>
+                        <div className="flex items-center gap-3 p-2 rounded-xl transition-all duration-300" style={{
+                          background: "#e8f1f8",
+                          boxShadow: "inset 3px 3px 6px #d4e3ee, inset -3px -3px 6px #fcffff"
+                        }}>
+                          <div className="p-1.5 rounded-lg" style={{
+                            background: "#e8f1f8",
+                            boxShadow: "3px 3px 6px #c5d4e0, -3px -3px 6px #ffffff"
+                          }}>
+                            <Github size={14} className="text-gray-600"/>
                           </div>
-                          <span className="text-sm text-gray-300 font-mono truncate">{hideData ? "••••••" : p.github}</span>
+                          <span className="text-sm text-gray-600 font-mono truncate">{hideData ? "••••••" : p.github}</span>
                         </div>
                       )}
                       
                       {p.website && (
-                        <div className="flex items-center gap-3 group/item hover:bg-blue-500/5 p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 bg-blue-500/10 rounded-lg group-hover/item:bg-blue-500/20 transition-colors">
-                            <Globe size={14} className="text-blue-400"/>
+                        <div className="flex items-center gap-3 p-2 rounded-xl transition-all duration-300" style={{
+                          background: "#e8f1f8",
+                          boxShadow: "inset 3px 3px 6px #d4e3ee, inset -3px -3px 6px #fcffff"
+                        }}>
+                          <div className="p-1.5 rounded-lg" style={{
+                            background: "#e8f1f8",
+                            boxShadow: "3px 3px 6px #c5d4e0, -3px -3px 6px #ffffff"
+                          }}>
+                            <Globe size={14} className="text-blue-500"/>
                           </div>
                           <a 
                             href={p.website} 
                             target="_blank" 
                             rel="noopener noreferrer" 
-                            className="text-sm text-blue-400 hover:text-blue-300 underline truncate transition-colors"
+                            className="text-sm text-blue-600 hover:text-blue-700 underline truncate transition-colors font-medium"
                           >
                             {p.website}
                           </a>
@@ -979,8 +1113,10 @@ function TrackerPageFullScreen({ onLogout }) {
                     </div>
 
                     {p.lastupdate && (
-                      <div className="mt-4 pt-3 border-t border-gray-700/30">
-                        <p className="text-xs text-gray-500 text-center">
+                      <div className="mt-4 pt-3" style={{
+                        borderTop: "1px solid #c5d4e0"
+                      }}>
+                        <p className="text-xs text-gray-500 text-center font-medium">
                           Last update: {new Date(p.lastupdate).toLocaleDateString('id-ID', { 
                             day: 'numeric', 
                             month: 'short', 
@@ -1298,72 +1434,5 @@ function TrackerPageFullScreen({ onLogout }) {
                                   ? 'text-green-400' 
                                   : 'text-gray-400'
                               }`}>
-                                {b.balance.includes('Error') || b.balance.includes('Invalid') 
-                                  ? b.balance 
-                                  : `${b.balance} ${selectedNetwork === 'BSC' ? 'BNB' : selectedNetwork === 'Polygon' ? 'MATIC' : 'ETH'}`
-                                }
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    <div className="mt-3 text-xs text-gray-400 text-right">
-                      Total Balance: {quickBalances
-                        .filter(b => !b.balance.includes('Error') && !b.balance.includes('Invalid'))
-                        .reduce((sum, b) => sum + parseFloat(b.balance), 0)
-                        .toFixed(6)} {selectedNetwork === 'BSC' ? 'BNB' : selectedNetwork === 'Polygon' ? 'MATIC' : 'ETH'}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+ <response clipped><NOTE>To save on context only part of this file has been shown to you. You should retry this tool after you have searched inside the file with `grep -n` in order to find the line numbers of what you are looking for.</NOTE>
 
-          {activeView === "analytics" && (
-            <div className="max-w-7xl mx-auto">
-              <AnalyticsDashboard 
-                projects={projects} 
-                balances={quickBalances}
-                selectedNetwork={selectedNetwork}
-              />
-            </div>
-          )}
-
-          {activeView === "gas" && (
-            <div className="max-w-7xl mx-auto">
-              <GasTracker />
-            </div>
-          )}
-
-          {activeView === "roi" && (
-            <div className="max-w-7xl mx-auto">
-              <ROICalculator />
-            </div>
-          )}
-
-          {activeView === "news" && (
-            <div className="max-w-7xl mx-auto">
-              <NewsAggregator />
-            </div>
-          )}
-
-          {activeView === "multisend" && (
-            <div className="max-w-7xl mx-auto">
-              <MultisendTool />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {isMobile && sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40"
-          onClick={() => setSidebarOpen(false)}
-        ></div>
-      )}
-    </div>
-  );
-}
-
-export default TrackerPageFullScreen;
