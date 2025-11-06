@@ -38,7 +38,6 @@ const ROICalculator = () => {
   const [result, setResult] = useState(null);
   const [savedCalculations, setSavedCalculations] = useState([]);
 
-  // Historical airdrop data (sample)
   const historicalAirdrops = [
     { name: "Uniswap", avgReturn: 12000, probability: 100 },
     { name: "dYdX", avgReturn: 8000, probability: 85 },
@@ -50,12 +49,9 @@ const ROICalculator = () => {
     { name: "Celestia", avgReturn: 3000, probability: 65 },
   ];
 
-  // Load saved calculations from localStorage
   useEffect(() => {
     const saved = localStorage.getItem("roi_calculations");
-    if (saved) {
-      setSavedCalculations(JSON.parse(saved));
-    }
+    if (saved) setSavedCalculations(JSON.parse(saved));
   }, []);
 
   const calculateROI = () => {
@@ -63,50 +59,28 @@ const ROICalculator = () => {
     const time = parseFloat(formData.timeInvested) || 0;
     const expected = parseFloat(formData.expectedValue) || 0;
     const prob = parseFloat(formData.probability) || 50;
-
-    // Time value calculation (assume $20/hour)
     const timeValue = time * 20;
     const totalInvestment = gas + timeValue;
-
-    // Expected value with probability
     const adjustedExpected = (expected * prob) / 100;
-
-    // ROI calculation
     const profit = adjustedExpected - totalInvestment;
     const roiPercentage =
       totalInvestment > 0 ? (profit / totalInvestment) * 100 : 0;
-
-    // Break-even calculation
     const breakEvenValue = totalInvestment;
 
-    // Risk assessment
     let riskLevel = "Low";
-    let riskColor = "text-green-400";
+    let riskColor = "text-green-500";
     if (roiPercentage < 0) {
       riskLevel = "High";
-      riskColor = "text-red-400";
+      riskColor = "text-red-500";
     } else if (roiPercentage < 100) {
       riskLevel = "Medium";
-      riskColor = "text-yellow-400";
+      riskColor = "text-yellow-500";
     }
 
-    // Projection scenarios
     const scenarios = [
-      {
-        name: "Pessimistic",
-        value: adjustedExpected * 0.3,
-        profit: adjustedExpected * 0.3 - totalInvestment,
-      },
-      {
-        name: "Realistic",
-        value: adjustedExpected,
-        profit: profit,
-      },
-      {
-        name: "Optimistic",
-        value: adjustedExpected * 2,
-        profit: adjustedExpected * 2 - totalInvestment,
-      },
+      { name: "Pessimistic", value: adjustedExpected * 0.3 },
+      { name: "Realistic", value: adjustedExpected },
+      { name: "Optimistic", value: adjustedExpected * 2 },
     ];
 
     const resultData = {
@@ -121,7 +95,6 @@ const ROICalculator = () => {
       projectName: formData.projectName || "Unnamed Project",
       timestamp: new Date().toISOString(),
     };
-
     setResult(resultData);
   };
 
@@ -130,7 +103,6 @@ const ROICalculator = () => {
     const newCalculations = [result, ...savedCalculations].slice(0, 10);
     setSavedCalculations(newCalculations);
     localStorage.setItem("roi_calculations", JSON.stringify(newCalculations));
-    alert("✅ Calculation saved!");
   };
 
   const deleteCalculation = (index) => {
@@ -139,142 +111,80 @@ const ROICalculator = () => {
     localStorage.setItem("roi_calculations", JSON.stringify(updated));
   };
 
-  const clearForm = () => {
-    setFormData({
-      projectName: "",
-      gasSpent: "",
-      timeInvested: "",
-      expectedValue: "",
-      probability: "50",
-    });
-    setResult(null);
-  };
-
-  // Chart data for scenarios
-  const scenarioChartData = result
-    ? result.scenarios.map((s) => ({
-        name: s.name,
-        Investment: parseFloat(result.totalInvestment),
-        Return: s.value,
-        Profit: s.profit > 0 ? s.profit : 0,
-      }))
-    : [];
-
-  // Pie chart for investment breakdown
-  const investmentBreakdown = result
-    ? [
-        {
-          name: "Gas Costs",
-          value: parseFloat(formData.gasSpent) || 0,
-          color: "#f59e0b",
-        },
-        {
-          name: "Time Value",
-          value: parseFloat(formData.timeInvested) * 20 || 0,
-          color: "#06b6d4",
-        },
-      ]
-    : [];
+  // === NEUMORPHIC UI STYLE START ===
+  const neuContainer =
+    "bg-[#e0e5ec] rounded-3xl shadow-[9px_9px_16px_#b8b9be,-9px_-9px_16px_#ffffff] p-6 transition hover:shadow-[inset_5px_5px_10px_#b8b9be,inset_-5px_-5px_10px_#ffffff]";
+  const neuButton =
+    "bg-[#e0e5ec] rounded-xl shadow-[3px_3px_6px_#b8b9be,-3px_-3px_6px_#ffffff] active:shadow-[inset_3px_3px_6px_#b8b9be,inset_-3px_-3px_6px_#ffffff] transition text-gray-700 font-semibold";
+  const neuInput =
+    "w-full bg-[#e0e5ec] rounded-xl px-4 py-3 shadow-[inset_3px_3px_6px_#b8b9be,inset_-3px_-3px_6px_#ffffff] text-gray-700 outline-none";
+  // === NEUMORPHIC UI STYLE END ===
 
   return (
-    <div className="relative z-10 w-full mb-8 fade-in">
+    <div className="relative z-10 w-full mb-8">
       {/* Header */}
-      <div className="bg-gray-900/60 backdrop-blur-md rounded-t-2xl border border-gray-700 border-b-0">
-        <div className="p-4 flex justify-between items-center">
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-green-400 via-emerald-500 to-teal-500 bg-clip-text text-transparent flex items-center gap-2">
-            <Calculator size={28} />
-            📈 ROI Calculator
-          </h2>
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg transition flex items-center gap-2"
-          >
-            {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-            {isExpanded ? "Collapse" : "Expand"}
-          </button>
-        </div>
+      <div
+        className={`${neuContainer} flex justify-between items-center bg-gradient-to-r from-[#e0e5ec] to-[#f1f4f8]`}
+      >
+        <h2 className="text-2xl font-bold flex items-center gap-2 text-gray-700">
+          <Calculator size={26} className="text-cyan-500" /> ROI Calculator
+        </h2>
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className={`${neuButton} px-4 py-2 flex items-center gap-2`}
+        >
+          {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+          {isExpanded ? "Collapse" : "Expand"}
+        </button>
       </div>
 
       {isExpanded && (
-        <div className="bg-gray-900/60 backdrop-blur-md rounded-b-2xl border border-gray-700 p-6 space-y-6">
+        <div
+          className={`${neuContainer} mt-4 space-y-6 bg-gradient-to-br from-[#f0f3f7] to-[#e0e5ec]`}
+        >
           {/* Info Banner */}
-          <div className="bg-blue-600/10 border border-blue-500/30 rounded-xl p-4 flex items-start gap-3">
-            <Info className="text-blue-400 flex-shrink-0 mt-0.5" size={20} />
-            <div className="text-sm text-gray-300">
-              <strong className="text-blue-400">How it works:</strong> Enter
-              your gas costs, time invested, and expected airdrop value. The
-              calculator will show your potential ROI with different scenarios.
-              Time is valued at $20/hour.
-            </div>
+          <div
+            className="rounded-2xl p-4 flex items-start gap-3 text-gray-700"
+            style={{
+              boxShadow:
+                "inset 4px 4px 8px #b8b9be, inset -4px -4px 8px #ffffff",
+            }}
+          >
+            <Info className="text-cyan-500 mt-0.5" size={20} />
+            <p className="text-sm">
+              💡 <b>How it works:</b> Enter your gas, time, and expected value.
+              Time is valued at <b>$20/hour</b>.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Input Form */}
+          {/* Input Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="space-y-4">
-              <h3 className="text-xl font-semibold text-cyan-400">Input Data</h3>
+              <h3 className="text-lg font-semibold text-gray-600">Input Data</h3>
+              {[
+                { label: "Project Name", key: "projectName", placeholder: "zkSync, LayerZero" },
+                { label: "💰 Gas Spent (USD)", key: "gasSpent", placeholder: "150" },
+                { label: "⏱️ Time Invested (Hours)", key: "timeInvested", placeholder: "5" },
+                { label: "🎯 Expected Airdrop Value (USD)", key: "expectedValue", placeholder: "3000" },
+              ].map((f) => (
+                <div key={f.key}>
+                  <label className="block text-sm text-gray-500 mb-1">
+                    {f.label}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={f.placeholder}
+                    value={formData[f.key]}
+                    onChange={(e) =>
+                      setFormData({ ...formData, [f.key]: e.target.value })
+                    }
+                    className={neuInput}
+                  />
+                </div>
+              ))}
 
               <div>
-                <label className="block text-sm text-gray-400 mb-2">
-                  Project Name (Optional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g., zkSync, LayerZero"
-                  value={formData.projectName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, projectName: e.target.value })
-                  }
-                  className="w-full p-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-400 mb-2">
-                  💰 Gas Spent (USD)
-                </label>
-                <input
-                  type="number"
-                  placeholder="e.g., 150"
-                  value={formData.gasSpent}
-                  onChange={(e) =>
-                    setFormData({ ...formData, gasSpent: e.target.value })
-                  }
-                  className="w-full p-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-400 mb-2">
-                  ⏱️ Time Invested (Hours)
-                </label>
-                <input
-                  type="number"
-                  placeholder="e.g., 5"
-                  value={formData.timeInvested}
-                  onChange={(e) =>
-                    setFormData({ ...formData, timeInvested: e.target.value })
-                  }
-                  className="w-full p-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-400 mb-2">
-                  🎯 Expected Airdrop Value (USD)
-                </label>
-                <input
-                  type="number"
-                  placeholder="e.g., 3000"
-                  value={formData.expectedValue}
-                  onChange={(e) =>
-                    setFormData({ ...formData, expectedValue: e.target.value })
-                  }
-                  className="w-full p-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-400 mb-2">
+                <label className="block text-sm text-gray-500 mb-2">
                   📊 Success Probability: {formData.probability}%
                 </label>
                 <input
@@ -285,289 +195,165 @@ const ROICalculator = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, probability: e.target.value })
                   }
-                  className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                  className="w-full accent-cyan-500"
                 />
-                <div className="flex justify-between text-xs text-gray-500 mt-1">
-                  <span>0%</span>
-                  <span>50%</span>
-                  <span>100%</span>
-                </div>
               </div>
 
               <div className="flex gap-3">
                 <button
                   onClick={calculateROI}
-                  className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:opacity-90 px-6 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition"
+                  className={`${neuButton} flex-1 py-3 flex items-center justify-center gap-2 text-cyan-600`}
                 >
-                  <Calculator size={18} />
-                  Calculate ROI
+                  <Calculator size={18} /> Calculate ROI
                 </button>
                 <button
-                  onClick={clearForm}
-                  className="bg-gray-700 hover:bg-gray-600 px-4 py-3 rounded-lg transition"
+                  onClick={() =>
+                    setFormData({
+                      projectName: "",
+                      gasSpent: "",
+                      timeInvested: "",
+                      expectedValue: "",
+                      probability: "50",
+                    })
+                  }
+                  className={`${neuButton} px-6 py-3 text-gray-600`}
                 >
                   Clear
                 </button>
               </div>
             </div>
 
-            {/* Historical Data Reference */}
-            <div className="space-y-4">
-              <h3 className="text-xl font-semibold text-cyan-400">
-                📊 Historical Airdrop Data
+            {/* Historical Table */}
+            <div
+              className="rounded-3xl p-4 overflow-y-auto"
+              style={{
+                boxShadow:
+                  "inset 4px 4px 8px #b8b9be, inset -4px -4px 8px #ffffff",
+              }}
+            >
+              <h3 className="text-lg font-semibold text-gray-600 mb-2">
+                Historical Airdrops
               </h3>
-              <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4 max-h-[500px] overflow-y-auto">
-                <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-gray-800">
-                    <tr className="text-cyan-400 border-b border-gray-700">
-                      <th className="p-2 text-left">Project</th>
-                      <th className="p-2 text-right">Avg Return</th>
-                      <th className="p-2 text-right">Success %</th>
+              <table className="w-full text-sm text-gray-700">
+                <thead>
+                  <tr className="border-b border-gray-300 text-gray-500">
+                    <th className="p-2 text-left">Project</th>
+                    <th className="p-2 text-right">Avg Return</th>
+                    <th className="p-2 text-right">Success %</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {historicalAirdrops.map((air, i) => (
+                    <tr
+                      key={i}
+                      className="hover:bg-gray-100 cursor-pointer transition"
+                      onClick={() =>
+                        setFormData({
+                          ...formData,
+                          projectName: air.name,
+                          expectedValue: air.avgReturn.toString(),
+                          probability: air.probability.toString(),
+                        })
+                      }
+                    >
+                      <td className="p-2 font-medium">{air.name}</td>
+                      <td className="p-2 text-right">${air.avgReturn}</td>
+                      <td className="p-2 text-right text-cyan-600">
+                        {air.probability}%
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {historicalAirdrops.map((airdrop, i) => (
-                      <tr
-                        key={i}
-                        className="border-b border-gray-700 hover:bg-gray-700/30 cursor-pointer"
-                        onClick={() =>
-                          setFormData({
-                            ...formData,
-                            projectName: airdrop.name,
-                            expectedValue: airdrop.avgReturn.toString(),
-                            probability: airdrop.probability.toString(),
-                          })
-                        }
-                      >
-                        <td className="p-2 text-white font-medium">
-                          {airdrop.name}
-                        </td>
-                        <td className="p-2 text-right text-green-400 font-semibold">
-                          ${airdrop.avgReturn.toLocaleString()}
-                        </td>
-                        <td className="p-2 text-right text-yellow-400">
-                          {airdrop.probability}%
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <p className="text-xs text-gray-500 mt-3 italic">
-                  💡 Click on any row to use as reference
-                </p>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
 
-          {/* Results Section */}
+          {/* Result Section */}
           {result && (
-            <div className="space-y-6 animate-fadeIn">
+            <div className="space-y-6">
               <div className="flex justify-between items-center">
-                <h3 className="text-2xl font-bold text-cyan-400">Results</h3>
+                <h3 className="text-xl font-bold text-gray-600">Results</h3>
                 <button
                   onClick={saveCalculation}
-                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition"
+                  className={`${neuButton} px-5 py-2 flex items-center gap-2 text-cyan-600`}
                 >
-                  <Save size={16} />
-                  Save Calculation
+                  <Save size={16} /> Save
                 </button>
               </div>
 
-              {/* Key Metrics Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-gradient-to-br from-orange-600/20 to-orange-800/20 border border-orange-500/30 rounded-xl p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-400 text-sm">Total Investment</p>
-                      <p className="text-2xl font-bold text-orange-400">
-                        ${result.totalInvestment}
-                      </p>
+              {/* Metrics */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                {[
+                  { label: "Investment", value: `$${result.totalInvestment}`, icon: DollarSign },
+                  { label: "Expected", value: `$${result.expectedReturn}`, icon: TrendingUp },
+                  {
+                    label: "Profit",
+                    value: `$${result.profit}`,
+                    icon: Zap,
+                    color: parseFloat(result.profit) >= 0 ? "text-green-500" : "text-red-500",
+                  },
+                  {
+                    label: "ROI",
+                    value: `${result.roiPercentage}%`,
+                    icon: TrendingUp,
+                    color: parseFloat(result.roiPercentage) >= 0 ? "text-purple-500" : "text-red-500",
+                  },
+                ].map((card, i) => (
+                  <div
+                    key={i}
+                    className={`${neuContainer} flex flex-col items-start space-y-2`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <card.icon
+                        size={26}
+                        className={card.color || "text-cyan-500"}
+                      />
+                      <p className="text-gray-500 text-sm">{card.label}</p>
                     </div>
-                    <DollarSign className="text-orange-400" size={32} />
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-cyan-600/20 to-cyan-800/20 border border-cyan-500/30 rounded-xl p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-400 text-sm">Expected Return</p>
-                      <p className="text-2xl font-bold text-cyan-400">
-                        ${result.expectedReturn}
-                      </p>
-                    </div>
-                    <TrendingUp className="text-cyan-400" size={32} />
-                  </div>
-                </div>
-
-                <div
-                  className={`bg-gradient-to-br ${
-                    parseFloat(result.profit) >= 0
-                      ? "from-green-600/20 to-green-800/20 border-green-500/30"
-                      : "from-red-600/20 to-red-800/20 border-red-500/30"
-                  } border rounded-xl p-4`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-400 text-sm">Profit/Loss</p>
-                      <p
-                        className={`text-2xl font-bold ${
-                          parseFloat(result.profit) >= 0
-                            ? "text-green-400"
-                            : "text-red-400"
-                        }`}
-                      >
-                        ${result.profit}
-                      </p>
-                    </div>
-                    <Zap
-                      className={`${
-                        parseFloat(result.profit) >= 0
-                          ? "text-green-400"
-                          : "text-red-400"
+                    <p
+                      className={`text-2xl font-bold ${
+                        card.color || "text-gray-700"
                       }`}
-                      size={32}
-                    />
+                    >
+                      {card.value}
+                    </p>
                   </div>
-                </div>
-
-                <div
-                  className={`bg-gradient-to-br ${
-                    parseFloat(result.roiPercentage) >= 0
-                      ? "from-purple-600/20 to-purple-800/20 border-purple-500/30"
-                      : "from-red-600/20 to-red-800/20 border-red-500/30"
-                  } border rounded-xl p-4`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-400 text-sm">ROI</p>
-                      <p
-                        className={`text-2xl font-bold ${
-                          parseFloat(result.roiPercentage) >= 0
-                            ? "text-purple-400"
-                            : "text-red-400"
-                        }`}
-                      >
-                        {result.roiPercentage}%
-                      </p>
-                    </div>
-                    <TrendingUp
-                      className={`${
-                        parseFloat(result.roiPercentage) >= 0
-                          ? "text-purple-400"
-                          : "text-red-400"
-                      }`}
-                      size={32}
-                    />
-                  </div>
-                </div>
+                ))}
               </div>
 
-              {/* Risk Assessment */}
+              {/* Risk Level */}
               <div
-                className={`p-4 rounded-xl border ${
-                  result.riskLevel === "Low"
-                    ? "bg-green-600/10 border-green-500/30"
-                    : result.riskLevel === "Medium"
-                    ? "bg-yellow-600/10 border-yellow-500/30"
-                    : "bg-red-600/10 border-red-500/30"
-                }`}
+                className={`${neuContainer} flex items-center gap-3 text-gray-700`}
               >
-                <div className="flex items-center gap-3">
-                  <Info className={result.riskColor} size={24} />
-                  <div>
-                    <p className="font-semibold text-white">
-                      Risk Level: <span className={result.riskColor}>{result.riskLevel}</span>
-                    </p>
-                    <p className="text-sm text-gray-400">
-                      Break-even value: ${result.breakEvenValue} | Time valued
-                      at $20/hour
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Charts Row */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Scenario Comparison */}
-                <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
-                  <h4 className="text-lg font-semibold text-cyan-400 mb-4">
-                    Profit Projection Scenarios
-                  </h4>
-                  <ResponsiveContainer width="100%" height={250}>
-                    <BarChart data={scenarioChartData}>
-                      <XAxis
-                        dataKey="name"
-                        stroke="#9ca3af"
-                        style={{ fontSize: "12px" }}
-                      />
-                      <YAxis stroke="#9ca3af" style={{ fontSize: "12px" }} />
-                      <Tooltip
-                        contentStyle={{
-                          background: "#1f2937",
-                          border: "1px solid #374151",
-                          borderRadius: "8px",
-                          color: "#fff",
-                        }}
-                      />
-                      <Legend />
-                      <Bar dataKey="Investment" fill="#f59e0b" radius={[8, 8, 0, 0]} />
-                      <Bar dataKey="Return" fill="#06b6d4" radius={[8, 8, 0, 0]} />
-                      <Bar dataKey="Profit" fill="#22c55e" radius={[8, 8, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-
-                {/* Investment Breakdown */}
-                <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
-                  <h4 className="text-lg font-semibold text-cyan-400 mb-4">
-                    Investment Breakdown
-                  </h4>
-                  <ResponsiveContainer width="100%" height={250}>
-                    <PieChart>
-                      <Pie
-                        data={investmentBreakdown}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ name, value }) => `${name}: $${value.toFixed(0)}`}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {investmentBreakdown.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{
-                          background: "#1f2937",
-                          border: "1px solid #374151",
-                          borderRadius: "8px",
-                          color: "#fff",
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
+                <Info className={result.riskColor} size={24} />
+                <div>
+                  <p className="font-semibold">
+                    Risk Level:{" "}
+                    <span className={result.riskColor}>{result.riskLevel}</span>
+                  </p>
+                  <p className="text-sm">
+                    Break-even: ${result.breakEvenValue} | $20/hr time value
+                  </p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Saved Calculations */}
+          {/* Saved */}
           {savedCalculations.length > 0 && (
-            <div className="space-y-4">
-              <h3 className="text-xl font-semibold text-cyan-400">
-                💾 Saved Calculations
+            <div>
+              <h3 className="text-lg font-semibold text-gray-600 mb-3">
+                Saved Calculations
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {savedCalculations.map((calc, i) => (
                   <div
                     key={i}
-                    className="bg-gray-800/50 border border-gray-700 rounded-xl p-4 hover:border-cyan-500/50 transition"
+                    className={`${neuContainer} flex flex-col justify-between`}
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div>
-                        <h4 className="font-semibold text-white">
+                        <h4 className="font-semibold text-gray-700">
                           {calc.projectName}
                         </h4>
                         <p className="text-xs text-gray-500">
@@ -576,42 +362,42 @@ const ROICalculator = () => {
                       </div>
                       <button
                         onClick={() => deleteCalculation(i)}
-                        className="text-red-400 hover:text-red-300 transition"
+                        className="text-red-400 hover:text-red-500"
                       >
                         <Trash2 size={16} />
                       </button>
                     </div>
-                    <div className="space-y-1 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Investment:</span>
-                        <span className="text-orange-400 font-semibold">
+                    <div className="text-sm space-y-1">
+                      <p>
+                        Investment:{" "}
+                        <span className="font-semibold text-gray-700">
                           ${calc.totalInvestment}
                         </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">ROI:</span>
+                      </p>
+                      <p>
+                        ROI:{" "}
                         <span
                           className={`font-semibold ${
                             parseFloat(calc.roiPercentage) >= 0
-                              ? "text-green-400"
-                              : "text-red-400"
+                              ? "text-green-500"
+                              : "text-red-500"
                           }`}
                         >
                           {calc.roiPercentage}%
                         </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Profit:</span>
+                      </p>
+                      <p>
+                        Profit:{" "}
                         <span
                           className={`font-semibold ${
                             parseFloat(calc.profit) >= 0
-                              ? "text-green-400"
-                              : "text-red-400"
+                              ? "text-green-500"
+                              : "text-red-500"
                           }`}
                         >
                           ${calc.profit}
                         </span>
-                      </div>
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -625,4 +411,3 @@ const ROICalculator = () => {
 };
 
 export default ROICalculator;
-
