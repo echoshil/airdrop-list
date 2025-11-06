@@ -42,7 +42,6 @@ import AnalyticsDashboard from "./components/AnalyticsDashboard";
 import GasTracker from "./components/GasTracker";
 import ROICalculator from "./components/ROICalculator";
 import NewsAggregator from "./components/NewsAggregator";
-import MultisendTool from "./components/MultisendTool";
 
 const GOOGLE_SCRIPT_URL = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
 
@@ -86,24 +85,12 @@ function TrackerPageFullScreen({ onLogout }) {
   const [timer, setTimer] = useState(60);
   const [progress, setProgress] = useState(100);
   const [showDexList, setShowDexList] = useState(false);
-  
-  // State untuk EVM Native & Tokens Balance Checker
-  const [evmAddresses, setEvmAddresses] = useState("");
-  const [evmBalances, setEvmBalances] = useState([]);
-  const [evmBalanceLoading, setEvmBalanceLoading] = useState(false);
-  const [customRpcUrl, setCustomRpcUrl] = useState("");
-  const [checkType, setCheckType] = useState("native");
-  const [tokenContractAddress, setTokenContractAddress] = useState("");
-  
-  // State untuk Quick Network Balance Checker
   const [selectedNetwork, setSelectedNetwork] = useState("Ethereum");
-  const [quickAddresses, setQuickAddresses] = useState("");
-  const [quickBalances, setQuickBalances] = useState([]);
-  const [quickBalanceLoading, setQuickBalanceLoading] = useState(false);
-  
+  const [addresses, setAddresses] = useState("");
+  const [balances, setBalances] = useState([]);
+  const [balanceLoading, setBalanceLoading] = useState(false);
   const [selectedTags, setSelectedTags] = useState([]);
   const [filterTag, setFilterTag] = useState("all");
-  const [filterDaily, setFilterDaily] = useState("all");
   
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeView, setActiveView] = useState("projects");
@@ -317,16 +304,11 @@ function TrackerPageFullScreen({ onLogout }) {
         filterTag === "all" ||
         (hasTags && p.tags.includes(filterTag));
       
-      const matchesDaily =
-        filterDaily === "all" ||
-        (filterDaily === "checked" && p.daily === "CHECKED") ||
-        (filterDaily === "unchecked" && p.daily !== "CHECKED");
-      
       if (filterTag !== "all") {
         console.log(`Project: ${p.name}, Tags: ${JSON.stringify(p.tags)}, FilterTag: ${filterTag}, Matches: ${matchesTags}`);
       }
       
-      return matchesSearch && matchesTags && matchesDaily;
+      return matchesSearch && matchesTags;
     })
     .sort((a, b) => {
       const A = (a.name || "").toLowerCase();
@@ -354,11 +336,11 @@ function TrackerPageFullScreen({ onLogout }) {
   };
 
   const checkBalances = async () => {
-    const list = quickAddresses.split(/[\n,\s]+/).filter(Boolean);
+    const list = addresses.split(/[\n,\s]+/).filter(Boolean);
     if (list.length === 0) return alert("Masukkan address wallet!");
     
-    setQuickBalanceLoading(true);
-    setQuickBalances([]);
+    setBalanceLoading(true);
+    setBalances([]);
     const result = [];
     
     try {
@@ -394,134 +376,23 @@ function TrackerPageFullScreen({ onLogout }) {
       console.error("Provider error:", err);
       alert(`⚠️ Gagal terhubung ke ${selectedNetwork} network. Coba lagi!`);
     } finally {
-      setQuickBalances(result);
-      setQuickBalanceLoading(false);
-    }
-  };
-
-  const checkEVMBalances = async () => {
-    const list = evmAddresses.split(/[\n,\s]+/).filter(Boolean);
-    if (list.length === 0) return alert("Masukkan address wallet!");
-    
-    if (!customRpcUrl) return alert("Masukkan RPC URL!");
-    
-    if (checkType === "token" && !tokenContractAddress) {
-      return alert("Masukkan contract address token!");
-    }
-    
-    setEvmBalanceLoading(true);
-    setEvmBalances([]);
-    const result = [];
-    
-    try {
-      const provider = new ethers.JsonRpcProvider(customRpcUrl);
-      
-      if (checkType === "native") {
-        for (const addr of list) {
-          try {
-            if (!ethers.isAddress(addr)) {
-              result.push({ 
-                address: addr, 
-                balance: "❌ Invalid Address" 
-              });
-              continue;
-            }
-            
-            const checksumAddr = ethers.getAddress(addr);
-            const bal = await provider.getBalance(checksumAddr);
-            const formattedBalance = parseFloat(ethers.formatEther(bal)).toFixed(6);
-            
-            result.push({ 
-              address: checksumAddr, 
-              balance: formattedBalance 
-            });
-          } catch (err) {
-            console.error(`Error checking ${addr}:`, err);
-            result.push({ 
-              address: addr, 
-              balance: "❌ Error" 
-            });
-          }
-        }
-      } else if (checkType === "token") {
-        if (!ethers.isAddress(tokenContractAddress)) {
-          alert("❌ Invalid token contract address!");
-          setEvmBalanceLoading(false);
-          return;
-        }
-        
-        const tokenABI = [
-          "function balanceOf(address owner) view returns (uint256)",
-          "function decimals() view returns (uint8)",
-          "function symbol() view returns (string)"
-        ];
-        
-        try {
-          const tokenContract = new ethers.Contract(tokenContractAddress, tokenABI, provider);
-          const decimals = await tokenContract.decimals();
-          const symbol = await tokenContract.symbol();
-          
-          for (const addr of list) {
-            try {
-              if (!ethers.isAddress(addr)) {
-                result.push({ 
-                  address: addr, 
-                  balance: "❌ Invalid Address",
-                  symbol: symbol 
-                });
-                continue;
-              }
-              
-              const checksumAddr = ethers.getAddress(addr);
-              const bal = await tokenContract.balanceOf(checksumAddr);
-              const formattedBalance = parseFloat(ethers.formatUnits(bal, decimals)).toFixed(6);
-              
-              result.push({ 
-                address: checksumAddr, 
-                balance: formattedBalance,
-                symbol: symbol
-              });
-            } catch (err) {
-              console.error(`Error checking ${addr}:`, err);
-              result.push({ 
-                address: addr, 
-                balance: "❌ Error",
-                symbol: symbol
-              });
-            }
-          }
-        } catch (err) {
-          console.error("Token contract error:", err);
-          alert("⚠️ Gagal membaca token contract. Pastikan contract address benar!");
-          setEvmBalanceLoading(false);
-          return;
-        }
-      }
-    } catch (err) {
-      console.error("Provider error:", err);
-      alert("⚠️ Gagal terhubung ke RPC URL. Pastikan URL benar dan mendukung jaringan EVM!");
-    } finally {
-      setEvmBalances(result);
-      setEvmBalanceLoading(false);
+      setBalances(result);
+      setBalanceLoading(false);
     }
   };
 
   const sidebarMenuItems = [
     { id: "projects", label: "Projects", icon: LayoutDashboard, color: "text-cyan-400" },
-    { id: "trading", label: "Trading", icon: Zap, color: "text-green-500" },
     { id: "analytics", label: "Analytics", icon: Activity, color: "text-purple-400" },
     { id: "gas", label: "Gas Tracker", icon: Fuel, color: "text-orange-400" },
     { id: "roi", label: "ROI Calculator", icon: Calculator, color: "text-green-400" },
     { id: "news", label: "News Feed", icon: Newspaper, color: "text-yellow-400" },
     { id: "balance", label: "Balance Checker", icon: Wallet, color: "text-blue-400" },
-    { id: "multisend", label: "Multisend", icon: Send, color: "text-pink-400" },
   ];
 
   return (
-    <div className="min-h-screen text-white relative overflow-hidden" style={{
-      background: "linear-gradient(135deg, #e3edf7 0%, #d4e4f7 50%, #dfe9f5 100%)"
-    }}>
-      {/* <NeonParticles /> */}
+    <div className="min-h-screen text-white relative overflow-hidden bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
+      <NeonParticles />
 
       <div
         className={`fixed top-0 left-0 h-full bg-gray-900/95 backdrop-blur-md border-r border-gray-700 z-50 transition-all duration-300 ${
@@ -596,55 +467,30 @@ function TrackerPageFullScreen({ onLogout }) {
           <div className="flex flex-wrap justify-between items-center gap-3 md:gap-4">
             <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
               {activeView === "projects" && "📦 My Projects"}
-              {activeView === "trading" && "⚡ DeDoo Trading Platform"}
               {activeView === "analytics" && "📊 Analytics Dashboard"}
               {activeView === "gas" && "⛽ Gas Tracker"}
               {activeView === "roi" && "💹 ROI Calculator"}
               {activeView === "news" && "📰 News Feed"}
               {activeView === "balance" && "💰 Balance Checker"}
-              {activeView === "multisend" && "🚀 Multisend Native & Tokens"}
             </h1>
-            
+
             <div className="flex items-center gap-2 md:gap-3 flex-wrap">
               {activeView === "projects" && (
                 <>
                   <div className="relative">
                     <button className="flex items-center gap-1 md:gap-2 bg-gray-800 hover:bg-gray-700 px-2 md:px-4 py-1.5 md:py-2 rounded-lg transition text-xs md:text-sm">
-                      <Tag size={14} />
+                      <Filter size={14} />
                       <select
                         value={filterTag}
                         onChange={(e) => setFilterTag(e.target.value)}
-                        className="bg-gray-800 text-white outline-none cursor-pointer border-none appearance-none pr-2"
-                        style={{
-                          WebkitAppearance: 'none',
-                          MozAppearance: 'none'
-                        }}
+                        className="bg-transparent text-white outline-none cursor-pointer"
                       >
-                        <option value="all" className="bg-gray-800 text-white">All Tags</option>
+                        <option value="all">All Tags</option>
                         {AVAILABLE_TAGS.map((tag) => (
-                          <option key={tag.id} value={tag.id} className="bg-gray-800 text-white">
+                          <option key={tag.id} value={tag.id}>
                             {tag.label}
                           </option>
                         ))}
-                      </select>
-                    </button>
-                  </div>
-
-                  <div className="relative">
-                    <button className="flex items-center gap-1 md:gap-2 bg-gray-800 hover:bg-gray-700 px-2 md:px-4 py-1.5 md:py-2 rounded-lg transition text-xs md:text-sm">
-                      <CheckSquare size={14} />
-                      <select
-                        value={filterDaily}
-                        onChange={(e) => setFilterDaily(e.target.value)}
-                        className="bg-gray-800 text-white outline-none cursor-pointer border-none appearance-none pr-2"
-                        style={{
-                          WebkitAppearance: 'none',
-                          MozAppearance: 'none'
-                        }}
-                      >
-                        <option value="all" className="bg-gray-800 text-white">All Projects</option>
-                        <option value="checked" className="bg-gray-800 text-white">✅ Daily Checked</option>
-                        <option value="unchecked" className="bg-gray-800 text-white">⬜ Daily Unchecked</option>
                       </select>
                     </button>
                   </div>
@@ -677,104 +523,14 @@ function TrackerPageFullScreen({ onLogout }) {
           </div>
         </div>
 
-        <div className="p-4 md:p-6">
-          {activeView === "trading" && (
-            <div className="max-w-full mx-auto space-y-6">
-              <div className="text-center py-8 bg-gradient-to-br from-gray-900/60 to-gray-800/60 backdrop-blur-md rounded-3xl border border-gray-700/50">
-                <div className="flex items-center justify-center gap-4 mb-3">
-                  <Zap className="text-green-400" size={48} />
-                  <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-green-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">
-                    DeDoo Trading Platform
-                  </h2>
-                </div>
-                <p className="text-gray-300 text-lg">
-                  Trade crypto with lightning speed & zero fees
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-gradient-to-br from-green-500/20 to-emerald-600/20 p-6 rounded-2xl border-2 border-green-500/40 hover:border-green-400/60 transition-all shadow-xl hover:shadow-green-500/20">
-                  <div className="flex items-center gap-4 mb-3">
-                    <div className="p-3 bg-green-500/30 rounded-xl">
-                      <Zap className="text-green-300" size={28} />
-                    </div>
-                    <h3 className="text-xl font-bold text-green-300">Lightning Fast</h3>
-                  </div>
-                  <p className="text-gray-200 text-base leading-relaxed">
-                    Execute trades in milliseconds with our optimized engine
-                  </p>
-                </div>
-
-                <div className="bg-gradient-to-br from-blue-500/20 to-cyan-600/20 p-6 rounded-2xl border-2 border-blue-500/40 hover:border-blue-400/60 transition-all shadow-xl hover:shadow-blue-500/20">
-                  <div className="flex items-center gap-4 mb-3">
-                    <div className="p-3 bg-blue-500/30 rounded-xl">
-                      <Wallet className="text-blue-300" size={28} />
-                    </div>
-                    <h3 className="text-xl font-bold text-blue-300">Low Fees</h3>
-                  </div>
-                  <p className="text-gray-200 text-base leading-relaxed">
-                    Trade with minimal fees and maximum profit potential
-                  </p>
-                </div>
-
-                <div className="bg-gradient-to-br from-purple-500/20 to-pink-600/20 p-6 rounded-2xl border-2 border-purple-500/40 hover:border-purple-400/60 transition-all shadow-xl hover:shadow-purple-500/20">
-                  <div className="flex items-center gap-4 mb-3">
-                    <div className="p-3 bg-purple-500/30 rounded-xl">
-                      <Activity className="text-purple-300" size={28} />
-                    </div>
-                    <h3 className="text-xl font-bold text-purple-300">Real-time Data</h3>
-                  </div>
-                  <p className="text-gray-200 text-base leading-relaxed">
-                    Get live market data and advanced trading charts
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-xl p-6 rounded-3xl border-2 border-gray-700/50 shadow-2xl">
-                <div className="relative w-full" style={{ height: 'calc(100vh - 450px)', minHeight: '650px' }}>
-                  <div className="absolute inset-0 rounded-2xl overflow-hidden border-2 border-gray-600/50 shadow-2xl">
-                    <iframe
-                      src="https://trade.dedoo.xyz/"
-                      className="w-full h-full"
-                      title="DeDoo Trading Platform"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      loading="lazy"
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-6 flex items-center justify-center">
-                  <a 
-                    href="https://trade.dedoo.xyz/" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 px-8 py-3 rounded-xl font-semibold text-white shadow-lg hover:shadow-cyan-500/50 transition-all transform hover:scale-105"
-                  >
-                    <Globe size={20} />
-                    <span>Open in New Tab</span>
-                    <ExternalLink size={20} />
-                  </a>
-                </div>
-              </div>
-            </div>
-          )}
-
+        <div className="p-6">
           {activeView === "projects" && (
             <div className="space-y-8">
-              <div className="p-4 md:p-8 rounded-3xl" style={{
-                background: "linear-gradient(135deg, #e8f1f8 0%, #dae7f3 100%)",
-                boxShadow: "20px 20px 60px #c5d4e0, -20px -20px 60px #ffffff"
-              }}>
-                <h2 className="text-xl md:text-2xl font-bold mb-6 text-gray-700 flex items-center gap-3">
-                  <div className="p-2 rounded-xl" style={{
-                    background: "#e8f1f8",
-                    boxShadow: "inset 6px 6px 12px #c5d4e0, inset -6px -6px 12px #ffffff"
-                  }}>
-                    ➕
-                  </div>
-                  Tambah Project Baru
+              <div className="bg-gray-900/60 backdrop-blur-md p-4 md:p-6 rounded-2xl border border-gray-700 shadow-lg">
+                <h2 className="text-lg md:text-xl font-semibold mb-4 text-cyan-300">
+                  ➕ Tambah Project Baru
                 </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {["name", "twitter", "discord", "telegram", "farcaster", "wallet", "email", "github", "website"].map(
                     (field) => (
                       <input
@@ -785,24 +541,14 @@ function TrackerPageFullScreen({ onLogout }) {
                         onChange={(e) =>
                           setFormData({ ...formData, [field]: e.target.value })
                         }
-                        className="p-3 md:p-4 text-sm md:text-base rounded-2xl outline-none text-gray-700 placeholder-gray-400 transition-all duration-300 w-full"
-                        style={{
-                          background: "#e8f1f8",
-                          boxShadow: "inset 6px 6px 12px #c5d4e0, inset -6px -6px 12px #ffffff"
-                        }}
-                        onFocus={(e) => {
-                          e.target.style.boxShadow = "inset 8px 8px 16px #c5d4e0, inset -8px -8px 16px #ffffff";
-                        }}
-                        onBlur={(e) => {
-                          e.target.style.boxShadow = "inset 6px 6px 12px #c5d4e0, inset -6px -6px 12px #ffffff";
-                        }}
+                        className="p-2 md:p-3 text-sm md:text-base rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white w-full"
                       />
                     )
                   )}
                 </div>
 
-                <div className="mt-4">
-                  <label className="flex items-center gap-2 text-sm text-gray-600 mb-2 font-medium">
+                <div className="mt-3">
+                  <label className="flex items-center gap-2 text-sm text-gray-400 mb-2">
                     <StickyNote size={16} />
                     Notes
                   </label>
@@ -810,44 +556,27 @@ function TrackerPageFullScreen({ onLogout }) {
                     placeholder="Add notes..."
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    className="w-full p-3 rounded-2xl text-gray-700 placeholder-gray-400 resize-none outline-none transition-all duration-300"
-                    rows="3"
-                    style={{
-                      background: "#e8f1f8",
-                      boxShadow: "inset 6px 6px 12px #c5d4e0, inset -6px -6px 12px #ffffff"
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.boxShadow = "inset 8px 8px 16px #c5d4e0, inset -8px -8px 16px #ffffff";
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.boxShadow = "inset 6px 6px 12px #c5d4e0, inset -6px -6px 12px #ffffff";
-                    }}
+                    className="w-full p-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white resize-none"
+                    rows="2"
                   ></textarea>
                 </div>
 
-                <div className="mt-4">
-                  <label className="flex items-center gap-2 text-sm text-gray-600 mb-3 font-medium">
+                <div className="mt-3">
+                  <label className="flex items-center gap-2 text-sm text-gray-400 mb-2">
                     <Tag size={16} />
                     Select Tags
                   </label>
-                  <div className="flex flex-wrap gap-3">
+                  <div className="flex flex-wrap gap-2">
                     {AVAILABLE_TAGS.map((tag) => (
                       <button
                         key={tag.id}
                         type="button"
                         onClick={() => toggleTag(tag.id)}
-                        className="px-4 py-2 rounded-full text-xs font-semibold transition-all duration-300"
-                        style={{
-                          background: selectedTags.includes(tag.id) || (formData.tags && formData.tags.includes(tag.id))
-                            ? `linear-gradient(135deg, ${tag.color.replace('bg-', '#')}, ${tag.color.replace('bg-', '#')})`
-                            : "#e8f1f8",
-                          boxShadow: selectedTags.includes(tag.id) || (formData.tags && formData.tags.includes(tag.id))
-                            ? "inset 4px 4px 8px #c5d4e0, inset -4px -4px 8px #ffffff"
-                            : "6px 6px 12px #c5d4e0, -6px -6px 12px #ffffff",
-                          color: selectedTags.includes(tag.id) || (formData.tags && formData.tags.includes(tag.id))
-                            ? "white"
-                            : "#64748b"
-                        }}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold transition ${
+                          selectedTags.includes(tag.id) || (formData.tags && formData.tags.includes(tag.id))
+                            ? `${tag.color} text-white`
+                            : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                        }`}
                       >
                         {tag.label}
                       </button>
@@ -858,24 +587,13 @@ function TrackerPageFullScreen({ onLogout }) {
                 <button
                   onClick={addProject}
                   disabled={loading}
-                  className="mt-6 px-8 py-3 rounded-2xl font-semibold text-gray-700 transition-all duration-300 active:scale-95"
-                  style={{
-                    background: "#e8f1f8",
-                    boxShadow: loading ? "inset 4px 4px 8px #c5d4e0, inset -4px -4px 8px #ffffff" : "8px 8px 16px #c5d4e0, -8px -8px 16px #ffffff",
-                    cursor: loading ? "not-allowed" : "pointer",
-                    opacity: loading ? 0.6 : 1
-                  }}
-                  onMouseDown={(e) => {
-                    if (!loading) e.currentTarget.style.boxShadow = "inset 4px 4px 8px #c5d4e0, inset -4px -4px 8px #ffffff";
-                  }}
-                  onMouseUp={(e) => {
-                    if (!loading) e.currentTarget.style.boxShadow = "8px 8px 16px #c5d4e0, -8px -8px 16px #ffffff";
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!loading) e.currentTarget.style.boxShadow = "8px 8px 16px #c5d4e0, -8px -8px 16px #ffffff";
-                  }}
+                  className={`mt-4 px-6 py-2 rounded-lg shadow-md transition-all ${
+                    loading
+                      ? "bg-gray-600 cursor-not-allowed"
+                      : "bg-green-600 hover:bg-green-700"
+                  }`}
                 >
-                  {loading ? "Loading..." : "✨ Tambah Project"}
+                  {loading ? "Loading..." : "+ Tambah Project"}
                 </button>
               </div>
 
@@ -883,60 +601,30 @@ function TrackerPageFullScreen({ onLogout }) {
                 {displayedProjects.map((p, i) => (
                   <div
                     key={i}
-                    className="group relative p-6 transition-all duration-500 w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] max-w-sm rounded-3xl"
-                    style={{
-                      background: "linear-gradient(135deg, #e8f1f8 0%, #dae7f3 100%)",
-                      boxShadow: "15px 15px 40px #c5d4e0, -15px -15px 40px #ffffff",
-                      transition: "all 0.5s ease"
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = "translateY(-8px) scale(1.02)";
-                      e.currentTarget.style.boxShadow = "20px 20px 50px #b8c9d9, -20px -20px 50px #ffffff";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = "translateY(0) scale(1)";
-                      e.currentTarget.style.boxShadow = "15px 15px 40px #c5d4e0, -15px -15px 40px #ffffff";
-                    }}
+                    className="group relative bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-xl p-6 rounded-3xl border border-gray-700/50 hover:border-cyan-500/50 transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-cyan-500/10 hover:-translate-y-1 w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] max-w-sm"
                   >
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
-                        <h3 className="text-xl font-bold text-gray-700 mb-2 pr-20">
+                        <h3 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 pr-16">
                           {p.name}
                         </h3>
                       </div>
                       
-                      <div className="flex gap-2 absolute top-5 right-5">
+                      <div className="flex gap-2 absolute top-4 right-4">
                         <button
                           onClick={() => toggleDaily(p.name, p.daily)}
-                          className="p-2 rounded-xl transition-all duration-300"
-                          style={{
-                            background: "#e8f1f8",
-                            boxShadow: p.daily === "CHECKED" 
-                              ? "inset 4px 4px 8px #c5d4e0, inset -4px -4px 8px #ffffff"
-                              : "4px 4px 8px #c5d4e0, -4px -4px 8px #ffffff",
-                            color: p.daily === "CHECKED" ? "#06b6d4" : "#94a3b8"
-                          }}
+                          className={`p-2 rounded-lg transition-all duration-200 ${
+                            p.daily === "CHECKED"
+                              ? "bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30"
+                              : "bg-gray-700/50 text-gray-400 hover:bg-gray-700 hover:text-cyan-400"
+                          }`}
                           title="Toggle Daily Check"
                         >
                           {p.daily === "CHECKED" ? <CheckSquare size={18} /> : <Square size={18} />}
                         </button>
                         <button
                           onClick={() => deleteProject(p.name)}
-                          className="p-2 rounded-xl transition-all duration-300"
-                          style={{
-                            background: "#e8f1f8",
-                            boxShadow: "4px 4px 8px #c5d4e0, -4px -4px 8px #ffffff",
-                            color: "#ef4444"
-                          }}
-                          onMouseDown={(e) => {
-                            e.currentTarget.style.boxShadow = "inset 3px 3px 6px #c5d4e0, inset -3px -3px 6px #ffffff";
-                          }}
-                          onMouseUp={(e) => {
-                            e.currentTarget.style.boxShadow = "4px 4px 8px #c5d4e0, -4px -4px 8px #ffffff";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.boxShadow = "4px 4px 8px #c5d4e0, -4px -4px 8px #ffffff";
-                          }}
+                          className="p-2 rounded-lg bg-gray-700/50 text-gray-400 hover:bg-red-500/20 hover:text-red-400 transition-all duration-200"
                           title="Hapus Project"
                         >
                           <Trash2 size={18} />
@@ -951,11 +639,7 @@ function TrackerPageFullScreen({ onLogout }) {
                           return tag ? (
                             <span
                               key={tagId}
-                              className="text-white text-xs px-3 py-1.5 rounded-full font-semibold"
-                              style={{
-                                background: `linear-gradient(135deg, ${tag.color.replace('bg-', '#')}, ${tag.color.replace('bg-', '#')})`,
-                                boxShadow: "4px 4px 10px rgba(0,0,0,0.2), -2px -2px 8px rgba(255,255,255,0.5)"
-                              }}
+                              className={`${tag.color} text-white text-xs px-3 py-1 rounded-full font-semibold shadow-lg`}
                             >
                               {tag.label}
                             </span>
@@ -965,143 +649,90 @@ function TrackerPageFullScreen({ onLogout }) {
                     )}
 
                     {p.notes && (
-                      <div className="mb-4 p-3 rounded-2xl" style={{
-                        background: "linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)",
-                        boxShadow: "inset 4px 4px 8px #e5d4a0, inset -4px -4px 8px #fffef0"
-                      }}>
-                        <p className="flex items-start gap-2 text-sm text-gray-700">
-                          <StickyNote size={16} className="mt-0.5 text-amber-600 flex-shrink-0" />
+                      <div className="mb-4 p-3 bg-gradient-to-br from-yellow-500/10 to-orange-500/10 rounded-xl border border-yellow-500/20">
+                        <p className="flex items-start gap-2 text-sm text-gray-200">
+                          <StickyNote size={16} className="mt-0.5 text-yellow-400 flex-shrink-0" />
                           <span className="italic leading-relaxed">{p.notes}</span>
                         </p>
                       </div>
                     )}
 
-                    <div className="h-px my-4" style={{
-                      background: "linear-gradient(90deg, transparent, #c5d4e0, transparent)"
-                    }}></div>
+                    <div className="border-t border-gray-700/50 my-4"></div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {p.twitter && (
-                        <div className="flex items-center gap-3 p-2 rounded-xl transition-all duration-300" style={{
-                          background: "#e8f1f8",
-                          boxShadow: "inset 3px 3px 6px #d4e3ee, inset -3px -3px 6px #fcffff"
-                        }}>
-                          <div className="p-1.5 rounded-lg" style={{
-                            background: "#e8f1f8",
-                            boxShadow: "3px 3px 6px #c5d4e0, -3px -3px 6px #ffffff"
-                          }}>
-                            <Twitter size={14} className="text-blue-500"/>
+                        <div className="flex items-center gap-3 group/item hover:bg-blue-500/5 p-2 rounded-lg transition-colors">
+                          <div className="p-1.5 bg-blue-500/10 rounded-lg group-hover/item:bg-blue-500/20 transition-colors">
+                            <Twitter size={14} className="text-blue-400"/>
                           </div>
-                          <span className="text-sm text-gray-600 font-mono truncate">{hideData ? "••••••" : p.twitter}</span>
+                          <span className="text-sm text-gray-300 font-mono truncate">{hideData ? "••••••" : p.twitter}</span>
                         </div>
                       )}
                       
                       {p.discord && (
-                        <div className="flex items-center gap-3 p-2 rounded-xl transition-all duration-300" style={{
-                          background: "#e8f1f8",
-                          boxShadow: "inset 3px 3px 6px #d4e3ee, inset -3px -3px 6px #fcffff"
-                        }}>
-                          <div className="p-1.5 rounded-lg" style={{
-                            background: "#e8f1f8",
-                            boxShadow: "3px 3px 6px #c5d4e0, -3px -3px 6px #ffffff"
-                          }}>
-                            <MessageCircle size={14} className="text-indigo-500"/>
+                        <div className="flex items-center gap-3 group/item hover:bg-indigo-500/5 p-2 rounded-lg transition-colors">
+                          <div className="p-1.5 bg-indigo-500/10 rounded-lg group-hover/item:bg-indigo-500/20 transition-colors">
+                            <MessageCircle size={14} className="text-indigo-400"/>
                           </div>
-                          <span className="text-sm text-gray-600 font-mono truncate">{hideData ? "••••••" : p.discord}</span>
+                          <span className="text-sm text-gray-300 font-mono truncate">{hideData ? "••••••" : p.discord}</span>
                         </div>
                       )}
                       
                       {p.telegram && (
-                        <div className="flex items-center gap-3 p-2 rounded-xl transition-all duration-300" style={{
-                          background: "#e8f1f8",
-                          boxShadow: "inset 3px 3px 6px #d4e3ee, inset -3px -3px 6px #fcffff"
-                        }}>
-                          <div className="p-1.5 rounded-lg" style={{
-                            background: "#e8f1f8",
-                            boxShadow: "3px 3px 6px #c5d4e0, -3px -3px 6px #ffffff"
-                          }}>
-                            <Send size={14} className="text-sky-500"/>
+                        <div className="flex items-center gap-3 group/item hover:bg-sky-500/5 p-2 rounded-lg transition-colors">
+                          <div className="p-1.5 bg-sky-500/10 rounded-lg group-hover/item:bg-sky-500/20 transition-colors">
+                            <Send size={14} className="text-sky-400"/>
                           </div>
-                          <span className="text-sm text-gray-600 font-mono truncate">{hideData ? "••••••" : p.telegram}</span>
+                          <span className="text-sm text-gray-300 font-mono truncate">{hideData ? "••••••" : p.telegram}</span>
                         </div>
                       )}
                       
                       {p.farcaster && (
-                        <div className="flex items-center gap-3 p-2 rounded-xl transition-all duration-300" style={{
-                          background: "#e8f1f8",
-                          boxShadow: "inset 3px 3px 6px #d4e3ee, inset -3px -3px 6px #fcffff"
-                        }}>
-                          <div className="p-1.5 rounded-lg" style={{
-                            background: "#e8f1f8",
-                            boxShadow: "3px 3px 6px #c5d4e0, -3px -3px 6px #ffffff"
-                          }}>
-                            <Zap size={14} className="text-purple-500"/>
+                        <div className="flex items-center gap-3 group/item hover:bg-purple-500/5 p-2 rounded-lg transition-colors">
+                          <div className="p-1.5 bg-purple-500/10 rounded-lg group-hover/item:bg-purple-500/20 transition-colors">
+                            <Zap size={14} className="text-purple-400"/>
                           </div>
-                          <span className="text-sm text-gray-600 font-mono truncate">{hideData ? "••••••" : p.farcaster}</span>
+                          <span className="text-sm text-gray-300 font-mono truncate">{hideData ? "••••••" : p.farcaster}</span>
                         </div>
                       )}
                       
                       {p.wallet && (
-                        <div className="flex items-center gap-3 p-2 rounded-xl transition-all duration-300" style={{
-                          background: "#e8f1f8",
-                          boxShadow: "inset 3px 3px 6px #d4e3ee, inset -3px -3px 6px #fcffff"
-                        }}>
-                          <div className="p-1.5 rounded-lg" style={{
-                            background: "#e8f1f8",
-                            boxShadow: "3px 3px 6px #c5d4e0, -3px -3px 6px #ffffff"
-                          }}>
-                            <Wallet size={14} className="text-yellow-600"/>
+                        <div className="flex items-center gap-3 group/item hover:bg-yellow-500/5 p-2 rounded-lg transition-colors">
+                          <div className="p-1.5 bg-yellow-500/10 rounded-lg group-hover/item:bg-yellow-500/20 transition-colors">
+                            <Wallet size={14} className="text-yellow-400"/>
                           </div>
-                          <span className="text-xs text-gray-600 font-mono break-all">{hideData ? "••••••••••••••" : p.wallet}</span>
+                          <span className="text-xs text-gray-300 font-mono break-all">{hideData ? "••••••••••••••" : p.wallet}</span>
                         </div>
                       )}
                       
                       {p.email && (
-                        <div className="flex items-center gap-3 p-2 rounded-xl transition-all duration-300" style={{
-                          background: "#e8f1f8",
-                          boxShadow: "inset 3px 3px 6px #d4e3ee, inset -3px -3px 6px #fcffff"
-                        }}>
-                          <div className="p-1.5 rounded-lg" style={{
-                            background: "#e8f1f8",
-                            boxShadow: "3px 3px 6px #c5d4e0, -3px -3px 6px #ffffff"
-                          }}>
-                            <Mail size={14} className="text-pink-500"/>
+                        <div className="flex items-center gap-3 group/item hover:bg-pink-500/5 p-2 rounded-lg transition-colors">
+                          <div className="p-1.5 bg-pink-500/10 rounded-lg group-hover/item:bg-pink-500/20 transition-colors">
+                            <Mail size={14} className="text-pink-400"/>
                           </div>
-                          <span className="text-sm text-gray-600 font-mono truncate">{hideData ? "••••••" : p.email}</span>
+                          <span className="text-sm text-gray-300 font-mono truncate">{hideData ? "••••••" : p.email}</span>
                         </div>
                       )}
                       
                       {p.github && (
-                        <div className="flex items-center gap-3 p-2 rounded-xl transition-all duration-300" style={{
-                          background: "#e8f1f8",
-                          boxShadow: "inset 3px 3px 6px #d4e3ee, inset -3px -3px 6px #fcffff"
-                        }}>
-                          <div className="p-1.5 rounded-lg" style={{
-                            background: "#e8f1f8",
-                            boxShadow: "3px 3px 6px #c5d4e0, -3px -3px 6px #ffffff"
-                          }}>
-                            <Github size={14} className="text-gray-600"/>
+                        <div className="flex items-center gap-3 group/item hover:bg-gray-500/5 p-2 rounded-lg transition-colors">
+                          <div className="p-1.5 bg-gray-500/10 rounded-lg group-hover/item:bg-gray-500/20 transition-colors">
+                            <Github size={14} className="text-gray-300"/>
                           </div>
-                          <span className="text-sm text-gray-600 font-mono truncate">{hideData ? "••••••" : p.github}</span>
+                          <span className="text-sm text-gray-300 font-mono truncate">{hideData ? "••••••" : p.github}</span>
                         </div>
                       )}
                       
                       {p.website && (
-                        <div className="flex items-center gap-3 p-2 rounded-xl transition-all duration-300" style={{
-                          background: "#e8f1f8",
-                          boxShadow: "inset 3px 3px 6px #d4e3ee, inset -3px -3px 6px #fcffff"
-                        }}>
-                          <div className="p-1.5 rounded-lg" style={{
-                            background: "#e8f1f8",
-                            boxShadow: "3px 3px 6px #c5d4e0, -3px -3px 6px #ffffff"
-                          }}>
-                            <Globe size={14} className="text-blue-500"/>
+                        <div className="flex items-center gap-3 group/item hover:bg-blue-500/5 p-2 rounded-lg transition-colors">
+                          <div className="p-1.5 bg-blue-500/10 rounded-lg group-hover/item:bg-blue-500/20 transition-colors">
+                            <Globe size={14} className="text-blue-400"/>
                           </div>
                           <a 
                             href={p.website} 
                             target="_blank" 
                             rel="noopener noreferrer" 
-                            className="text-sm text-blue-600 hover:text-blue-700 underline truncate transition-colors font-medium"
+                            className="text-sm text-blue-400 hover:text-blue-300 underline truncate transition-colors"
                           >
                             {p.website}
                           </a>
@@ -1110,10 +741,8 @@ function TrackerPageFullScreen({ onLogout }) {
                     </div>
 
                     {p.lastupdate && (
-                      <div className="mt-4 pt-3" style={{
-                        borderTop: "1px solid #c5d4e0"
-                      }}>
-                        <p className="text-xs text-gray-500 text-center font-medium">
+                      <div className="mt-4 pt-3 border-t border-gray-700/30">
+                        <p className="text-xs text-gray-500 text-center">
                           Last update: {new Date(p.lastupdate).toLocaleDateString('id-ID', { 
                             day: 'numeric', 
                             month: 'short', 
@@ -1206,11 +835,115 @@ function TrackerPageFullScreen({ onLogout }) {
             </div>
           )}
 
+          {activeView === "balance" && (
+            <div className="max-w-7xl mx-auto">
+              <div className="bg-gray-900/60 backdrop-blur-md p-6 rounded-2xl border border-gray-700 shadow-lg">
+                <h2 className="text-2xl font-bold mb-4 text-center bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
+                  💰 Bulk Wallet Balance Checker
+                </h2>
+
+                <div className="flex flex-wrap justify-center gap-3 mb-4">
+                  {Object.keys(NETWORKS).map((net) => (
+                    <button
+                      key={net}
+                      onClick={() => setSelectedNetwork(net)}
+                      className={`px-4 py-2 rounded-lg text-sm md:text-base transition ${
+                        selectedNetwork === net
+                          ? "bg-cyan-600"
+                          : "bg-gray-800 hover:bg-gray-700"
+                      }`}
+                    >
+                      {net}
+                    </button>
+                  ))}
+                </div>
+
+                <textarea
+                  className="w-full bg-gray-800 p-3 rounded-lg border border-gray-700 text-white resize-none focus:border-cyan-400 focus:outline-none"
+                  placeholder="Paste wallet addresses (one per line)&#10;Example:&#10;0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb&#10;0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
+                  rows="8"
+                  value={addresses}
+                  onChange={(e) => setAddresses(e.target.value)}
+                ></textarea>
+
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4">
+                  <button
+                    onClick={checkBalances}
+                    disabled={balanceLoading}
+                    className={`w-full sm:w-auto px-6 py-3 rounded-lg font-semibold transition ${
+                      balanceLoading
+                        ? "bg-gray-600 cursor-not-allowed"
+                        : "bg-green-600 hover:bg-green-700"
+                    }`}
+                  >
+                    {balanceLoading ? "⏳ Checking..." : "✅ Check Balance"}
+                  </button>
+                  {balances.length > 0 && (
+                    <span className="text-sm text-gray-400">
+                      Total: {balances.length} address(es) checked
+                    </span>
+                  )}
+                </div>
+
+                {balances.length > 0 && (
+                  <div className="mt-6 bg-gray-800 rounded-lg p-4 overflow-x-auto">
+                    <div className="flex justify-between items-center mb-3">
+                      <h3 className="text-cyan-400 font-semibold">Results - {selectedNetwork}</h3>
+                      <button
+                        onClick={() => setBalances([])}
+                        className="text-xs bg-red-600 hover:bg-red-700 px-3 py-1 rounded"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-sm">
+                        <thead>
+                          <tr className="text-cyan-400 border-b border-gray-700">
+                            <th className="p-2">#</th>
+                            <th className="p-2">Address</th>
+                            <th className="p-2 text-right">Balance</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {balances.map((b, i) => (
+                            <tr key={i} className="border-b border-gray-700 hover:bg-gray-700/30">
+                              <td className="p-2 text-gray-400">{i + 1}</td>
+                              <td className="p-2 break-all font-mono text-xs">{b.address}</td>
+                              <td className={`p-2 text-right font-semibold ${
+                                b.balance.includes('Error') || b.balance.includes('Invalid') 
+                                  ? 'text-red-400' 
+                                  : parseFloat(b.balance) > 0 
+                                  ? 'text-green-400' 
+                                  : 'text-gray-400'
+                              }`}>
+                                {b.balance.includes('Error') || b.balance.includes('Invalid') 
+                                  ? b.balance 
+                                  : `${b.balance} ${selectedNetwork === 'BSC' ? 'BNB' : selectedNetwork === 'Polygon' ? 'MATIC' : 'ETH'}`
+                                }
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="mt-3 text-xs text-gray-400 text-right">
+                      Total Balance: {balances
+                        .filter(b => !b.balance.includes('Error') && !b.balance.includes('Invalid'))
+                        .reduce((sum, b) => sum + parseFloat(b.balance), 0)
+                        .toFixed(6)} {selectedNetwork === 'BSC' ? 'BNB' : selectedNetwork === 'Polygon' ? 'MATIC' : 'ETH'}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {activeView === "analytics" && (
             <div className="max-w-7xl mx-auto">
               <AnalyticsDashboard 
                 projects={projects} 
-                balances={quickBalances}
+                balances={balances}
                 selectedNetwork={selectedNetwork}
               />
             </div>
@@ -1231,12 +964,6 @@ function TrackerPageFullScreen({ onLogout }) {
           {activeView === "news" && (
             <div className="max-w-7xl mx-auto">
               <NewsAggregator />
-            </div>
-          )}
-
-          {activeView === "multisend" && (
-            <div className="max-w-7xl mx-auto">
-              <MultisendTool />
             </div>
           )}
         </div>
