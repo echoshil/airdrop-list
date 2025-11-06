@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { LogIn } from "lucide-react";
 import NeonParticles from "./NeonParticles";
 
 const LoginPage = ({ onLogin }) => {
@@ -21,15 +20,15 @@ const LoginPage = ({ onLogin }) => {
   };
 
   return (
-    <div className="relative flex items-center justify-center min-h-screen text-white bg-[#040b2a] overflow-hidden">
+    <div className="relative flex items-center justify-center min-h-screen bg-[#030b2a] text-white overflow-hidden font-sans">
       <NeonParticles />
 
-      {/* Error Message */}
+      {/* Error bar */}
       {error && (
         <motion.div
           initial={{ y: -40, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="absolute top-8 bg-[#0a0f3c] text-yellow-300 border border-yellow-400 px-6 py-2 rounded-md shadow-md font-medium"
+          className="absolute top-6 left-6 bg-[#08103a] text-[#ffdf5b] px-4 py-2 text-sm rounded-md flex items-center border-l-4 border-[#ffd43b] shadow-md"
         >
           {error}
         </motion.div>
@@ -40,42 +39,50 @@ const LoginPage = ({ onLogin }) => {
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6 }}
-        className="relative z-10 bg-[#07113a] bg-opacity-95 p-10 rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.6)] border border-[#101c52] w-[90%] max-w-sm text-center"
+        className="relative z-10 bg-[#0a1138] p-10 rounded-3xl shadow-[0_0_40px_rgba(0,0,0,0.6)] w-[90%] max-w-sm text-center border border-[#121b50]"
       >
         <h1 className="text-3xl font-bold mb-10">
-          <span className="text-[#40c8ff]">Airdrop</span>{" "}
-          <span className="text-[#ff66c4]">Tracker Login</span>
+          <span className="text-[#5ad3ff]">Airdrop</span>{" "}
+          <span className="text-[#ff6bd6]">Tracker Login</span>
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Username */}
-          <div className="flex flex-col text-left">
-            <label className="text-[#f7c948] text-sm mb-1">Username</label>
+          {/* Username Field */}
+          <div className="text-left">
+            <label className="block text-[#ffdf5b] text-sm mb-2">
+              Username
+            </label>
             <input
               type="text"
               value={form.username}
-              onChange={(e) => setForm({ ...form, username: e.target.value })}
-              className="w-full p-3 bg-[#0a1648] border border-[#152768] text-white placeholder-[#f7c948] rounded-md shadow-inner focus:outline-none focus:ring-1 focus:ring-[#40c8ff]"
+              onChange={(e) =>
+                setForm({ ...form, username: e.target.value })
+              }
               placeholder="Username"
+              className="w-full bg-[#0f1852] text-[#ffdf5b] placeholder-[#ffdf5b]/60 px-4 py-3 rounded-md border border-[#19205c] focus:border-[#5ad3ff] outline-none text-sm"
             />
           </div>
 
-          {/* Password */}
-          <div className="flex flex-col text-left">
-            <label className="text-[#f7c948] text-sm mb-1">Password</label>
+          {/* Password Field */}
+          <div className="text-left">
+            <label className="block text-[#ffdf5b] text-sm mb-2">
+              Password
+            </label>
             <input
               type="password"
               value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              className="w-full p-3 bg-[#0a1648] border border-[#152768] text-white placeholder-[#f7c948] rounded-md shadow-inner focus:outline-none focus:ring-1 focus:ring-[#40c8ff]"
+              onChange={(e) =>
+                setForm({ ...form, password: e.target.value })
+              }
               placeholder="Password"
+              className="w-full bg-[#0f1852] text-[#ffdf5b] placeholder-[#ffdf5b]/60 px-4 py-3 rounded-md border border-[#19205c] focus:border-[#5ad3ff] outline-none text-sm"
             />
           </div>
 
-          {/* Button */}
+          {/* Login Button */}
           <button
             type="submit"
-            className="w-full mt-6 py-3 bg-[#ffd43b] text-[#0b0e2c] font-bold tracking-wider uppercase rounded-md hover:bg-[#ffcd00] transition"
+            className="w-full mt-4 bg-[#ffdf5b] hover:bg-[#ffd43b] text-[#0a1138] font-bold tracking-wide py-3 rounded-md uppercase transition-all duration-200"
           >
             LOGIN
           </button>
