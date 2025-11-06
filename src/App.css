@@ -2,6 +2,11 @@
 body {
   margin: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background-image: url('/bg.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
   background-color: #0f172a;
   color: white;
   overflow-x: hidden;
@@ -58,7 +63,10 @@ button:hover {
 
 /* === NEON CARD EFFECT === */
 .card {
-  background: rgba(17, 24, 39, 0.8);
+  background-image: url('/card.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   border: 1px solid rgba(59, 130, 246, 0.2);
   backdrop-filter: blur(12px);
   border-radius: 1rem;
@@ -174,5 +182,3 @@ button:hover {
     align-items: center;
   }
 }
-
-
