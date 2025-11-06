@@ -518,8 +518,10 @@ function TrackerPageFullScreen({ onLogout }) {
   ];
 
   return (
-    <div className="min-h-screen text-white relative overflow-hidden">
-      <NeonParticles />
+    <div className=\"min-h-screen text-white relative overflow-hidden\" style={{
+      background: \"linear-gradient(135deg, #e3edf7 0%, #d4e4f7 50%, #dfe9f5 100%)\"
+    }}>
+      {/* <NeonParticles /> */}
 
       <div
         className={`fixed top-0 left-0 h-full bg-gray-900/95 backdrop-blur-md border-r border-gray-700 z-50 transition-all duration-300 ${
