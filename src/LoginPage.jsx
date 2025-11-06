@@ -21,7 +21,7 @@ const LoginPage = ({ onLogin }) => {
   };
 
   return (
-    <div className="relative flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 text-white overflow-hidden">
+    <div className="relative flex items-center justify-center min-h-screen text-white overflow-hidden">
       <NeonParticles />
 
       <motion.div
@@ -65,5 +65,3 @@ const LoginPage = ({ onLogin }) => {
 };
 
 export default LoginPage;
-
-
