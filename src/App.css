@@ -42,11 +42,11 @@ button:hover {
 .animated-bg {
   position: fixed;
   inset: 0;
-  background: linear-gradient(-45deg, #0f172a, #1e293b, #0c4a6e, #3b0764);
+  background: linear-gradient(-45deg, rgba(15, 23, 42, 0.3), rgba(30, 41, 59, 0.3), rgba(12, 74, 110, 0.3), rgba(59, 7, 100, 0.3));
   background-size: 400% 400%;
   animation: gradientShift 15s ease infinite;
   z-index: 0;
-  opacity: 0.5;
+  opacity: 0.3;
 }
 
 @keyframes gradientShift {
@@ -67,8 +67,9 @@ button:hover {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  background-color: rgba(17, 24, 39, 0.6);
   border: 1px solid rgba(59, 130, 246, 0.2);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(8px);
   border-radius: 1rem;
   box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
   transition: all 0.3s ease;
