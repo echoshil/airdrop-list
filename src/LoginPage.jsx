@@ -16,47 +16,69 @@ const LoginPage = ({ onLogin }) => {
       localStorage.setItem("isLoggedIn", "true");
       onLogin();
     } else {
-      setError("❌ Username atau password salah!");
+      setError("Invalid username and/or password! Please try again.");
     }
   };
 
   return (
-    <div className="relative flex items-center justify-center min-h-screen text-white overflow-hidden">
+    <div className="relative flex items-center justify-center min-h-screen text-white bg-[#020621] overflow-hidden">
       <NeonParticles />
 
+      {/* Error Bar */}
+      {error && (
+        <motion.div
+          initial={{ y: -50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="absolute top-6 bg-[#0a0f3c] border border-yellow-400 text-yellow-300 px-6 py-2 rounded-md shadow-lg"
+        >
+          {error}
+        </motion.div>
+      )}
+
+      {/* Login Card */}
       <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
+        initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.6 }}
-        className="relative z-10 bg-gray-900 bg-opacity-80 p-8 rounded-2xl shadow-lg border border-gray-700 w-[90%] max-w-md text-center"
+        className="relative z-10 bg-[#0c123e] bg-opacity-90 p-10 rounded-3xl shadow-2xl border border-[#1c1f56] w-[90%] max-w-sm text-center backdrop-blur-md"
       >
-        <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-          🚀 Airdrop Tracker Login
+        {/* Title */}
+        <h1 className="text-3xl font-bold mb-8">
+          <span className="text-cyan-400">Airdrop</span>{" "}
+          <span className="text-pink-500">Tracker Login</span>
         </h1>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="text"
-            placeholder="Username"
-            value={form.username}
-            onChange={(e) => setForm({ ...form, username: e.target.value })}
-            className="w-full p-3 rounded bg-gray-800 border border-gray-700 focus:border-cyan-400 outline-none"
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={form.password}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
-            className="w-full p-3 rounded bg-gray-800 border border-gray-700 focus:border-cyan-400 outline-none"
-          />
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="text-left">
+            <label className="block text-sm text-gray-400 mb-1">
+              Username
+            </label>
+            <input
+              type="text"
+              placeholder="Enter your username"
+              value={form.username}
+              onChange={(e) => setForm({ ...form, username: e.target.value })}
+              className="w-full p-3 rounded-md bg-[#0e174f] border border-[#1b256b] focus:border-cyan-400 outline-none text-sm placeholder-gray-400"
+            />
+          </div>
 
-          {error && <p className="text-red-400 text-sm">{error}</p>}
+          <div className="text-left">
+            <label className="block text-sm text-gray-400 mb-1">Password</label>
+            <input
+              type="password"
+              placeholder="Enter your password"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              className="w-full p-3 rounded-md bg-[#0e174f] border border-[#1b256b] focus:border-cyan-400 outline-none text-sm placeholder-gray-400"
+            />
+          </div>
 
           <button
             type="submit"
-            className="w-full bg-gradient-to-r from-cyan-600 to-purple-600 hover:opacity-90 py-3 rounded-lg font-semibold flex items-center justify-center gap-2"
+            className="w-full mt-4 py-3 rounded-md bg-gradient-to-r from-yellow-400 to-yellow-300 text-gray-900 font-bold tracking-wide hover:opacity-90 flex items-center justify-center gap-2 transition"
           >
-            <LogIn size={18} /> Login
+            <LogIn size={18} /> LOGIN
           </button>
         </form>
       </motion.div>
