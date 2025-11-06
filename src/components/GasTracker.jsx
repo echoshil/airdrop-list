@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Fuel, TrendingUp, TrendingDown, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Fuel,
+  TrendingUp,
+  TrendingDown,
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import {
   LineChart,
   Line,
@@ -25,66 +32,43 @@ const GasTracker = () => {
   const fetchGasPrices = async () => {
     try {
       setLoading(true);
-      
-      // Get API keys from environment
       const etherscanKey = import.meta.env.VITE_ETHERSCAN_API_KEY;
       const bscscanKey = import.meta.env.VITE_BSCSCAN_API_KEY;
       const polygonscanKey = import.meta.env.VITE_POLYGONSCAN_API_KEY;
 
-      // Fetch Ethereum gas prices (using Etherscan V2 API)
       let ethGasData = { slow: 0, average: 0, fast: 0 };
       try {
         const ethResponse = await fetch(
           `https://api.etherscan.io/v2/api?chainid=1&module=gastracker&action=gasoracle&apikey=${etherscanKey}`
         );
         const ethResult = await ethResponse.json();
-        
         if (ethResult.status === "1" && ethResult.result) {
-          // Etherscan V2 returns decimal Gwei values, convert to proper display format
           const baseFee = parseFloat(ethResult.result.suggestBaseFee);
           ethGasData = {
             slow: parseFloat((baseFee * 0.95).toFixed(2)),
             average: parseFloat((baseFee * 1.0).toFixed(2)),
             fast: parseFloat((baseFee * 1.15).toFixed(2)),
           };
-          console.log("✅ Ethereum gas fetched from Etherscan API V2:", ethGasData);
-        } else {
-          throw new Error("Invalid Etherscan response");
         }
-      } catch (err) {
-        console.warn("⚠️ Etherscan API failed, using RPC fallback:", err.message);
+      } catch {
         ethGasData = await fetchGasFromRPC("ethereum");
       }
 
-      // Fetch BSC gas prices with enhanced accuracy
-      let bscGasData = { slow: 0, average: 0, fast: 0 };
-      try {
-        // Skip BNB48 Club API due to CORS - use enhanced RPC method directly
-        console.log("📡 Fetching BSC gas using enhanced RPC method...");
-        bscGasData = await fetchBSCGasEnhanced();
-      } catch (err) {
-        console.warn("⚠️ BSC enhanced RPC failed, using simple fallback:", err.message);
-        bscGasData = { slow: 3, average: 5, fast: 7 };
-      }
-
-      // Fetch Polygon gas prices (using Polygon Gas Station API - free and accurate)
+      let bscGasData = await fetchBSCGasEnhanced();
       let polygonGasData = { slow: 0, average: 0, fast: 0 };
       try {
-        const polygonResponse = await fetch("https://gasstation.polygon.technology/v2");
+        const polygonResponse = await fetch(
+          "https://gasstation.polygon.technology/v2"
+        );
         const polygonResult = await polygonResponse.json();
-        
         if (polygonResult && polygonResult.safeLow) {
           polygonGasData = {
             slow: Math.round(parseFloat(polygonResult.safeLow.maxFee)),
             average: Math.round(parseFloat(polygonResult.standard.maxFee)),
             fast: Math.round(parseFloat(polygonResult.fast.maxFee)),
           };
-          console.log("✅ Polygon gas fetched from Gas Station API:", polygonGasData);
-        } else {
-          throw new Error("Invalid Polygon Gas Station response");
         }
-      } catch (err) {
-        console.warn("⚠️ Polygon Gas Station API failed, using RPC fallback:", err.message);
+      } catch {
         polygonGasData = await fetchGasFromRPC("polygon");
       }
 
@@ -115,152 +99,104 @@ const GasTracker = () => {
       setLastUpdate(new Date());
       setLoading(false);
     } catch (err) {
-      console.error("❌ Error fetching gas prices:", err);
+      console.error("❌ Error fetching gas:", err);
       setLoading(false);
     }
   };
 
-  // Enhanced BSC gas fetching with multiple sources
   const fetchBSCGasEnhanced = async () => {
     try {
       const { JsonRpcProvider, formatUnits } = await import("ethers");
-      
       const rpcUrls = [
         "https://bsc-dataseed1.binance.org",
         "https://bsc-dataseed2.binance.org",
         "https://bsc-dataseed3.binance.org",
-        "https://bsc-dataseed4.binance.org",
         "https://rpc.ankr.com/bsc",
       ];
-      
       const gasPrices = [];
-      
-      // Query multiple RPCs for more accurate data
-      for (const rpc of rpcUrls.slice(0, 4)) {
+      for (const rpc of rpcUrls) {
         try {
           const provider = new JsonRpcProvider(rpc);
           const feeData = await provider.getFeeData();
-          
           if (feeData.gasPrice) {
-            const gasGwei = parseFloat(formatUnits(feeData.gasPrice, "gwei"));
-            gasPrices.push(gasGwei);
-            console.log(`📊 BSC RPC ${rpc}: ${gasGwei} Gwei`);
+            gasPrices.push(parseFloat(formatUnits(feeData.gasPrice, "gwei")));
           }
-        } catch (err) {
-          console.warn(`⚠️ BSC RPC ${rpc} failed:`, err.message);
+        } catch {
           continue;
         }
       }
-      
       if (gasPrices.length > 0) {
-        // Calculate average from multiple sources
-        const avgGas = gasPrices.reduce((a, b) => a + b, 0) / gasPrices.length;
-        
-        const result = {
-          slow: parseFloat((avgGas * 0.8).toFixed(2)),
-          average: parseFloat(avgGas.toFixed(2)),
-          fast: parseFloat((avgGas * 1.25).toFixed(2)),
+        const avg = gasPrices.reduce((a, b) => a + b, 0) / gasPrices.length;
+        return {
+          slow: parseFloat((avg * 0.8).toFixed(2)),
+          average: parseFloat(avg.toFixed(2)),
+          fast: parseFloat((avg * 1.25).toFixed(2)),
         };
-        
-        console.log(`✅ BSC gas calculated from ${gasPrices.length} sources:`, result);
-        return result;
       }
-      
-      // If all fail, return reasonable defaults for BSC
       return { slow: 3, average: 5, fast: 7 };
-    } catch (err) {
-      console.error("❌ Error in BSC enhanced fetch:", err);
+    } catch {
       return { slow: 3, average: 5, fast: 7 };
     }
   };
 
-  // RPC fallback function
   const fetchGasFromRPC = async (chain) => {
     try {
       const { JsonRpcProvider, formatUnits } = await import("ethers");
-      
       const rpcUrls = {
-        ethereum: [
-          "https://eth.llamarpc.com",
-          "https://rpc.ankr.com/eth",
-          "https://ethereum.publicnode.com"
-        ],
-        bsc: [
-          "https://bsc-dataseed1.binance.org",
-          "https://bsc-dataseed.binance.org",
-          "https://rpc.ankr.com/bsc"
-        ],
-        polygon: [
-          "https://polygon-rpc.com",
-          "https://rpc.ankr.com/polygon",
-          "https://polygon.llamarpc.com"
-        ]
+        ethereum: ["https://rpc.ankr.com/eth"],
+        bsc: ["https://rpc.ankr.com/bsc"],
+        polygon: ["https://rpc.ankr.com/polygon"],
       };
-
       for (const rpc of rpcUrls[chain]) {
         try {
           const provider = new JsonRpcProvider(rpc);
           const feeData = await provider.getFeeData();
-          
           if (feeData.gasPrice) {
-            const gasGwei = parseFloat(formatUnits(feeData.gasPrice, "gwei"));
-            const gasData = {
-              slow: Math.max(1, Math.round(gasGwei * 0.85)),
-              average: Math.max(1, Math.round(gasGwei)),
-              fast: Math.max(1, Math.round(gasGwei * 1.15)),
+            const g = parseFloat(formatUnits(feeData.gasPrice, "gwei"));
+            return {
+              slow: Math.max(1, Math.round(g * 0.85)),
+              average: Math.max(1, Math.round(g)),
+              fast: Math.max(1, Math.round(g * 1.15)),
             };
-            console.log(`✅ ${chain} gas fetched from RPC ${rpc}:`, gasData);
-            return gasData;
           }
-        } catch (err) {
-          console.warn(`⚠️ RPC ${rpc} failed:`, err.message);
+        } catch {
           continue;
         }
       }
-      
-      // If all RPCs fail, return default values
       return { slow: 1, average: 1, fast: 1 };
-    } catch (err) {
-      console.error(`❌ Error fetching ${chain} from RPC:`, err);
+    } catch {
       return { slow: 1, average: 1, fast: 1 };
     }
   };
 
   useEffect(() => {
     fetchGasPrices();
-    const interval = setInterval(fetchGasPrices, 15000); // Update every 15 seconds for real-time
+    const interval = setInterval(fetchGasPrices, 15000);
     return () => clearInterval(interval);
   }, []);
 
   const getRecommendation = (chain) => {
-    const avgGas = gasData[chain].average;
+    const avg = gasData[chain].average;
     let threshold = { low: 20, medium: 50 };
-
     if (chain === "bsc") threshold = { low: 3, medium: 5 };
     if (chain === "polygon") threshold = { low: 30, medium: 80 };
-
-    if (avgGas <= threshold.low) {
+    if (avg <= threshold.low)
       return {
-        color: "text-green-400",
-        bg: "bg-green-600/20",
+        color: "text-green-500",
         icon: TrendingDown,
         text: "Waktu terbaik untuk transaksi!",
       };
-    } else if (avgGas <= threshold.medium) {
+    if (avg <= threshold.medium)
       return {
-        color: "text-yellow-400",
-        bg: "bg-yellow-600/20",
+        color: "text-yellow-500",
         icon: AlertCircle,
         text: "Biaya gas sedang",
       };
-    } else {
-      return {
-        color: "text-red-400",
-        bg: "bg-red-600/20",
-        icon: TrendingUp,
-        text: "Gas tinggi - tunggu jika memungkinkan",
-      };
-    }
+    return {
+      color: "text-red-500",
+      icon: TrendingUp,
+      text: "Gas tinggi - tunggu jika memungkinkan",
+    };
   };
 
   const chains = [
@@ -269,42 +205,39 @@ const GasTracker = () => {
     { id: "polygon", name: "Polygon", color: "#8247E5" },
   ];
 
+  // ===== NEUMORPHIC STYLE CLASSES =====
+  const neuCard =
+    "bg-[#e0e5ec] rounded-3xl p-5 shadow-[9px_9px_16px_#b8b9be,-9px_-9px_16px_#ffffff] hover:shadow-[inset_4px_4px_8px_#b8b9be,inset_-4px_-4px_8px_#ffffff] transition";
+  const neuButton =
+    "bg-[#e0e5ec] rounded-xl shadow-[3px_3px_6px_#b8b9be,-3px_-3px_6px_#ffffff] active:shadow-[inset_3px_3px_6px_#b8b9be,inset_-3px_-3px_6px_#ffffff] transition text-gray-700 font-semibold";
+
   return (
-    <div className="relative z-10 w-full mb-8 fade-in">
-      <div className="bg-gray-900/60 backdrop-blur-md rounded-t-2xl border border-gray-700 border-b-0">
-        <div 
-          className="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-800/30 transition"
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-orange-400 via-red-500 to-pink-500 bg-clip-text text-transparent flex items-center gap-2">
-            <Fuel size={28} /> ⛽ Real-time Gas Tracker
-          </h2>
-          <div className="flex items-center gap-3">
-            <div className="text-sm text-gray-400">
-              {loading ? "🔄 Memperbarui..." : "✅ Live Data"}
-            </div>
-            <button 
-              className="text-gray-400 hover:text-white transition"
-              aria-label={isExpanded ? "Collapse" : "Expand"}
-            >
-              {isExpanded ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
-            </button>
-          </div>
+    <div className="w-full mb-8">
+      <div
+        className={`bg-[#e0e5ec] rounded-3xl shadow-[9px_9px_16px_#b8b9be,-9px_-9px_16px_#ffffff] p-6 mb-3 flex justify-between items-center cursor-pointer`}
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <h2 className="text-2xl font-bold text-gray-700 flex items-center gap-2">
+          <Fuel className="text-orange-500" size={26} /> ⛽ Real-time Gas Tracker
+        </h2>
+        <div className="flex items-center gap-3 text-gray-500">
+          {loading ? "🔄 Memperbarui..." : "✅ Live Data"}
+          {isExpanded ? <ChevronUp /> : <ChevronDown />}
         </div>
       </div>
 
       {isExpanded && (
-        <div className="bg-gray-900/60 backdrop-blur-md rounded-b-2xl border border-gray-700 p-6 animate-fadeIn">
-          {/* Chain Selector Tabs */}
-          <div className="flex flex-wrap justify-center gap-3 mb-6">
+        <div className="bg-[#e0e5ec] rounded-3xl shadow-[9px_9px_16px_#b8b9be,-9px_-9px_16px_#ffffff] p-6 space-y-6">
+          {/* Chain Selector */}
+          <div className="flex flex-wrap justify-center gap-3">
             {chains.map((chain) => (
               <button
                 key={chain.id}
                 onClick={() => setSelectedChain(chain.id)}
-                className={`px-6 py-2 rounded-lg font-semibold transition-all ${
+                className={`${neuButton} px-6 py-2 ${
                   selectedChain === chain.id
-                    ? "bg-gradient-to-r from-orange-500 to-pink-500 text-white shadow-lg"
-                    : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                    ? "text-white bg-gradient-to-r from-orange-400 to-pink-400"
+                    : ""
                 }`}
               >
                 {chain.name}
@@ -313,107 +246,77 @@ const GasTracker = () => {
           </div>
 
           {/* Gas Price Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {["slow", "average", "fast"].map((speed) => {
-              const speedLabels = {
-                slow: { label: "🐢 Lambat", desc: "Biaya rendah" },
-                average: { label: "⚡ Rata-rata", desc: "Seimbang" },
-                fast: { label: "🚀 Cepat", desc: "Konfirmasi cepat" },
-              };
-
+              const label =
+                speed === "slow"
+                  ? "🐢 Lambat"
+                  : speed === "average"
+                  ? "⚡ Rata-rata"
+                  : "🚀 Cepat";
+              const color =
+                speed === "slow"
+                  ? "text-green-500"
+                  : speed === "average"
+                  ? "text-yellow-500"
+                  : "text-red-500";
               return (
-                <div
-                  key={speed}
-                  className="bg-gray-800/50 border border-gray-700 rounded-xl p-4 hover:border-orange-500/50 transition"
-                >
-                  <div className="text-sm text-gray-400 mb-1">
-                    {speedLabels[speed].label}
-                  </div>
-                  <div className="text-3xl font-bold text-orange-400 mb-1">
+                <div key={speed} className={`${neuCard}`}>
+                  <div className="text-sm text-gray-500 mb-1">{label}</div>
+                  <div className={`text-3xl font-bold ${color}`}>
                     {gasData[selectedChain][speed]} Gwei
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {speedLabels[speed].desc}
                   </div>
                 </div>
               );
             })}
           </div>
 
-          {/* Recommendation Card */}
+          {/* Recommendation */}
           {(() => {
             const rec = getRecommendation(selectedChain);
             const Icon = rec.icon;
             return (
-              <div
-                className={`flex items-center gap-3 p-4 rounded-lg ${rec.bg} border border-gray-700 mb-6`}
-              >
+              <div className={`${neuCard} flex items-center gap-3`}>
                 <Icon className={`${rec.color}`} size={24} />
                 <div>
                   <div className={`font-semibold ${rec.color}`}>{rec.text}</div>
-                  <div className="text-sm text-gray-400">
-                    Rata-rata saat ini: {gasData[selectedChain].average} Gwei
+                  <div className="text-sm text-gray-500">
+                    Rata-rata: {gasData[selectedChain].average} Gwei
                   </div>
                 </div>
               </div>
             );
           })()}
 
-          {/* Historical Chart */}
+          {/* Chart */}
           {historicalData.length > 1 && (
-            <div className="bg-gray-800/30 rounded-xl p-4 border border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-300 mb-4">
+            <div className={`${neuCard}`}>
+              <h3 className="text-lg font-semibold text-gray-600 mb-4">
                 📊 Tren Harga Gas (Real-time)
               </h3>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={historicalData}>
-                  <XAxis
-                    dataKey="time"
-                    stroke="#6b7280"
-                    style={{ fontSize: "12px" }}
-                  />
-                  <YAxis stroke="#6b7280" style={{ fontSize: "12px" }} />
+                  <XAxis dataKey="time" stroke="#9ca3af" />
+                  <YAxis stroke="#9ca3af" />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "#1f2937",
-                      border: "1px solid #374151",
+                      background: "#f5f7fa",
+                      border: "1px solid #d1d5db",
                       borderRadius: "8px",
                     }}
                   />
                   <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="ethereum"
-                    stroke="#627EEA"
-                    strokeWidth={2}
-                    dot={false}
-                    name="Ethereum"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="bsc"
-                    stroke="#F3BA2F"
-                    strokeWidth={2}
-                    dot={false}
-                    name="BSC"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="polygon"
-                    stroke="#8247E5"
-                    strokeWidth={2}
-                    dot={false}
-                    name="Polygon"
-                  />
+                  <Line dataKey="ethereum" stroke="#627EEA" strokeWidth={2} dot={false} />
+                  <Line dataKey="bsc" stroke="#F3BA2F" strokeWidth={2} dot={false} />
+                  <Line dataKey="polygon" stroke="#8247E5" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           )}
 
-          {/* Info Footer */}
-          <div className="mt-4 text-xs text-gray-500 text-center">
-            ℹ️ Data diperbarui otomatis setiap 15 detik dari API resmi | 
-            {lastUpdate && ` Terakhir update: ${lastUpdate.toLocaleTimeString('id-ID')}`}
+          <div className="text-center text-xs text-gray-500">
+            ℹ️ Diperbarui otomatis setiap 15 detik
+            {lastUpdate && ` | Terakhir: ${lastUpdate.toLocaleTimeString("id-ID")}`}
           </div>
         </div>
       )}
