@@ -1434,5 +1434,80 @@ function TrackerPageFullScreen({ onLogout }) {
                                   ? 'text-green-400' 
                                   : 'text-gray-400'
                               }`}>
- <response clipped><NOTE>To save on context only part of this file has been shown to you. You should retry this tool after you have searched inside the file with `grep -n` in order to find the line numbers of what you are looking for.</NOTE>
+                              <td className={`p-2 text-right font-semibold ${
+                                b.balance.includes('Error') || b.balance.includes('Invalid') 
+                                  ? 'text-red-400' 
+                                  : parseFloat(b.balance) > 0 
+                                  ? 'text-green-400' 
+                                  : 'text-gray-400'
+                              }`}>
+                                {b.balance.includes('Error') || b.balance.includes('Invalid') 
+                                  ? b.balance 
+                                  : `${b.balance} ${selectedNetwork === 'BSC' ? 'BNB' : selectedNetwork === 'Polygon' ? 'MATIC' : 'ETH'}`
+                                }
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="mt-3 text-xs text-gray-400 text-right">
+                      Total Balance: {quickBalances
+                        .filter(b => !b.balance.includes('Error') && !b.balance.includes('Invalid'))
+                        .reduce((sum, b) => sum + parseFloat(b.balance), 0)
+                        .toFixed(6)} {selectedNetwork === 'BSC' ? 'BNB' : selectedNetwork === 'Polygon' ? 'MATIC' : 'ETH'}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeView === "analytics" && (
+            <div className="max-w-7xl mx-auto">
+              <AnalyticsDashboard 
+                projects={projects} 
+                balances={quickBalances}
+                selectedNetwork={selectedNetwork}
+              />
+            </div>
+          )}
+
+          {activeView === "gas" && (
+            <div className="max-w-7xl mx-auto">
+              <GasTracker />
+            </div>
+          )}
+
+          {activeView === "roi" && (
+            <div className="max-w-7xl mx-auto">
+              <ROICalculator />
+            </div>
+          )}
+
+          {activeView === "news" && (
+            <div className="max-w-7xl mx-auto">
+              <NewsAggregator />
+            </div>
+          )}
+
+          {activeView === "multisend" && (
+            <div className="max-w-7xl mx-auto">
+              <MultisendTool />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {isMobile && sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40"
+          onClick={() => setSidebarOpen(false)}
+        ></div>
+      )}
+    </div>
+  );
+}
+
+export default TrackerPageFullScreen;
 
