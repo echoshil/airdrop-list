@@ -63,16 +63,16 @@ const NETWORKS = {
 };
 
 const AVAILABLE_TAGS = [
-  { id: "defi", label: "DeFi", color: "bg-blue-500" },
-  { id: "gamefi", label: "GameFi", color: "bg-purple-500" },
-  { id: "layer2", label: "Layer2", color: "bg-green-500" },
-  { id: "nft", label: "NFT", color: "bg-pink-500" },
-  { id: "meme", label: "Meme", color: "bg-yellow-500" },
-  { id: "infra", label: "Infrastructure", color: "bg-cyan-500" },
-  { id: "social", label: "SocialFi", color: "bg-orange-500" },
-  { id: "bridge", label: "Bridge", color: "bg-indigo-500" },
-  { id: "dex", label: "DEX", color: "bg-red-500" },
-  { id: "lending", label: "Lending", color: "bg-teal-500" },
+  { id: "defi", label: "DeFi", color: "bg-blue-300" },
+  { id: "gamefi", label: "GameFi", color: "bg-purple-300" },
+  { id: "layer2", label: "Layer2", color: "bg-green-300" },
+  { id: "nft", label: "NFT", color: "bg-pink-300" },
+  { id: "meme", label: "Meme", color: "bg-yellow-300" },
+  { id: "infra", label: "Infrastructure", color: "bg-cyan-300" },
+  { id: "social", label: "SocialFi", color: "bg-orange-300" },
+  { id: "bridge", label: "Bridge", color: "bg-indigo-300" },
+  { id: "dex", label: "DEX", color: "bg-red-300" },
+  { id: "lending", label: "Lending", color: "bg-teal-300" },
 ];
 
 function TrackerPageFullScreen({ onLogout }) {
@@ -86,7 +86,7 @@ function TrackerPageFullScreen({ onLogout }) {
   const [timer, setTimer] = useState(60);
   const [progress, setProgress] = useState(100);
   const [showDexList, setShowDexList] = useState(false);
-  
+
   // State untuk EVM Native & Tokens Balance Checker
   const [evmAddresses, setEvmAddresses] = useState("");
   const [evmBalances, setEvmBalances] = useState([]);
@@ -94,17 +94,17 @@ function TrackerPageFullScreen({ onLogout }) {
   const [customRpcUrl, setCustomRpcUrl] = useState("");
   const [checkType, setCheckType] = useState("native");
   const [tokenContractAddress, setTokenContractAddress] = useState("");
-  
+
   // State untuk Quick Network Balance Checker
   const [selectedNetwork, setSelectedNetwork] = useState("Ethereum");
   const [quickAddresses, setQuickAddresses] = useState("");
   const [quickBalances, setQuickBalances] = useState([]);
   const [quickBalanceLoading, setQuickBalanceLoading] = useState(false);
-  
+
   const [selectedTags, setSelectedTags] = useState([]);
   const [filterTag, setFilterTag] = useState("all");
   const [filterDaily, setFilterDaily] = useState("all");
-  
+
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeView, setActiveView] = useState("projects");
   const [isMobile, setIsMobile] = useState(false);
@@ -140,11 +140,11 @@ function TrackerPageFullScreen({ onLogout }) {
       const res = await fetch(GOOGLE_SCRIPT_URL + "?action=read");
       const data = await res.json();
       console.log("Raw data from Google Sheets:", data);
-      
+
       if (Array.isArray(data)) {
         const parsedData = data.map(project => {
           let parsedTags = [];
-          
+
           if (project.tags) {
             if (typeof project.tags === 'string') {
               const trimmed = project.tags.trim();
@@ -163,14 +163,14 @@ function TrackerPageFullScreen({ onLogout }) {
               parsedTags = project.tags;
             }
           }
-          
+
           return {
             ...project,
             tags: parsedTags,
             notes: project.notes || ""
           };
         });
-        
+
         console.log("Parsed data with tags:", parsedData);
         setProjects(parsedData);
       }
@@ -245,7 +245,7 @@ function TrackerPageFullScreen({ onLogout }) {
   const deleteProject = async (name) => {
     const confirmDelete = window.confirm(`Apakah Anda yakin ingin menghapus project "${name}"?`);
     if (!confirmDelete) return;
-    
+
     try {
       setLoading(true);
       const res = await fetch(GOOGLE_SCRIPT_URL, {
@@ -311,21 +311,21 @@ function TrackerPageFullScreen({ onLogout }) {
       const matchesSearch = (p.name || "")
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
-      
+
       const hasTags = p.tags && Array.isArray(p.tags);
       const matchesTags =
         filterTag === "all" ||
         (hasTags && p.tags.includes(filterTag));
-      
+
       const matchesDaily =
         filterDaily === "all" ||
         (filterDaily === "checked" && p.daily === "CHECKED") ||
         (filterDaily === "unchecked" && p.daily !== "CHECKED");
-      
+
       if (filterTag !== "all") {
         console.log(`Project: ${p.name}, Tags: ${JSON.stringify(p.tags)}, FilterTag: ${filterTag}, Matches: ${matchesTags}`);
       }
-      
+
       return matchesSearch && matchesTags && matchesDaily;
     })
     .sort((a, b) => {
@@ -343,12 +343,12 @@ function TrackerPageFullScreen({ onLogout }) {
       const newTags = prev.includes(tagId)
         ? prev.filter((t) => t !== tagId)
         : [...prev, tagId];
-      
+
       setFormData((prevForm) => ({
         ...prevForm,
         tags: newTags,
       }));
-      
+
       return newTags;
     });
   };
@@ -356,37 +356,37 @@ function TrackerPageFullScreen({ onLogout }) {
   const checkBalances = async () => {
     const list = quickAddresses.split(/[\n,\s]+/).filter(Boolean);
     if (list.length === 0) return alert("Masukkan address wallet!");
-    
+
     setQuickBalanceLoading(true);
     setQuickBalances([]);
     const result = [];
-    
+
     try {
       const provider = new ethers.JsonRpcProvider(NETWORKS[selectedNetwork].rpc);
-      
+
       for (const addr of list) {
         try {
           if (!ethers.isAddress(addr)) {
-            result.push({ 
-              address: addr, 
-              balance: "❌ Invalid Address" 
+            result.push({
+              address: addr,
+              balance: "❌ Invalid Address"
             });
             continue;
           }
-          
+
           const checksumAddr = ethers.getAddress(addr);
           const bal = await provider.getBalance(checksumAddr);
           const formattedBalance = parseFloat(ethers.formatEther(bal)).toFixed(6);
-          
-          result.push({ 
-            address: checksumAddr, 
-            balance: formattedBalance 
+
+          result.push({
+            address: checksumAddr,
+            balance: formattedBalance
           });
         } catch (err) {
           console.error(`Error checking ${addr}:`, err);
-          result.push({ 
-            address: addr, 
-            balance: "❌ Error" 
+          result.push({
+            address: addr,
+            balance: "❌ Error"
           });
         }
       }
@@ -402,44 +402,44 @@ function TrackerPageFullScreen({ onLogout }) {
   const checkEVMBalances = async () => {
     const list = evmAddresses.split(/[\n,\s]+/).filter(Boolean);
     if (list.length === 0) return alert("Masukkan address wallet!");
-    
+
     if (!customRpcUrl) return alert("Masukkan RPC URL!");
-    
+
     if (checkType === "token" && !tokenContractAddress) {
       return alert("Masukkan contract address token!");
     }
-    
+
     setEvmBalanceLoading(true);
     setEvmBalances([]);
     const result = [];
-    
+
     try {
       const provider = new ethers.JsonRpcProvider(customRpcUrl);
-      
+
       if (checkType === "native") {
         for (const addr of list) {
           try {
             if (!ethers.isAddress(addr)) {
-              result.push({ 
-                address: addr, 
-                balance: "❌ Invalid Address" 
+              result.push({
+                address: addr,
+                balance: "❌ Invalid Address"
               });
               continue;
             }
-            
+
             const checksumAddr = ethers.getAddress(addr);
             const bal = await provider.getBalance(checksumAddr);
             const formattedBalance = parseFloat(ethers.formatEther(bal)).toFixed(6);
-            
-            result.push({ 
-              address: checksumAddr, 
-              balance: formattedBalance 
+
+            result.push({
+              address: checksumAddr,
+              balance: formattedBalance
             });
           } catch (err) {
             console.error(`Error checking ${addr}:`, err);
-            result.push({ 
-              address: addr, 
-              balance: "❌ Error" 
+            result.push({
+              address: addr,
+              balance: "❌ Error"
             });
           }
         }
@@ -449,42 +449,42 @@ function TrackerPageFullScreen({ onLogout }) {
           setEvmBalanceLoading(false);
           return;
         }
-        
+
         const tokenABI = [
           "function balanceOf(address owner) view returns (uint256)",
           "function decimals() view returns (uint8)",
           "function symbol() view returns (string)"
         ];
-        
+
         try {
           const tokenContract = new ethers.Contract(tokenContractAddress, tokenABI, provider);
           const decimals = await tokenContract.decimals();
           const symbol = await tokenContract.symbol();
-          
+
           for (const addr of list) {
             try {
               if (!ethers.isAddress(addr)) {
-                result.push({ 
-                  address: addr, 
+                result.push({
+                  address: addr,
                   balance: "❌ Invalid Address",
-                  symbol: symbol 
+                  symbol: symbol
                 });
                 continue;
               }
-              
+
               const checksumAddr = ethers.getAddress(addr);
               const bal = await tokenContract.balanceOf(checksumAddr);
               const formattedBalance = parseFloat(ethers.formatUnits(bal, decimals)).toFixed(6);
-              
-              result.push({ 
-                address: checksumAddr, 
+
+              result.push({
+                address: checksumAddr,
                 balance: formattedBalance,
                 symbol: symbol
               });
             } catch (err) {
               console.error(`Error checking ${addr}:`, err);
-              result.push({ 
-                address: addr, 
+              result.push({
+                address: addr,
                 balance: "❌ Error",
                 symbol: symbol
               });
@@ -507,40 +507,45 @@ function TrackerPageFullScreen({ onLogout }) {
   };
 
   const sidebarMenuItems = [
-    { id: "projects", label: "Projects", icon: LayoutDashboard, color: "text-cyan-400" },
-    { id: "trading", label: "Trading", icon: Zap, color: "text-green-500" },
-    { id: "analytics", label: "Analytics", icon: Activity, color: "text-purple-400" },
-    { id: "gas", label: "Gas Tracker", icon: Fuel, color: "text-orange-400" },
-    { id: "roi", label: "ROI Calculator", icon: Calculator, color: "text-green-400" },
-    { id: "news", label: "News Feed", icon: Newspaper, color: "text-yellow-400" },
-    { id: "balance", label: "Balance Checker", icon: Wallet, color: "text-blue-400" },
-    { id: "multisend", label: "Multisend", icon: Send, color: "text-pink-400" },
+    { id: "projects", label: "Projects", icon: LayoutDashboard, color: "text-blue-600" },
+    { id: "trading", label: "Trading", icon: Zap, color: "text-green-600" },
+    { id: "analytics", label: "Analytics", icon: Activity, color: "text-purple-600" },
+    { id: "gas", label: "Gas Tracker", icon: Fuel, color: "text-orange-600" },
+    { id: "roi", label: "ROI Calculator", icon: Calculator, color: "text-teal-600" },
+    { id: "news", label: "News Feed", icon: Newspaper, color: "text-yellow-700" },
+    { id: "balance", label: "Balance Checker", icon: Wallet, color: "text-indigo-600" },
+    { id: "multisend", label: "Multisend", icon: Send, color: "text-pink-600" },
   ];
 
   return (
-    <div className="min-h-screen text-white relative overflow-hidden">
-      <NeonParticles />
-
+    <div className="min-h-screen text-gray-800 relative overflow-hidden bg-[#e0e5ec]">
+      {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 h-full bg-gray-900/95 backdrop-blur-md border-r border-gray-700 z-50 transition-all duration-300 ${
+        className={`fixed top-0 left-0 h-full bg-[#e0e5ec] z-50 transition-all duration-300 ${
           sidebarOpen ? "w-64" : "w-0"
-        } ${isMobile ? "shadow-2xl" : ""}`}
+        } ${isMobile ? "shadow-[20px_20px_40px_rgba(163,177,198,0.5),-20px_-20px_40px_rgba(255,255,255,0.8)]" : ""}`}
+        style={{
+          boxShadow: sidebarOpen ? '20px 0 40px rgba(163,177,198,0.3)' : 'none'
+        }}
       >
         {sidebarOpen && (
           <div className="h-full flex flex-col">
-            <div className="p-4 border-b border-gray-700 flex justify-between items-center">
-              <h2 className="text-lg font-bold bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
+            <div className="p-4 flex justify-between items-center">
+              <h2 className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
                 🚀 Airdrop Tracker
               </h2>
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="text-gray-400 hover:text-white transition lg:hidden"
+                className="text-gray-600 hover:text-gray-800 transition lg:hidden rounded-lg p-2"
+                style={{
+                  boxShadow: '4px 4px 8px rgba(163,177,198,0.6), -4px -4px 8px rgba(255,255,255,0.5)'
+                }}
               >
                 <ChevronLeft size={20} />
               </button>
             </div>
 
-            <div className="flex-1 p-3 space-y-2">
+            <div className="flex-1 p-3 space-y-2 overflow-y-auto">
               {sidebarMenuItems.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -550,23 +555,36 @@ function TrackerPageFullScreen({ onLogout }) {
                       setActiveView(item.id);
                       if (isMobile) setSidebarOpen(false);
                     }}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ease-in-out border ${
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ease-in-out ${
                       activeView === item.id
-                        ? "bg-gradient-to-r from-cyan-600/20 to-purple-600/20 border-cyan-500/50 text-white shadow-lg"
-                        : "border-transparent text-gray-400 hover:bg-gray-800 hover:text-white"
+                        ? "text-gray-800 font-semibold"
+                        : "text-gray-600 hover:text-gray-800"
                     }`}
+                    style={
+                      activeView === item.id
+                        ? {
+                            boxShadow: 'inset 4px 4px 8px rgba(163,177,198,0.6), inset -4px -4px 8px rgba(255,255,255,0.5)',
+                            background: 'linear-gradient(145deg, #d1d6dd, #ecf0f3)'
+                          }
+                        : {
+                            boxShadow: '6px 6px 12px rgba(163,177,198,0.6), -6px -6px 12px rgba(255,255,255,0.5)'
+                          }
+                    }
                   >
                     <Icon size={20} className={activeView === item.id ? item.color : ""} />
-                    <span className="font-semibold">{item.label}</span>
+                    <span>{item.label}</span>
                   </button>
                 );
               })}
             </div>
 
-            <div className="p-4 border-t border-gray-700">
+            <div className="p-4">
               <button
                 onClick={onLogout}
-                className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 px-4 py-3 rounded-lg font-semibold transition"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold transition text-red-700 hover:text-red-800"
+                style={{
+                  boxShadow: '6px 6px 12px rgba(163,177,198,0.6), -6px -6px 12px rgba(255,255,255,0.5)'
+                }}
               >
                 <LogOut size={18} />
                 Logout
@@ -579,7 +597,11 @@ function TrackerPageFullScreen({ onLogout }) {
       {!sidebarOpen && (
         <button
           onClick={() => setSidebarOpen(true)}
-          className="fixed top-4 left-4 z-40 bg-gray-800 hover:bg-gray-700 p-3 rounded-lg shadow-lg transition"
+          className="fixed top-4 left-4 z-40 p-3 rounded-xl transition text-gray-700 hover:text-gray-900"
+          style={{
+            background: '#e0e5ec',
+            boxShadow: '6px 6px 12px rgba(163,177,198,0.6), -6px -6px 12px rgba(255,255,255,0.5)'
+          }}
         >
           <Menu size={24} />
         </button>
@@ -590,9 +612,14 @@ function TrackerPageFullScreen({ onLogout }) {
           sidebarOpen && !isMobile ? "ml-64" : "ml-0"
         }`}
       >
-        <div className="sticky top-0 z-30 bg-gray-900/90 backdrop-blur-md border-b border-gray-700 px-4 md:px-6 py-3 md:py-4">
+        {/* Header */}
+        <div className="sticky top-0 z-30 bg-[#e0e5ec] px-4 md:px-6 py-3 md:py-4"
+          style={{
+            boxShadow: '0 8px 16px rgba(163,177,198,0.4)'
+          }}
+        >
           <div className="flex flex-wrap justify-between items-center gap-3 md:gap-4">
-            <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+            <h1 className="text-xl md:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600">
               {activeView === "projects" && "📦 My Projects"}
               {activeView === "trading" && "⚡ DeDoo Trading Platform"}
               {activeView === "analytics" && "📊 Analytics Dashboard"}
@@ -607,20 +634,24 @@ function TrackerPageFullScreen({ onLogout }) {
               {activeView === "projects" && (
                 <>
                   <div className="relative">
-                    <button className="flex items-center gap-1 md:gap-2 bg-gray-800 hover:bg-gray-700 px-2 md:px-4 py-1.5 md:py-2 rounded-lg transition text-xs md:text-sm">
+                    <button className="flex items-center gap-1 md:gap-2 px-2 md:px-4 py-1.5 md:py-2 rounded-xl transition text-xs md:text-sm text-gray-700"
+                      style={{
+                        boxShadow: '4px 4px 8px rgba(163,177,198,0.6), -4px -4px 8px rgba(255,255,255,0.5)'
+                      }}
+                    >
                       <Tag size={14} />
                       <select
                         value={filterTag}
                         onChange={(e) => setFilterTag(e.target.value)}
-                        className="bg-gray-800 text-white outline-none cursor-pointer border-none appearance-none pr-2"
+                        className="bg-transparent text-gray-800 outline-none cursor-pointer border-none appearance-none pr-2 font-medium"
                         style={{
                           WebkitAppearance: 'none',
                           MozAppearance: 'none'
                         }}
                       >
-                        <option value="all" className="bg-gray-800 text-white">All Tags</option>
+                        <option value="all" className="bg-white text-gray-800">All Tags</option>
                         {AVAILABLE_TAGS.map((tag) => (
-                          <option key={tag.id} value={tag.id} className="bg-gray-800 text-white">
+                          <option key={tag.id} value={tag.id} className="bg-white text-gray-800">
                             {tag.label}
                           </option>
                         ))}
@@ -629,20 +660,24 @@ function TrackerPageFullScreen({ onLogout }) {
                   </div>
 
                   <div className="relative">
-                    <button className="flex items-center gap-1 md:gap-2 bg-gray-800 hover:bg-gray-700 px-2 md:px-4 py-1.5 md:py-2 rounded-lg transition text-xs md:text-sm">
+                    <button className="flex items-center gap-1 md:gap-2 px-2 md:px-4 py-1.5 md:py-2 rounded-xl transition text-xs md:text-sm text-gray-700"
+                      style={{
+                        boxShadow: '4px 4px 8px rgba(163,177,198,0.6), -4px -4px 8px rgba(255,255,255,0.5)'
+                      }}
+                    >
                       <CheckSquare size={14} />
                       <select
                         value={filterDaily}
                         onChange={(e) => setFilterDaily(e.target.value)}
-                        className="bg-gray-800 text-white outline-none cursor-pointer border-none appearance-none pr-2"
+                        className="bg-transparent text-gray-800 outline-none cursor-pointer border-none appearance-none pr-2 font-medium"
                         style={{
                           WebkitAppearance: 'none',
                           MozAppearance: 'none'
                         }}
                       >
-                        <option value="all" className="bg-gray-800 text-white">All Projects</option>
-                        <option value="checked" className="bg-gray-800 text-white">✅ Daily Checked</option>
-                        <option value="unchecked" className="bg-gray-800 text-white">⬜ Daily Unchecked</option>
+                        <option value="all" className="bg-white text-gray-800">All Projects</option>
+                        <option value="checked" className="bg-white text-gray-800">✅ Daily Checked</option>
+                        <option value="unchecked" className="bg-white text-gray-800">⬜ Daily Unchecked</option>
                       </select>
                     </button>
                   </div>
@@ -652,12 +687,18 @@ function TrackerPageFullScreen({ onLogout }) {
                     placeholder="🔍 Search..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="px-2 md:px-3 py-1.5 md:py-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 w-28 md:w-48 text-xs md:text-sm"
+                    className="px-2 md:px-3 py-1.5 md:py-2 rounded-xl bg-[#e0e5ec] text-gray-800 w-28 md:w-48 text-xs md:text-sm"
+                    style={{
+                      boxShadow: 'inset 3px 3px 6px rgba(163,177,198,0.6), inset -3px -3px 6px rgba(255,255,255,0.5)'
+                    }}
                   />
 
                   <button
                     onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-                    className="flex items-center gap-1 md:gap-2 bg-gray-800 hover:bg-gray-700 px-2 md:px-3 py-1.5 md:py-2 rounded-lg text-xs md:text-sm"
+                    className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1.5 md:py-2 rounded-xl text-xs md:text-sm text-gray-700"
+                    style={{
+                      boxShadow: '4px 4px 8px rgba(163,177,198,0.6), -4px -4px 8px rgba(255,255,255,0.5)'
+                    }}
                   >
                     <ArrowUpDown size={14} />
                     <span className="hidden sm:inline">{sortOrder === "asc" ? "A-Z" : "Z-A"}</span>
@@ -665,7 +706,10 @@ function TrackerPageFullScreen({ onLogout }) {
 
                   <button
                     onClick={() => setHideData(!hideData)}
-                    className="bg-gray-800 hover:bg-gray-700 px-2 md:px-3 py-1.5 md:py-2 rounded-lg flex items-center gap-1 md:gap-2 text-xs md:text-sm"
+                    className="px-2 md:px-3 py-1.5 md:py-2 rounded-xl flex items-center gap-1 md:gap-2 text-xs md:text-sm text-gray-700"
+                    style={{
+                      boxShadow: '4px 4px 8px rgba(163,177,198,0.6), -4px -4px 8px rgba(255,255,255,0.5)'
+                    }}
                   >
                     {hideData ? <Eye size={16} /> : <EyeOff size={16} />}
                   </button>
@@ -679,62 +723,102 @@ function TrackerPageFullScreen({ onLogout }) {
           {activeView === "trading" && (
             <div className="max-w-full mx-auto space-y-6">
               {/* HEADER BESAR */}
-              <div className="text-center py-8 bg-gradient-to-br from-gray-900/60 to-gray-800/60 backdrop-blur-md rounded-3xl border border-gray-700/50">
+              <div className="text-center py-8 rounded-3xl"
+                style={{
+                  background: '#e0e5ec',
+                  boxShadow: '12px 12px 24px rgba(163,177,198,0.6), -12px -12px 24px rgba(255,255,255,0.5)'
+                }}
+              >
                 <div className="flex items-center justify-center gap-4 mb-3">
-                  <Zap className="text-green-400" size={48} />
-                  <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-green-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">
+                  <Zap className="text-green-600" size={48} />
+                  <h2 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-600 via-blue-600 to-purple-600">
                     DeDoo Trading Platform
                   </h2>
                 </div>
-                <p className="text-gray-300 text-lg">
+                <p className="text-gray-700 text-lg">
                   Trade crypto with lightning speed & zero fees
                 </p>
               </div>
 
               {/* 3 FEATURE CARDS */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-gradient-to-br from-green-500/20 to-emerald-600/20 p-6 rounded-2xl border-2 border-green-500/40 hover:border-green-400/60 transition-all shadow-xl hover:shadow-green-500/20">
+                <div className="p-6 rounded-2xl transition-all"
+                  style={{
+                    background: 'linear-gradient(145deg, #d1d6dd, #ecf0f3)',
+                    boxShadow: '10px 10px 20px rgba(163,177,198,0.6), -10px -10px 20px rgba(255,255,255,0.5)'
+                  }}
+                >
                   <div className="flex items-center gap-4 mb-3">
-                    <div className="p-3 bg-green-500/30 rounded-xl">
-                      <Zap className="text-green-300" size={28} />
+                    <div className="p-3 rounded-xl"
+                      style={{
+                        boxShadow: 'inset 4px 4px 8px rgba(163,177,198,0.4), inset -4px -4px 8px rgba(255,255,255,0.5)'
+                      }}
+                    >
+                      <Zap className="text-green-600" size={28} />
                     </div>
-
-                    <h3 className="text-xl font-bold text-green-300">Lightning Fast</h3>
+                    <h3 className="text-xl font-bold text-green-700">Lightning Fast</h3>
                   </div>
-                  <p className="text-gray-200 text-base leading-relaxed">
+                  <p className="text-gray-700 text-base leading-relaxed">
                     Execute trades in milliseconds with our optimized engine
                   </p>
                 </div>
 
-                <div className="bg-gradient-to-br from-blue-500/20 to-cyan-600/20 p-6 rounded-2xl border-2 border-blue-500/40 hover:border-blue-400/60 transition-all shadow-xl hover:shadow-blue-500/20">
+                <div className="p-6 rounded-2xl transition-all"
+                  style={{
+                    background: 'linear-gradient(145deg, #d1d6dd, #ecf0f3)',
+                    boxShadow: '10px 10px 20px rgba(163,177,198,0.6), -10px -10px 20px rgba(255,255,255,0.5)'
+                  }}
+                >
                   <div className="flex items-center gap-4 mb-3">
-                    <div className="p-3 bg-blue-500/30 rounded-xl">
-                      <Wallet className="text-blue-300" size={28} />
+                    <div className="p-3 rounded-xl"
+                      style={{
+                        boxShadow: 'inset 4px 4px 8px rgba(163,177,198,0.4), inset -4px -4px 8px rgba(255,255,255,0.5)'
+                      }}
+                    >
+                      <Wallet className="text-blue-600" size={28} />
                     </div>
-                    <h3 className="text-xl font-bold text-blue-300">Low Fees</h3>
+                    <h3 className="text-xl font-bold text-blue-700">Low Fees</h3>
                   </div>
-                  <p className="text-gray-200 text-base leading-relaxed">
+                  <p className="text-gray-700 text-base leading-relaxed">
                     Trade with minimal fees and maximum profit potential
                   </p>
                 </div>
 
-                <div className="bg-gradient-to-br from-purple-500/20 to-pink-600/20 p-6 rounded-2xl border-2 border-purple-500/40 hover:border-purple-400/60 transition-all shadow-xl hover:shadow-purple-500/20">
+                <div className="p-6 rounded-2xl transition-all"
+                  style={{
+                    background: 'linear-gradient(145deg, #d1d6dd, #ecf0f3)',
+                    boxShadow: '10px 10px 20px rgba(163,177,198,0.6), -10px -10px 20px rgba(255,255,255,0.5)'
+                  }}
+                >
                   <div className="flex items-center gap-4 mb-3">
-                    <div className="p-3 bg-purple-500/30 rounded-xl">
-                      <Activity className="text-purple-300" size={28} />
+                    <div className="p-3 rounded-xl"
+                      style={{
+                        boxShadow: 'inset 4px 4px 8px rgba(163,177,198,0.4), inset -4px -4px 8px rgba(255,255,255,0.5)'
+                      }}
+                    >
+                      <Activity className="text-purple-600" size={28} />
                     </div>
-                    <h3 className="text-xl font-bold text-purple-300">Real-time Data</h3>
+                    <h3 className="text-xl font-bold text-purple-700">Real-time Data</h3>
                   </div>
-                  <p className="text-gray-200 text-base leading-relaxed">
+                  <p className="text-gray-700 text-base leading-relaxed">
                     Get live market data and advanced trading charts
                   </p>
                 </div>
               </div>
 
               {/* IFRAME CONTAINER */}
-              <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-xl p-6 rounded-3xl border-2 border-gray-700/50 shadow-2xl">
+              <div className="p-6 rounded-3xl"
+                style={{
+                  background: '#e0e5ec',
+                  boxShadow: '12px 12px 24px rgba(163,177,198,0.6), -12px -12px 24px rgba(255,255,255,0.5)'
+                }}
+              >
                 <div className="relative w-full" style={{ height: 'calc(100vh - 450px)', minHeight: '650px' }}>
-                  <div className="absolute inset-0 rounded-2xl overflow-hidden border-2 border-gray-600/50 shadow-2xl">
+                  <div className="absolute inset-0 rounded-2xl overflow-hidden"
+                    style={{
+                      boxShadow: 'inset 6px 6px 12px rgba(163,177,198,0.4), inset -6px -6px 12px rgba(255,255,255,0.3)'
+                    }}
+                  >
                     <iframe
                       src="https://trade.dedoo.xyz/"
                       className="w-full h-full"
@@ -747,11 +831,15 @@ function TrackerPageFullScreen({ onLogout }) {
 
                 {/* OPEN IN NEW TAB BUTTON */}
                 <div className="mt-6 flex items-center justify-center">
-                  <a 
-                    href="https://trade.dedoo.xyz/" 
-                    target="_blank" 
+                  <a
+                    href="https://trade.dedoo.xyz/"
+                    target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 px-8 py-3 rounded-xl font-semibold text-white shadow-lg hover:shadow-cyan-500/50 transition-all transform hover:scale-105"
+                    className="flex items-center gap-3 px-8 py-3 rounded-xl font-semibold text-white transition-all transform hover:scale-105"
+                    style={{
+                      background: 'linear-gradient(145deg, #3b82f6, #8b5cf6)',
+                      boxShadow: '8px 8px 16px rgba(163,177,198,0.6), -8px -8px 16px rgba(255,255,255,0.5)'
+                    }}
                   >
                     <Globe size={20} />
                     <span>Open in New Tab</span>
@@ -764,8 +852,13 @@ function TrackerPageFullScreen({ onLogout }) {
 
           {activeView === "projects" && (
             <div className="space-y-8">
-              <div className="bg-gray-900/60 backdrop-blur-md p-4 md:p-6 rounded-2xl border border-gray-700 shadow-lg">
-                <h2 className="text-lg md:text-xl font-semibold mb-4 text-cyan-300">
+              <div className="p-4 md:p-6 rounded-2xl"
+                style={{
+                  background: '#e0e5ec',
+                  boxShadow: '10px 10px 20px rgba(163,177,198,0.6), -10px -10px 20px rgba(255,255,255,0.5)'
+                }}
+              >
+                <h2 className="text-lg md:text-xl font-semibold mb-4 text-blue-700">
                   ➕ Tambah Project Baru
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -779,14 +872,17 @@ function TrackerPageFullScreen({ onLogout }) {
                         onChange={(e) =>
                           setFormData({ ...formData, [field]: e.target.value })
                         }
-                        className="p-2 md:p-3 text-sm md:text-base rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white w-full"
+                        className="p-2 md:p-3 text-sm md:text-base rounded-lg bg-[#e0e5ec] text-gray-800 w-full"
+                        style={{
+                          boxShadow: 'inset 3px 3px 6px rgba(163,177,198,0.6), inset -3px -3px 6px rgba(255,255,255,0.5)'
+                        }}
                       />
                     )
                   )}
                 </div>
 
                 <div className="mt-3">
-                  <label className="flex items-center gap-2 text-sm text-gray-400 mb-2">
+                  <label className="flex items-center gap-2 text-sm text-gray-600 mb-2">
                     <StickyNote size={16} />
                     Notes
                   </label>
@@ -794,13 +890,16 @@ function TrackerPageFullScreen({ onLogout }) {
                     placeholder="Add notes..."
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    className="w-full p-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white resize-none"
+                    className="w-full p-2 rounded-lg bg-[#e0e5ec] text-gray-800 resize-none"
+                    style={{
+                      boxShadow: 'inset 3px 3px 6px rgba(163,177,198,0.6), inset -3px -3px 6px rgba(255,255,255,0.5)'
+                    }}
                     rows="2"
                   ></textarea>
                 </div>
 
                 <div className="mt-3">
-                  <label className="flex items-center gap-2 text-sm text-gray-400 mb-2">
+                  <label className="flex items-center gap-2 text-sm text-gray-600 mb-2">
                     <Tag size={16} />
                     Select Tags
                   </label>
@@ -812,9 +911,18 @@ function TrackerPageFullScreen({ onLogout }) {
                         onClick={() => toggleTag(tag.id)}
                         className={`px-3 py-1 rounded-full text-xs font-semibold transition ${
                           selectedTags.includes(tag.id) || (formData.tags && formData.tags.includes(tag.id))
-                            ? `${tag.color} text-white`
-                            : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                            ? `${tag.color} text-gray-800 shadow-inner`
+                            : "text-gray-600"
                         }`}
+                        style={
+                          selectedTags.includes(tag.id) || (formData.tags && formData.tags.includes(tag.id))
+                            ? {
+                                boxShadow: 'inset 3px 3px 6px rgba(163,177,198,0.5), inset -3px -3px 6px rgba(255,255,255,0.3)'
+                              }
+                            : {
+                                boxShadow: '4px 4px 8px rgba(163,177,198,0.6), -4px -4px 8px rgba(255,255,255,0.5)'
+                              }
+                        }
                       >
                         {tag.label}
                       </button>
@@ -825,11 +933,16 @@ function TrackerPageFullScreen({ onLogout }) {
                 <button
                   onClick={addProject}
                   disabled={loading}
-                  className={`mt-4 px-6 py-2 rounded-lg shadow-md transition-all ${
+                  className={`mt-4 px-6 py-2 rounded-lg font-semibold transition-all ${
                     loading
-                      ? "bg-gray-600 cursor-not-allowed"
-                      : "bg-green-600 hover:bg-green-700"
+                      ? "text-gray-500 cursor-not-allowed"
+                      : "text-green-700 hover:text-green-800"
                   }`}
+                  style={{
+                    boxShadow: loading 
+                      ? 'inset 4px 4px 8px rgba(163,177,198,0.4)' 
+                      : '6px 6px 12px rgba(163,177,198,0.6), -6px -6px 12px rgba(255,255,255,0.5)'
+                  }}
                 >
                   {loading ? "Loading..." : "+ Tambah Project"}
                 </button>
@@ -839,30 +952,42 @@ function TrackerPageFullScreen({ onLogout }) {
                 {displayedProjects.map((p, i) => (
                   <div
                     key={i}
-                    className="group relative card p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-500/10 hover:-translate-y-1 w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] max-w-sm"
+                    className="group relative p-6 transition-all duration-300 hover:-translate-y-1 w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] max-w-sm rounded-2xl"
+                    style={{
+                      background: 'linear-gradient(145deg, #d1d6dd, #ecf0f3)',
+                      boxShadow: '10px 10px 20px rgba(163,177,198,0.6), -10px -10px 20px rgba(255,255,255,0.5)'
+                    }}
                   >
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
-                        <h3 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2 pr-16">
+                        <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 mb-2 pr-16">
                           {p.name}
                         </h3>
                       </div>
-                      
+
                       <div className="flex gap-2 absolute top-4 right-4">
                         <button
                           onClick={() => toggleDaily(p.name, p.daily)}
                           className={`p-2 rounded-lg transition-all duration-200 ${
                             p.daily === "CHECKED"
-                              ? "bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30"
-                              : "bg-gray-700/50 text-gray-400 hover:bg-gray-700 hover:text-cyan-400"
+                              ? "text-blue-600"
+                              : "text-gray-500"
                           }`}
+                          style={{
+                            boxShadow: p.daily === "CHECKED"
+                              ? 'inset 3px 3px 6px rgba(163,177,198,0.5)'
+                              : '4px 4px 8px rgba(163,177,198,0.6), -4px -4px 8px rgba(255,255,255,0.5)'
+                          }}
                           title="Toggle Daily Check"
                         >
                           {p.daily === "CHECKED" ? <CheckSquare size={18} /> : <Square size={18} />}
                         </button>
                         <button
                           onClick={() => deleteProject(p.name)}
-                          className="p-2 rounded-lg bg-gray-700/50 text-gray-400 hover:bg-red-500/20 hover:text-red-400 transition-all duration-200"
+                          className="p-2 rounded-lg text-red-600 hover:text-red-700 transition-all duration-200"
+                          style={{
+                            boxShadow: '4px 4px 8px rgba(163,177,198,0.6), -4px -4px 8px rgba(255,255,255,0.5)'
+                          }}
                           title="Hapus Project"
                         >
                           <Trash2 size={18} />
@@ -877,7 +1002,10 @@ function TrackerPageFullScreen({ onLogout }) {
                           return tag ? (
                             <span
                               key={tagId}
-                              className={`${tag.color} text-white text-xs px-3 py-1 rounded-full font-semibold shadow-lg`}
+                              className={`${tag.color} text-gray-800 text-xs px-3 py-1 rounded-full font-semibold`}
+                              style={{
+                                boxShadow: '3px 3px 6px rgba(163,177,198,0.4), -3px -3px 6px rgba(255,255,255,0.5)'
+                              }}
                             >
                               {tag.label}
                             </span>
@@ -887,90 +1015,126 @@ function TrackerPageFullScreen({ onLogout }) {
                     )}
 
                     {p.notes && (
-                      <div className="mb-4 p-3 bg-gradient-to-br from-yellow-500/10 to-orange-500/10 rounded-xl border border-yellow-500/20">
-                        <p className="flex items-start gap-2 text-sm text-gray-200">
-                          <StickyNote size={16} className="mt-0.5 text-yellow-400 flex-shrink-0" />
+                      <div className="mb-4 p-3 rounded-xl bg-gradient-to-br from-yellow-100 to-orange-100"
+                        style={{
+                          boxShadow: 'inset 3px 3px 6px rgba(163,177,198,0.3), inset -3px -3px 6px rgba(255,255,255,0.5)'
+                        }}
+                      >
+                        <p className="flex items-start gap-2 text-sm text-gray-700">
+                          <StickyNote size={16} className="mt-0.5 text-yellow-700 flex-shrink-0" />
                           <span className="italic leading-relaxed">{p.notes}</span>
                         </p>
                       </div>
                     )}
 
-                    <div className="border-t border-gray-700/50 my-4"></div>
+                    <div className="border-t border-gray-300/50 my-4"></div>
 
                     <div className="space-y-3">
                       {p.twitter && (
-                        <div className="flex items-center gap-3 group/item hover:bg-blue-500/5 p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 bg-blue-500/10 rounded-lg group-hover/item:bg-blue-500/20 transition-colors">
-                            <Twitter size={14} className="text-blue-400"/>
+                        <div className="flex items-center gap-3 group/item p-2 rounded-lg transition-colors">
+                          <div className="p-1.5 rounded-lg"
+                            style={{
+                              boxShadow: '3px 3px 6px rgba(163,177,198,0.4), -3px -3px 6px rgba(255,255,255,0.5)'
+                            }}
+                          >
+                            <Twitter size={14} className="text-blue-600"/>
                           </div>
-                          <span className="text-sm text-gray-300 font-mono truncate">{hideData ? "••••••" : p.twitter}</span>
+                          <span className="text-sm text-gray-700 font-mono truncate">{hideData ? "••••••" : p.twitter}</span>
                         </div>
                       )}
-                      
+
                       {p.discord && (
-                        <div className="flex items-center gap-3 group/item hover:bg-indigo-500/5 p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 bg-indigo-500/10 rounded-lg group-hover/item:bg-indigo-500/20 transition-colors">
-                            <MessageCircle size={14} className="text-indigo-400"/>
+                        <div className="flex items-center gap-3 group/item p-2 rounded-lg transition-colors">
+                          <div className="p-1.5 rounded-lg"
+                            style={{
+                              boxShadow: '3px 3px 6px rgba(163,177,198,0.4), -3px -3px 6px rgba(255,255,255,0.5)'
+                            }}
+                          >
+                            <MessageCircle size={14} className="text-indigo-600"/>
                           </div>
-                          <span className="text-sm text-gray-300 font-mono truncate">{hideData ? "••••••" : p.discord}</span>
+                          <span className="text-sm text-gray-700 font-mono truncate">{hideData ? "••••••" : p.discord}</span>
                         </div>
                       )}
-                      
+
                       {p.telegram && (
-                        <div className="flex items-center gap-3 group/item hover:bg-sky-500/5 p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 bg-sky-500/10 rounded-lg group-hover/item:bg-sky-500/20 transition-colors">
-                            <Send size={14} className="text-sky-400"/>
+                        <div className="flex items-center gap-3 group/item p-2 rounded-lg transition-colors">
+                          <div className="p-1.5 rounded-lg"
+                            style={{
+                              boxShadow: '3px 3px 6px rgba(163,177,198,0.4), -3px -3px 6px rgba(255,255,255,0.5)'
+                            }}
+                          >
+                            <Send size={14} className="text-sky-600"/>
                           </div>
-                          <span className="text-sm text-gray-300 font-mono truncate">{hideData ? "••••••" : p.telegram}</span>
+                          <span className="text-sm text-gray-700 font-mono truncate">{hideData ? "••••••" : p.telegram}</span>
                         </div>
                       )}
-                      
+
                       {p.farcaster && (
-                        <div className="flex items-center gap-3 group/item hover:bg-purple-500/5 p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 bg-purple-500/10 rounded-lg group-hover/item:bg-purple-500/20 transition-colors">
-                            <Zap size={14} className="text-purple-400"/>
+                        <div className="flex items-center gap-3 group/item p-2 rounded-lg transition-colors">
+                          <div className="p-1.5 rounded-lg"
+                            style={{
+                              boxShadow: '3px 3px 6px rgba(163,177,198,0.4), -3px -3px 6px rgba(255,255,255,0.5)'
+                            }}
+                          >
+                            <Zap size={14} className="text-purple-600"/>
                           </div>
-                          <span className="text-sm text-gray-300 font-mono truncate">{hideData ? "••••••" : p.farcaster}</span>
+                          <span className="text-sm text-gray-700 font-mono truncate">{hideData ? "••••••" : p.farcaster}</span>
                         </div>
                       )}
-                      
+
                       {p.wallet && (
-                        <div className="flex items-center gap-3 group/item hover:bg-yellow-500/5 p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 bg-yellow-500/10 rounded-lg group-hover/item:bg-yellow-500/20 transition-colors">
-                            <Wallet size={14} className="text-yellow-400"/>
+                        <div className="flex items-center gap-3 group/item p-2 rounded-lg transition-colors">
+                          <div className="p-1.5 rounded-lg"
+                            style={{
+                              boxShadow: '3px 3px 6px rgba(163,177,198,0.4), -3px -3px 6px rgba(255,255,255,0.5)'
+                            }}
+                          >
+                            <Wallet size={14} className="text-yellow-700"/>
                           </div>
-                          <span className="text-xs text-gray-300 font-mono break-all">{hideData ? "••••••••••••••" : p.wallet}</span>
+                          <span className="text-xs text-gray-700 font-mono break-all">{hideData ? "••••••••••••••" : p.wallet}</span>
                         </div>
                       )}
-                      
+
                       {p.email && (
-                        <div className="flex items-center gap-3 group/item hover:bg-pink-500/5 p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 bg-pink-500/10 rounded-lg group-hover/item:bg-pink-500/20 transition-colors">
-                            <Mail size={14} className="text-pink-400"/>
+                        <div className="flex items-center gap-3 group/item p-2 rounded-lg transition-colors">
+                          <div className="p-1.5 rounded-lg"
+                            style={{
+                              boxShadow: '3px 3px 6px rgba(163,177,198,0.4), -3px -3px 6px rgba(255,255,255,0.5)'
+                            }}
+                          >
+                            <Mail size={14} className="text-pink-600"/>
                           </div>
-                          <span className="text-sm text-gray-300 font-mono truncate">{hideData ? "••••••" : p.email}</span>
+                          <span className="text-sm text-gray-700 font-mono truncate">{hideData ? "••••••" : p.email}</span>
                         </div>
                       )}
-                      
+
                       {p.github && (
-                        <div className="flex items-center gap-3 group/item hover:bg-gray-500/5 p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 bg-gray-500/10 rounded-lg group-hover/item:bg-gray-500/20 transition-colors">
-                            <Github size={14} className="text-gray-300"/>
+                        <div className="flex items-center gap-3 group/item p-2 rounded-lg transition-colors">
+                          <div className="p-1.5 rounded-lg"
+                            style={{
+                              boxShadow: '3px 3px 6px rgba(163,177,198,0.4), -3px -3px 6px rgba(255,255,255,0.5)'
+                            }}
+                          >
+                            <Github size={14} className="text-gray-700"/>
                           </div>
-                          <span className="text-sm text-gray-300 font-mono truncate">{hideData ? "••••••" : p.github}</span>
+                          <span className="text-sm text-gray-700 font-mono truncate">{hideData ? "••••••" : p.github}</span>
                         </div>
                       )}
-                      
+
                       {p.website && (
-                        <div className="flex items-center gap-3 group/item hover:bg-blue-500/5 p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 bg-blue-500/10 rounded-lg group-hover/item:bg-blue-500/20 transition-colors">
-                            <Globe size={14} className="text-blue-400"/>
+                        <div className="flex items-center gap-3 group/item p-2 rounded-lg transition-colors">
+                          <div className="p-1.5 rounded-lg"
+                            style={{
+                              boxShadow: '3px 3px 6px rgba(163,177,198,0.4), -3px -3px 6px rgba(255,255,255,0.5)'
+                            }}
+                          >
+                            <Globe size={14} className="text-blue-600"/>
                           </div>
-                          <a 
-                            href={p.website} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="text-sm text-blue-400 hover:text-blue-300 underline truncate transition-colors"
+                          <a
+                            href={p.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-blue-600 hover:text-blue-700 underline truncate transition-colors"
                           >
                             {p.website}
                           </a>
@@ -979,11 +1143,11 @@ function TrackerPageFullScreen({ onLogout }) {
                     </div>
 
                     {p.lastupdate && (
-                      <div className="mt-4 pt-3 border-t border-gray-700/30">
+                      <div className="mt-4 pt-3 border-t border-gray-300/30">
                         <p className="text-xs text-gray-500 text-center">
-                          Last update: {new Date(p.lastupdate).toLocaleDateString('id-ID', { 
-                            day: 'numeric', 
-                            month: 'short', 
+                          Last update: {new Date(p.lastupdate).toLocaleDateString('id-ID', {
+                            day: 'numeric',
+                            month: 'short',
                             year: 'numeric',
                             hour: '2-digit',
                             minute: '2-digit'
@@ -999,25 +1163,38 @@ function TrackerPageFullScreen({ onLogout }) {
                 <div className="text-center">
                   <button
                     onClick={() => setShowAll(!showAll)}
-                    className="bg-cyan-600 hover:bg-cyan-700 px-6 py-2 rounded-lg font-semibold transition"
+                    className="px-6 py-2 rounded-lg font-semibold transition text-blue-700 hover:text-blue-800"
+                    style={{
+                      boxShadow: '6px 6px 12px rgba(163,177,198,0.6), -6px -6px 12px rgba(255,255,255,0.5)'
+                    }}
                   >
                     {showAll ? "⬆️ Show Less" : "⬇️ Show More"}
                   </button>
                 </div>
               )}
 
-              <div className="bg-gray-900/60 backdrop-blur-md p-6 rounded-2xl border border-gray-700 shadow-lg">
-                <h2 className="text-2xl font-bold mb-4 text-center bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
+              <div className="p-6 rounded-2xl"
+                style={{
+                  background: '#e0e5ec',
+                  boxShadow: '10px 10px 20px rgba(163,177,198,0.6), -10px -10px 20px rgba(255,255,255,0.5)'
+                }}
+              >
+                <h2 className="text-2xl font-bold mb-4 text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
                   📈 Live Crypto Market
                 </h2>
 
                 <div className="text-center mb-4">
-                  <p className="text-gray-400 text-sm mb-2">
-                    ⏱️ Auto-refresh in <span className="text-cyan-400 font-semibold">{timer}s</span>
+                  <p className="text-gray-600 text-sm mb-2">
+                    ⏱️ Auto-refresh in <span className="text-blue-700 font-semibold">{timer}s</span>
                   </p>
-                  <div className="w-64 mx-auto h-2 bg-gray-800 rounded-full overflow-hidden">
+                  <div className="w-64 mx-auto h-2 rounded-full overflow-hidden"
+                    style={{
+                      background: '#e0e5ec',
+                      boxShadow: 'inset 2px 2px 4px rgba(163,177,198,0.6), inset -2px -2px 4px rgba(255,255,255,0.5)'
+                    }}
+                  >
                     <div
-                      className="h-full transition-all duration-1000 ease-linear"
+                      className="h-full transition-all duration-1000 ease-linear rounded-full"
                       style={{ width: `${progress}%`, backgroundColor: progressColor }}
                     ></div>
                   </div>
@@ -1025,21 +1202,26 @@ function TrackerPageFullScreen({ onLogout }) {
 
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {coins.map((coin) => (
-                    <div key={coin.id} className="bg-gray-800/50 p-4 rounded-xl border border-gray-700 hover:border-cyan-400/60 transition-all">
+                    <div key={coin.id} className="p-4 rounded-xl transition-all"
+                      style={{
+                        background: 'linear-gradient(145deg, #d1d6dd, #ecf0f3)',
+                        boxShadow: '8px 8px 16px rgba(163,177,198,0.6), -8px -8px 16px rgba(255,255,255,0.5)'
+                      }}
+                    >
                       <div className="flex justify-between items-center mb-2">
                         <div className="flex items-center gap-3">
                           <img src={coin.image} alt={coin.name} className="w-6 h-6 rounded-full" />
-                          <span className="font-semibold">{coin.name}</span>
+                          <span className="font-semibold text-gray-800">{coin.name}</span>
                         </div>
                         <span
                           className={`text-sm font-bold ${
-                            coin.price_change_percentage_24h >= 0 ? "text-green-400" : "text-red-400"
+                            coin.price_change_percentage_24h >= 0 ? "text-green-600" : "text-red-600"
                           }`}
                         >
                           {coin.price_change_percentage_24h.toFixed(2)}%
                         </span>
                       </div>
-                      <p className="text-gray-300 mb-2 text-sm">
+                      <p className="text-gray-700 mb-2 text-sm font-semibold">
                         ${coin.current_price.toLocaleString()}
                       </p>
                       <ResponsiveContainer width="100%" height={60}>
@@ -1049,8 +1231,8 @@ function TrackerPageFullScreen({ onLogout }) {
                             dataKey="p"
                             stroke={
                               coin.price_change_percentage_24h >= 0
-                                ? "#22c55e"
-                                : "#ef4444"
+                                ? "#16a34a"
+                                : "#dc2626"
                             }
                             dot={false}
                             strokeWidth={2}
@@ -1059,9 +1241,11 @@ function TrackerPageFullScreen({ onLogout }) {
                           <YAxis hide domain={["auto", "auto"]} />
                           <Tooltip
                             contentStyle={{
-                              background: "#111",
+                              background: "#e0e5ec",
                               border: "none",
-                              color: "#fff",
+                              color: "#1f2937",
+                              borderRadius: "8px",
+                              boxShadow: '4px 4px 8px rgba(163,177,198,0.6), -4px -4px 8px rgba(255,255,255,0.5)'
                             }}
                           />
                         </LineChart>
@@ -1076,34 +1260,45 @@ function TrackerPageFullScreen({ onLogout }) {
           {activeView === "balance" && (
             <div className="max-w-7xl mx-auto space-y-6">
               {/* EVM Native & Tokens Balance Checker */}
-              <div className="bg-gray-900/60 backdrop-blur-md p-6 rounded-2xl border border-gray-700 shadow-lg">
-                <h2 className="text-2xl font-bold mb-6 text-center bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent">
+              <div className="p-6 rounded-2xl"
+                style={{
+                  background: '#e0e5ec',
+                  boxShadow: '10px 10px 20px rgba(163,177,198,0.6), -10px -10px 20px rgba(255,255,255,0.5)'
+                }}
+              >
+                <h2 className="text-2xl font-bold mb-6 text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
                   🔷 EVM Native & Tokens Balance Checker
                 </h2>
 
                 <div className="space-y-4">
                   {/* RPC URL Input */}
                   <div>
-                    <label className="block text-sm text-gray-400 mb-2">Input RPC URL</label>
+                    <label className="block text-sm text-gray-600 mb-2 font-medium">Input RPC URL</label>
                     <input
                       type="text"
                       placeholder="e.g. https://1.rpc.thirdweb.com"
                       value={customRpcUrl}
                       onChange={(e) => setCustomRpcUrl(e.target.value)}
-                      className="w-full bg-gray-800 p-3 rounded-lg border border-gray-700 text-white focus:border-cyan-400 focus:outline-none"
+                      className="w-full bg-[#e0e5ec] p-3 rounded-lg text-gray-800"
+                      style={{
+                        boxShadow: 'inset 3px 3px 6px rgba(163,177,198,0.6), inset -3px -3px 6px rgba(255,255,255,0.5)'
+                      }}
                     />
                   </div>
 
                   {/* Check Type Dropdown */}
                   <div>
-                    <label className="block text-sm text-gray-400 mb-2">Select Check Type</label>
+                    <label className="block text-sm text-gray-600 mb-2 font-medium">Select Check Type</label>
                     <select
                       value={checkType}
                       onChange={(e) => {
                         setCheckType(e.target.value);
                         setEvmBalances([]);
                       }}
-                      className="w-full bg-gray-800 p-3 rounded-lg border border-gray-700 text-white focus:border-cyan-400 focus:outline-none cursor-pointer"
+                      className="w-full bg-[#e0e5ec] p-3 rounded-lg text-gray-800 cursor-pointer font-medium"
+                      style={{
+                        boxShadow: 'inset 3px 3px 6px rgba(163,177,198,0.6), inset -3px -3px 6px rgba(255,255,255,0.5)'
+                      }}
                     >
                       <option value="native">Check Native Balance</option>
                       <option value="token">Check Token Balance</option>
@@ -1113,22 +1308,28 @@ function TrackerPageFullScreen({ onLogout }) {
                   {/* Token Contract Address (only show if checkType is token) */}
                   {checkType === "token" ? (
                     <div>
-                      <label className="block text-sm text-gray-400 mb-2">Token Contract Address</label>
+                      <label className="block text-sm text-gray-600 mb-2 font-medium">Token Contract Address</label>
                       <input
                         type="text"
                         placeholder="0xabc...def"
                         value={tokenContractAddress}
                         onChange={(e) => setTokenContractAddress(e.target.value)}
-                        className="w-full bg-gray-800 p-3 rounded-lg border border-gray-700 text-white focus:border-cyan-400 focus:outline-none"
+                        className="w-full bg-[#e0e5ec] p-3 rounded-lg text-gray-800"
+                        style={{
+                          boxShadow: 'inset 3px 3px 6px rgba(163,177,198,0.6), inset -3px -3px 6px rgba(255,255,255,0.5)'
+                        }}
                       />
                     </div>
                   ) : null}
 
                   {/* Wallet Addresses Input */}
                   <div>
-                    <label className="block text-sm text-gray-400 mb-2">Wallet Addresses (one per line)</label>
+                    <label className="block text-sm text-gray-600 mb-2 font-medium">Wallet Addresses (one per line)</label>
                     <textarea
-                      className="w-full bg-gray-800 p-3 rounded-lg border border-gray-700 text-white resize-none focus:border-cyan-400 focus:outline-none"
+                      className="w-full bg-[#e0e5ec] p-3 rounded-lg text-gray-800 resize-none"
+                      style={{
+                        boxShadow: 'inset 3px 3px 6px rgba(163,177,198,0.6), inset -3px -3px 6px rgba(255,255,255,0.5)'
+                      }}
                       placeholder="Paste wallet addresses (one per line)&#10;Example:&#10;0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb&#10;0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
                       rows="6"
                       value={evmAddresses}
@@ -1142,9 +1343,14 @@ function TrackerPageFullScreen({ onLogout }) {
                     disabled={evmBalanceLoading}
                     className={`w-full py-3 rounded-lg font-semibold text-lg transition ${
                       evmBalanceLoading
-                        ? "bg-gray-600 cursor-not-allowed"
-                        : "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
+                        ? "text-gray-500 cursor-not-allowed"
+                        : "text-blue-700 hover:text-blue-800"
                     }`}
+                    style={{
+                      boxShadow: evmBalanceLoading
+                        ? 'inset 4px 4px 8px rgba(163,177,198,0.6)'
+                        : '8px 8px 16px rgba(163,177,198,0.6), -8px -8px 16px rgba(255,255,255,0.5)'
+                    }}
                   >
                     {evmBalanceLoading ? "⏳ Checking..." : "Check Balance"}
                   </button>
@@ -1152,14 +1358,23 @@ function TrackerPageFullScreen({ onLogout }) {
 
                 {/* Results Table */}
                 {evmBalances.length > 0 && (
-                  <div className="mt-6 bg-gray-800 rounded-lg p-4 overflow-x-auto">
+                  <div className="mt-6 rounded-lg p-4"
+                    style={{
+                      background: 'linear-gradient(145deg, #d1d6dd, #ecf0f3)',
+                      boxShadow: 'inset 4px 4px 8px rgba(163,177,198,0.4), inset -4px -4px 8px rgba(255,255,255,0.5)'
+                    }}
+                  >
                     <div className="flex justify-between items-center mb-3">
-                      <h3 className="text-cyan-400 font-semibold">
+                      <h3 className="text-blue-700 font-semibold">
                         Results - {checkType === "native" ? "Native Balance" : "Token Balance"}
                       </h3>
                       <button
                         onClick={() => setEvmBalances([])}
-                        className="text-xs bg-red-600 hover:bg-red-700 px-3 py-1 rounded"
+                        className="text-xs text-white px-3 py-1 rounded"
+                        style={{
+                          background: 'linear-gradient(145deg, #dc2626, #ef4444)',
+                          boxShadow: '4px 4px 8px rgba(163,177,198,0.6), -4px -4px 8px rgba(255,255,255,0.5)'
+                        }}
                       >
                         Clear
                       </button>
@@ -1167,7 +1382,7 @@ function TrackerPageFullScreen({ onLogout }) {
                     <div className="overflow-x-auto">
                       <table className="w-full text-left text-sm">
                         <thead>
-                          <tr className="text-cyan-400 border-b border-gray-700">
+                          <tr className="text-blue-700 border-b border-gray-300">
                             <th className="p-2">#</th>
                             <th className="p-2">Address</th>
                             <th className="p-2 text-right">Balance</th>
@@ -1175,19 +1390,19 @@ function TrackerPageFullScreen({ onLogout }) {
                         </thead>
                         <tbody>
                           {evmBalances.map((b, i) => (
-                            <tr key={i} className="border-b border-gray-700 hover:bg-gray-700/30">
-                              <td className="p-2 text-gray-400">{i + 1}</td>
-                              <td className="p-2 break-all font-mono text-xs">{b.address}</td>
+                            <tr key={i} className="border-b border-gray-300">
+                              <td className="p-2 text-gray-600">{i + 1}</td>
+                              <td className="p-2 break-all font-mono text-xs text-gray-700">{b.address}</td>
                               <td className={`p-2 text-right font-semibold ${
-                                b.balance.includes('Error') || b.balance.includes('Invalid') 
-                                  ? 'text-red-400' 
-                                  : parseFloat(b.balance) > 0 
-                                  ? 'text-green-400' 
-                                  : 'text-gray-400'
+                                b.balance.includes('Error') || b.balance.includes('Invalid')
+                                  ? 'text-red-600'
+                                  : parseFloat(b.balance) > 0
+                                  ? 'text-green-600'
+                                  : 'text-gray-600'
                               }`}>
-                                {b.balance.includes('Error') || b.balance.includes('Invalid') 
-                                  ? b.balance 
-                                  : checkType === "token" 
+                                {b.balance.includes('Error') || b.balance.includes('Invalid')
+                                  ? b.balance
+                                  : checkType === "token"
                                   ? `${b.balance} ${b.symbol || 'TOKEN'}`
                                   : `${b.balance} Native`
                                 }
@@ -1198,7 +1413,7 @@ function TrackerPageFullScreen({ onLogout }) {
                       </table>
                     </div>
                     {checkType === "native" && (
-                      <div className="mt-3 text-xs text-gray-400 text-right">
+                      <div className="mt-3 text-xs text-gray-600 text-right font-medium">
                         Total Balance: {evmBalances
                           .filter(b => !b.balance.includes('Error') && !b.balance.includes('Invalid'))
                           .reduce((sum, b) => sum + parseFloat(b.balance), 0)
@@ -1206,7 +1421,7 @@ function TrackerPageFullScreen({ onLogout }) {
                       </div>
                     )}
                     {checkType === "token" && evmBalances[0]?.symbol && (
-                      <div className="mt-3 text-xs text-gray-400 text-right">
+                      <div className="mt-3 text-xs text-gray-600 text-right font-medium">
                         Total Balance: {evmBalances
                           .filter(b => !b.balance.includes('Error') && !b.balance.includes('Invalid'))
                           .reduce((sum, b) => sum + parseFloat(b.balance), 0)
@@ -1218,8 +1433,13 @@ function TrackerPageFullScreen({ onLogout }) {
               </div>
 
               {/* Default Network Balance Checker */}
-              <div className="bg-gray-900/60 backdrop-blur-md p-6 rounded-2xl border border-gray-700 shadow-lg">
-                <h2 className="text-2xl font-bold mb-4 text-center bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
+              <div className="p-6 rounded-2xl"
+                style={{
+                  background: '#e0e5ec',
+                  boxShadow: '10px 10px 20px rgba(163,177,198,0.6), -10px -10px 20px rgba(255,255,255,0.5)'
+                }}
+              >
+                <h2 className="text-2xl font-bold mb-4 text-center text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-blue-600">
                   💰 Quick Network Balance Checker
                 </h2>
 
@@ -1228,11 +1448,20 @@ function TrackerPageFullScreen({ onLogout }) {
                     <button
                       key={net}
                       onClick={() => setSelectedNetwork(net)}
-                      className={`px-4 py-2 rounded-lg text-sm md:text-base transition ${
+                      className={`px-4 py-2 rounded-lg text-sm md:text-base transition font-medium ${
                         selectedNetwork === net
-                          ? "bg-cyan-600"
-                          : "bg-gray-800 hover:bg-gray-700"
+                          ? "text-blue-700"
+                          : "text-gray-600 hover:text-gray-800"
                       }`}
+                      style={
+                        selectedNetwork === net
+                          ? {
+                              boxShadow: 'inset 4px 4px 8px rgba(163,177,198,0.6), inset -4px -4px 8px rgba(255,255,255,0.5)'
+                            }
+                          : {
+                              boxShadow: '6px 6px 12px rgba(163,177,198,0.6), -6px -6px 12px rgba(255,255,255,0.5)'
+                            }
+                      }
                     >
                       {net}
                     </button>
@@ -1240,7 +1469,10 @@ function TrackerPageFullScreen({ onLogout }) {
                 </div>
 
                 <textarea
-                  className="w-full bg-gray-800 p-3 rounded-lg border border-gray-700 text-white resize-none focus:border-cyan-400 focus:outline-none"
+                  className="w-full bg-[#e0e5ec] p-3 rounded-lg text-gray-800 resize-none"
+                  style={{
+                    boxShadow: 'inset 3px 3px 6px rgba(163,177,198,0.6), inset -3px -3px 6px rgba(255,255,255,0.5)'
+                  }}
                   placeholder="Paste wallet addresses (one per line)&#10;Example:&#10;0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb&#10;0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
                   rows="8"
                   value={quickAddresses}
@@ -1253,26 +1485,40 @@ function TrackerPageFullScreen({ onLogout }) {
                     disabled={quickBalanceLoading}
                     className={`w-full sm:w-auto px-6 py-3 rounded-lg font-semibold transition ${
                       quickBalanceLoading
-                        ? "bg-gray-600 cursor-not-allowed"
-                        : "bg-green-600 hover:bg-green-700"
+                        ? "text-gray-500 cursor-not-allowed"
+                        : "text-green-700 hover:text-green-800"
                     }`}
+                    style={{
+                      boxShadow: quickBalanceLoading
+                        ? 'inset 4px 4px 8px rgba(163,177,198,0.6)'
+                        : '8px 8px 16px rgba(163,177,198,0.6), -8px -8px 16px rgba(255,255,255,0.5)'
+                    }}
                   >
                     {quickBalanceLoading ? "⏳ Checking..." : "✅ Check Balance"}
                   </button>
                   {quickBalances.length > 0 && (
-                    <span className="text-sm text-gray-400">
+                    <span className="text-sm text-gray-600 font-medium">
                       Total: {quickBalances.length} address(es) checked
                     </span>
                   )}
                 </div>
 
                 {quickBalances.length > 0 && (
-                  <div className="mt-6 bg-gray-800 rounded-lg p-4 overflow-x-auto">
+                  <div className="mt-6 rounded-lg p-4"
+                    style={{
+                      background: 'linear-gradient(145deg, #d1d6dd, #ecf0f3)',
+                      boxShadow: 'inset 4px 4px 8px rgba(163,177,198,0.4), inset -4px -4px 8px rgba(255,255,255,0.5)'
+                    }}
+                  >
                     <div className="flex justify-between items-center mb-3">
-                      <h3 className="text-cyan-400 font-semibold">Results - {selectedNetwork}</h3>
+                      <h3 className="text-blue-700 font-semibold">Results - {selectedNetwork}</h3>
                       <button
                         onClick={() => setQuickBalances([])}
-                        className="text-xs bg-red-600 hover:bg-red-700 px-3 py-1 rounded"
+                        className="text-xs text-white px-3 py-1 rounded"
+                        style={{
+                          background: 'linear-gradient(145deg, #dc2626, #ef4444)',
+                          boxShadow: '4px 4px 8px rgba(163,177,198,0.6), -4px -4px 8px rgba(255,255,255,0.5)'
+                        }}
                       >
                         Clear
                       </button>
@@ -1280,7 +1526,7 @@ function TrackerPageFullScreen({ onLogout }) {
                     <div className="overflow-x-auto">
                       <table className="w-full text-left text-sm">
                         <thead>
-                          <tr className="text-cyan-400 border-b border-gray-700">
+                          <tr className="text-blue-700 border-b border-gray-300">
                             <th className="p-2">#</th>
                             <th className="p-2">Address</th>
                             <th className="p-2 text-right">Balance</th>
@@ -1288,18 +1534,18 @@ function TrackerPageFullScreen({ onLogout }) {
                         </thead>
                         <tbody>
                           {quickBalances.map((b, i) => (
-                            <tr key={i} className="border-b border-gray-700 hover:bg-gray-700/30">
-                              <td className="p-2 text-gray-400">{i + 1}</td>
-                              <td className="p-2 break-all font-mono text-xs">{b.address}</td>
+                            <tr key={i} className="border-b border-gray-300">
+                              <td className="p-2 text-gray-600">{i + 1}</td>
+                              <td className="p-2 break-all font-mono text-xs text-gray-700">{b.address}</td>
                               <td className={`p-2 text-right font-semibold ${
-                                b.balance.includes('Error') || b.balance.includes('Invalid') 
-                                  ? 'text-red-400' 
-                                  : parseFloat(b.balance) > 0 
-                                  ? 'text-green-400' 
-                                  : 'text-gray-400'
+                                b.balance.includes('Error') || b.balance.includes('Invalid')
+                                  ? 'text-red-600'
+                                  : parseFloat(b.balance) > 0
+                                  ? 'text-green-600'
+                                  : 'text-gray-600'
                               }`}>
-                                {b.balance.includes('Error') || b.balance.includes('Invalid') 
-                                  ? b.balance 
+                                {b.balance.includes('Error') || b.balance.includes('Invalid')
+                                  ? b.balance
                                   : `${b.balance} ${selectedNetwork === 'BSC' ? 'BNB' : selectedNetwork === 'Polygon' ? 'MATIC' : 'ETH'}`
                                 }
                               </td>
@@ -1308,7 +1554,7 @@ function TrackerPageFullScreen({ onLogout }) {
                         </tbody>
                       </table>
                     </div>
-                    <div className="mt-3 text-xs text-gray-400 text-right">
+                    <div className="mt-3 text-xs text-gray-600 text-right font-medium">
                       Total Balance: {quickBalances
                         .filter(b => !b.balance.includes('Error') && !b.balance.includes('Invalid'))
                         .reduce((sum, b) => sum + parseFloat(b.balance), 0)
@@ -1322,8 +1568,8 @@ function TrackerPageFullScreen({ onLogout }) {
 
           {activeView === "analytics" && (
             <div className="max-w-7xl mx-auto">
-              <AnalyticsDashboard 
-                projects={projects} 
+              <AnalyticsDashboard
+                projects={projects}
                 balances={quickBalances}
                 selectedNetwork={selectedNetwork}
               />
@@ -1358,7 +1604,7 @@ function TrackerPageFullScreen({ onLogout }) {
 
       {isMobile && sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40"
+          className="fixed inset-0 bg-black/20 z-40"
           onClick={() => setSidebarOpen(false)}
         ></div>
       )}
@@ -1367,3 +1613,5 @@ function TrackerPageFullScreen({ onLogout }) {
 }
 
 export default TrackerPageFullScreen;
+
+
