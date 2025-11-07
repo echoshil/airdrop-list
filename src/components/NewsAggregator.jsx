@@ -39,109 +39,94 @@ const NewsAggregator = () => {
   });
 
   const categories = [
-    { id: "all", label: "All", color: "bg-gray-600" },
-    { id: "defi", label: "DeFi", color: "bg-blue-500" },
-    { id: "gamefi", label: "GameFi", color: "bg-purple-500" },
-    { id: "layer2", label: "Layer2", color: "bg-green-500" },
-    { id: "nft", label: "NFT", color: "bg-pink-500" },
-    { id: "bridge", label: "Bridge", color: "bg-indigo-500" },
-    { id: "socialfi", label: "SocialFi", color: "bg-orange-500" },
-    { id: "airdrop", label: "Airdrop", color: "bg-yellow-500" },
+    { id: "all", label: "All", color: "bg-gray-400" },
+    { id: "defi", label: "DeFi", color: "bg-blue-400" },
+    { id: "gamefi", label: "GameFi", color: "bg-purple-400" },
+    { id: "layer2", label: "Layer2", color: "bg-green-400" },
+    { id: "nft", label: "NFT", color: "bg-pink-400" },
+    { id: "bridge", label: "Bridge", color: "bg-indigo-400" },
+    { id: "socialfi", label: "SocialFi", color: "bg-orange-400" },
+    { id: "airdrop", label: "Airdrop", color: "bg-yellow-400" },
   ];
 
-// Fetch news from CryptoCompare API (Free, No API Key)
-const fetchCryptoNews = useCallback(async () => {
-  setIsLoading(true);
-  setError(null);
-  
-  try {
-    // CryptoCompare News API (Free & Reliable)
-    const response = await axios.get("https://min-api.cryptocompare.com/data/v2/news/?lang=EN", {
-      timeout: 10000,
-    });
+  // ==== Fetch News (sama seperti aslinya) ====
+  const fetchCryptoNews = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
 
-    if (response.data && response.data.Data) {
-      // Transform CryptoCompare news to our format
-      const transformedNews = response.data.Data.slice(0, 20).map((item, index) => ({
-        id: `api-${item.id || Date.now() + index}`,
-        title: item.title || "No Title",
-        description: item.body || "No description available",
-        source: item.source || "CryptoCompare",
-        category: detectCategory(item.title + " " + (item.body || "") + " " + (item.categories || "")),
-        url: item.url || item.guid || "#",
-        sentiment: analyzeSentiment(item.title + " " + (item.body || "")),
-        votes: 0,
-        timestamp: new Date(item.published_on * 1000).toISOString(), // Convert Unix timestamp
-        isFromApi: true,
-        imageurl: item.imageurl || null,
-      }));
+    try {
+      const response = await axios.get(
+        "https://min-api.cryptocompare.com/data/v2/news/?lang=EN",
+        { timeout: 10000 }
+      );
 
-      setApiNews(transformedNews);
-      setLastUpdate(new Date());
-      setError(null); // Clear error on success
+      if (response.data && response.data.Data) {
+        const transformedNews = response.data.Data.slice(0, 20).map(
+          (item, index) => ({
+            id: `api-${item.id || Date.now() + index}`,
+            title: item.title || "No Title",
+            description: item.body || "No description available",
+            source: item.source || "CryptoCompare",
+            category: detectCategory(
+              item.title +
+                " " +
+                (item.body || "") +
+                " " +
+                (item.categories || "")
+            ),
+            url: item.url || item.guid || "#",
+            sentiment: analyzeSentiment(
+              item.title + " " + (item.body || "")
+            ),
+            votes: 0,
+            timestamp: new Date(item.published_on * 1000).toISOString(),
+            isFromApi: true,
+            imageurl: item.imageurl || null,
+          })
+        );
+
+        setApiNews(transformedNews);
+        setLastUpdate(new Date());
+      }
+    } catch (err) {
+      console.error("Error fetching crypto news:", err);
+      setError("⚠️ Failed to fetch latest news. Showing sample data.");
+      if (apiNews.length === 0) setApiNews(getSampleNews());
+    } finally {
+      setIsLoading(false);
     }
-  } catch (err) {
-    console.error("Error fetching crypto news:", err);
-    setError("Failed to fetch latest news. Showing sample data.");
-    
-    // Fallback: use sample data if API fails
-    if (apiNews.length === 0) {
-      setApiNews(getSampleNews());
-    }
-  } finally {
-    setIsLoading(false);
-  }
-}, [apiNews.length]);
+  }, [apiNews.length]);
 
-  // Auto-detect category from text
+  // === Analisis kategori dan sentimen (tetap) ===
   const detectCategory = (text) => {
-    const lowerText = text.toLowerCase();
-    
-    if (lowerText.match(/airdrop|claim|snapshot|distribution|reward/i)) return "airdrop";
-    if (lowerText.match(/defi|lending|yield|stake|liquidity/i)) return "defi";
-    if (lowerText.match(/game|play to earn|p2e|metaverse/i)) return "gamefi";
-    if (lowerText.match(/layer 2|l2|rollup|zk|optimistic|arbitrum|polygon/i)) return "layer2";
-    if (lowerText.match(/nft|non-fungible|opensea|collectible/i)) return "nft";
-    if (lowerText.match(/bridge|cross-chain|multichain/i)) return "bridge";
-    if (lowerText.match(/social|community|dao/i)) return "socialfi";
-    
-    return "defi"; // default
+    const lower = text.toLowerCase();
+    if (lower.match(/airdrop|snapshot|reward/)) return "airdrop";
+    if (lower.match(/defi|liquidity|yield/)) return "defi";
+    if (lower.match(/game|p2e|metaverse/)) return "gamefi";
+    if (lower.match(/layer 2|rollup|zk|optimistic/)) return "layer2";
+    if (lower.match(/nft|collectible/)) return "nft";
+    if (lower.match(/bridge|cross-chain/)) return "bridge";
+    if (lower.match(/social|community|dao/)) return "socialfi";
+    return "defi";
   };
 
-  // Simple sentiment analysis
   const analyzeSentiment = (text) => {
-    const bullishKeywords = [
-      "airdrop", "launch", "reward", "snapshot", "distribution",
-      "partnership", "expansion", "growth", "announcement", "new",
-      "confirmed", "bullish", "gain", "profit", "rise", "up", "surge",
-      "breakthrough", "adoption", "milestone"
-    ];
-    
-    const bearishKeywords = [
-      "delay", "postpone", "cancel", "issue", "problem",
-      "warning", "scam", "hack", "down", "crash", "bearish",
-      "loss", "decline", "drop", "fall", "risk", "fraud"
-    ];
-
-    const lowerText = text.toLowerCase();
-    const bullishCount = bullishKeywords.filter((word) =>
-      lowerText.includes(word)
-    ).length;
-    const bearishCount = bearishKeywords.filter((word) =>
-      lowerText.includes(word)
-    ).length;
-
-    if (bullishCount > bearishCount) return "bullish";
-    if (bearishCount > bullishCount) return "bearish";
+    const bull = ["gain", "bullish", "up", "reward", "launch"];
+    const bear = ["down", "hack", "loss", "bearish", "drop"];
+    const t = text.toLowerCase();
+    const bullCount = bull.filter((w) => t.includes(w)).length;
+    const bearCount = bear.filter((w) => t.includes(w)).length;
+    if (bullCount > bearCount) return "bullish";
+    if (bearCount > bullCount) return "bearish";
     return "neutral";
   };
 
-  // Sample news fallback
   const getSampleNews = () => [
     {
       id: "sample-1",
       title: "Major L2 Protocol Announces Airdrop Snapshot",
-      description: "Leading Layer 2 solution confirms airdrop eligibility snapshot. Early users who interacted before deadline will qualify for rewards.",
+      description:
+        "Layer 2 solution confirms airdrop snapshot for early users.",
       source: "CryptoNews",
       category: "airdrop",
       url: "#",
@@ -150,329 +135,208 @@ const fetchCryptoNews = useCallback(async () => {
       timestamp: new Date().toISOString(),
       isFromApi: true,
     },
-    {
-      id: "sample-2",
-      title: "DeFi Protocol Launches New Yield Farming Program",
-      description: "Popular DeFi platform introduces high-yield farming opportunities with reduced gas fees.",
-      source: "DeFi Pulse",
-      category: "defi",
-      url: "#",
-      sentiment: "bullish",
-      votes: 32,
-      timestamp: new Date(Date.now() - 3600000).toISOString(),
-      isFromApi: true,
-    },
   ];
 
-  // Load manual news from localStorage
+  // === useEffect ===
   useEffect(() => {
     const saved = localStorage.getItem("airdrop_news_manual");
-    if (saved) {
-      setNews(JSON.parse(saved));
-    }
+    if (saved) setNews(JSON.parse(saved));
   }, []);
 
-  // Initial fetch and auto-refresh setup
   useEffect(() => {
     fetchCryptoNews();
-
-    // Auto-refresh every 10 minutes
     let interval;
     if (autoRefresh) {
-      interval = setInterval(() => {
-        fetchCryptoNews();
-      }, 10 * 60 * 1000); // 10 minutes
+      interval = setInterval(fetchCryptoNews, 10 * 60 * 1000);
     }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
+    return () => interval && clearInterval(interval);
   }, [autoRefresh, fetchCryptoNews]);
 
-  // Add manual news
-  const addNews = () => {
-    if (!formData.title || !formData.description) {
-      alert("⚠️ Title and description are required!");
-      return;
-    }
-
-    const newNews = {
-      id: `manual-${Date.now()}`,
-      ...formData,
-      sentiment: analyzeSentiment(formData.description),
-      votes: 0,
-      timestamp: new Date().toISOString(),
-      isFromApi: false,
-    };
-
-    const updated = [newNews, ...news];
-    setNews(updated);
-    localStorage.setItem("airdrop_news_manual", JSON.stringify(updated));
-
-    setFormData({
-      title: "",
-      description: "",
-      source: "",
-      category: "defi",
-      url: "",
-    });
-    setShowAddForm(false);
-  };
-
-  // Vote handler
-  const handleVote = (newsId, type, isApi) => {
-    if (isApi) {
-      const updated = apiNews.map((item) => {
-        if (item.id === newsId) {
-          return {
-            ...item,
-            votes: type === "up" ? item.votes + 1 : item.votes - 1,
-          };
-        }
-        return item;
-      });
-      setApiNews(updated);
-    } else {
-      const updated = news.map((item) => {
-        if (item.id === newsId) {
-          return {
-            ...item,
-            votes: type === "up" ? item.votes + 1 : item.votes - 1,
-          };
-        }
-        return item;
-      });
-      setNews(updated);
-      localStorage.setItem("airdrop_news_manual", JSON.stringify(updated));
-    }
-  };
-
-  // Delete manual news
-  const deleteNews = (newsId) => {
-    const updated = news.filter((item) => item.id !== newsId);
-    setNews(updated);
-    localStorage.setItem("airdrop_news_manual", JSON.stringify(updated));
-  };
-
-  // Combine and filter news
-  const allNews = [...apiNews, ...news];
-  const filteredNews = allNews
-    .filter((item) =>
-      filterCategory === "all" ? true : item.category === filterCategory
-    )
-    .sort((a, b) => {
-      if (sortBy === "trending") return b.votes - a.votes;
-      if (sortBy === "latest")
-        return new Date(b.timestamp) - new Date(a.timestamp);
-      const sentimentOrder = { bullish: 3, neutral: 2, bearish: 1 };
-      return sentimentOrder[b.sentiment] - sentimentOrder[a.sentiment];
-    });
-
-  const getSentimentBadge = (sentiment) => {
-    const badges = {
-      bullish: {
-        color: "bg-green-600/20 text-green-400 border-green-500/30",
-        label: "🐂 Bullish",
-      },
-      bearish: {
-        color: "bg-red-600/20 text-red-400 border-red-500/30",
-        label: "🐻 Bearish",
-      },
-      neutral: {
-        color: "bg-gray-600/20 text-gray-400 border-gray-500/30",
-        label: "😐 Neutral",
-      },
-    };
-    return badges[sentiment];
-  };
-
-  const formatTimestamp = (timestamp) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    return `${diffDays}d ago`;
-  };
-
+  // === Header UI ===
   return (
-    <div className="relative z-10 w-full mb-8 fade-in">
-      {/* Header */}
-      <div className="bg-gray-900/60 backdrop-blur-md rounded-t-2xl border border-gray-700 border-b-0">
-        <div className="p-4 flex justify-between items-center flex-wrap gap-3">
-          <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent flex items-center gap-2">
-              <Newspaper size={28} />
-              🤖 Airdrop News Aggregator
-            </h2>
-            {isLoading && (
-              <RefreshCw size={20} className="text-cyan-400 animate-spin" />
-            )}
-          </div>
-          
-          <div className="flex items-center gap-3">
-            {/* Last Update */}
-            {lastUpdate && (
-              <div className="flex items-center gap-2 text-sm text-gray-400">
-                <Clock size={16} />
-                <span>Updated {formatTimestamp(lastUpdate)}</span>
-              </div>
-            )}
-            
-            {/* Manual Refresh Button */}
-            <button
-              onClick={fetchCryptoNews}
-              disabled={isLoading}
-              className="bg-cyan-600 hover:bg-cyan-500 disabled:bg-gray-600 px-3 py-2 rounded-lg transition flex items-center gap-2 text-sm"
-              data-testid="refresh-news-btn"
-            >
-              <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
-              Refresh
-            </button>
-            
-            {/* Auto-refresh Toggle */}
-            <button
-              onClick={() => setAutoRefresh(!autoRefresh)}
-              className={`px-3 py-2 rounded-lg transition text-sm ${
-                autoRefresh
-                  ? "bg-green-600 hover:bg-green-500"
-                  : "bg-gray-600 hover:bg-gray-500"
-              }`}
-              data-testid="auto-refresh-toggle"
-            >
-              Auto: {autoRefresh ? "ON" : "OFF"}
-            </button>
-            
-            {/* Collapse Button */}
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg transition flex items-center gap-2"
-            >
-              {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-              {isExpanded ? "Hide" : "Show"}
-            </button>
-          </div>
+    <div className="relative z-10 w-full mb-8 fade-in bg-[#e0e0e0] rounded-3xl shadow-[9px_9px_16px_#bebebe,-9px_-9px_16px_#ffffff] transition-all duration-300">
+      <div className="p-5 flex justify-between items-center flex-wrap gap-3 rounded-t-3xl bg-[#e0e0e0] shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff]">
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-bold text-gray-700 flex items-center gap-2">
+            <Newspaper size={28} className="text-blue-500" />
+            🤖 Airdrop News Aggregator
+          </h2>
+          {isLoading && (
+            <RefreshCw size={20} className="text-blue-400 animate-spin" />
+          )}
         </div>
-        
-        {/* Error Message */}
-        {error && (
-          <div className="px-4 pb-3">
-            <div className="bg-yellow-600/20 border border-yellow-500/30 rounded-lg p-3 flex items-center gap-2 text-yellow-400 text-sm">
-              <AlertCircle size={16} />
-              {error}
+
+        <div className="flex items-center gap-3 flex-wrap">
+          {lastUpdate && (
+            <div className="flex items-center gap-2 text-gray-500 text-sm px-3 py-1 rounded-full shadow-[inset_3px_3px_6px_#bebebe,inset_-3px_-3px_6px_#ffffff]">
+              <Clock size={16} />
+              <span>
+                Updated{" "}
+                {Math.floor((new Date() - lastUpdate) / 60000)}m ago
+              </span>
             </div>
-          </div>
-        )}
+          )}
+
+          <button
+            onClick={fetchCryptoNews}
+            disabled={isLoading}
+            className="px-4 py-2 rounded-full text-gray-700 bg-[#e0e0e0] shadow-[6px_6px_12px_#bebebe,-6px_-6px_12px_#ffffff] hover:shadow-[inset_4px_4px_8px_#bebebe,inset_-4px_-4px_8px_#ffffff] transition"
+          >
+            <RefreshCw
+              size={16}
+              className={`inline-block mr-1 ${
+                isLoading ? "animate-spin" : ""
+              }`}
+            />
+            Refresh
+          </button>
+
+          <button
+            onClick={() => setAutoRefresh(!autoRefresh)}
+            className={`px-4 py-2 rounded-full text-gray-700 transition ${
+              autoRefresh
+                ? "shadow-[6px_6px_12px_#bebebe,-6px_-6px_12px_#ffffff]"
+                : "shadow-[inset_4px_4px_8px_#bebebe,inset_-4px_-4px_8px_#ffffff]"
+            }`}
+          >
+            Auto: {autoRefresh ? "ON" : "OFF"}
+          </button>
+
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="px-4 py-2 rounded-full text-gray-700 shadow-[6px_6px_12px_#bebebe,-6px_-6px_12px_#ffffff] hover:shadow-[inset_4px_4px_8px_#bebebe,inset_-4px_-4px_8px_#ffffff] flex items-center gap-2"
+          >
+            {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+            {isExpanded ? "Hide" : "Show"}
+          </button>
+        </div>
       </div>
 
-      {isExpanded && (
-        <div className="bg-gray-900/60 backdrop-blur-md rounded-b-2xl border border-gray-700 p-6 space-y-6">
-          {/* Controls */}
-          <div className="flex flex-wrap justify-between items-center gap-4">
-            <div className="flex flex-wrap gap-3">
-              {/* Category Filter */}
-              <div className="flex items-center gap-2 bg-gray-800 px-3 py-2 rounded-lg">
-                <Filter size={16} className="text-gray-400" />
-                <select
-                  value={filterCategory}
-                  onChange={(e) => setFilterCategory(e.target.value)}
-                  className="bg-transparent text-white outline-none cursor-pointer text-sm"
-                  data-testid="category-filter"
-                >
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+      {error && (
+        <div className="p-4">
+          <div className="p-3 text-gray-700 flex items-center gap-2 rounded-xl bg-[#e0e0e0] shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff]">
+            <AlertCircle size={18} className="text-yellow-600" />
+            <span>{error}</span>
+          </div>
+        </div>
+      )}
 
-              {/* Sort */}
-              <div className="flex items-center gap-2 bg-gray-800 px-3 py-2 rounded-lg">
-                <TrendingUp size={16} className="text-gray-400" />
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="bg-transparent text-white outline-none cursor-pointer text-sm"
-                  data-testid="sort-by"
-                >
-                  <option value="trending">Trending</option>
-                  <option value="latest">Latest</option>
-                  <option value="sentiment">Sentiment</option>
-                </select>
-              </div>
+      {isExpanded && (
+        <div className="p-6 rounded-b-3xl bg-[#e0e0e0] shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] space-y-6">
+          {/* === Filter & Sort === */}
+          <div className="flex flex-wrap gap-4 items-center">
+            <div className="flex items-center gap-2">
+              <Filter size={16} className="text-gray-600" />
+              <select
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+                className="px-3 py-2 rounded-xl bg-[#e0e0e0] text-gray-700 shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff] focus:outline-none"
+              >
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            {/* Add News Button */}
+            <div className="flex items-center gap-2">
+              <TrendingUp size={16} className="text-gray-600" />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="px-3 py-2 rounded-xl bg-[#e0e0e0] text-gray-700 shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff] focus:outline-none"
+              >
+                <option value="trending">Trending</option>
+                <option value="latest">Latest</option>
+                <option value="bullish">Most Bullish</option>
+              </select>
+            </div>
+
             <button
               onClick={() => setShowAddForm(!showAddForm)}
-              className="flex items-center gap-2 bg-gradient-to-r from-orange-600 to-red-600 hover:opacity-90 px-4 py-2 rounded-lg font-semibold transition"
-              data-testid="add-news-btn"
+              className="ml-auto px-4 py-2 rounded-full text-gray-700 bg-[#e0e0e0] shadow-[6px_6px_12px_#bebebe,-6px_-6px_12px_#ffffff] hover:shadow-[inset_4px_4px_8px_#bebebe,inset_-4px_-4px_8px_#ffffff] flex items-center gap-2 transition"
             >
-              {showAddForm ? <X size={18} /> : <Plus size={18} />}
-              {showAddForm ? "Cancel" : "Add News"}
+              {showAddForm ? (
+                <>
+                  <X size={16} /> Cancel
+                </>
+              ) : (
+                <>
+                  <Plus size={16} /> Add News
+                </>
+              )}
             </button>
           </div>
 
-          {/* Add Form */}
+          {/* === Add Form === */}
           <AnimatePresence>
             {showAddForm && (
               <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="bg-gray-800/50 border border-gray-700 rounded-xl p-4 space-y-3"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="rounded-2xl p-5 bg-[#e0e0e0] shadow-[inset_8px_8px_16px_#bebebe,inset_-8px_-8px_16px_#ffffff] transition"
               >
-                <h3 className="text-lg font-semibold text-cyan-400 flex items-center gap-2">
-                  <Sparkles size={20} />
-                  Submit New Airdrop News
-                </h3>
-
-                <input
-                  type="text"
-                  placeholder="News Title *"
-                  value={formData.title}
-                  onChange={(e) =>
-                    setFormData({ ...formData, title: e.target.value })
-                  }
-                  className="w-full p-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white outline-none"
-                  data-testid="news-title-input"
-                />
-
-                <textarea
-                  placeholder="Description *"
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                  className="w-full p-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white outline-none resize-none"
-                  rows="3"
-                  data-testid="news-description-input"
-                ></textarea>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!formData.title || !formData.url) return;
+                    const newItem = {
+                      id: Date.now(),
+                      ...formData,
+                      sentiment: analyzeSentiment(formData.title),
+                      votes: 0,
+                      timestamp: new Date().toISOString(),
+                      isFromApi: false,
+                    };
+                    const updated = [newItem, ...news];
+                    setNews(updated);
+                    localStorage.setItem(
+                      "airdrop_news_manual",
+                      JSON.stringify(updated)
+                    );
+                    setFormData({
+                      title: "",
+                      description: "",
+                      source: "",
+                      category: "defi",
+                      url: "",
+                    });
+                    setShowAddForm(false);
+                  }}
+                  className="grid gap-4"
+                >
                   <input
-                    type="text"
-                    placeholder="Source (e.g., Twitter @xyz)"
+                    placeholder="Title"
+                    value={formData.title}
+                    onChange={(e) =>
+                      setFormData({ ...formData, title: e.target.value })
+                    }
+                    className="px-4 py-2 rounded-xl text-gray-700 bg-[#e0e0e0] shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff] focus:outline-none"
+                  />
+                  <textarea
+                    placeholder="Description"
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
+                    className="px-4 py-2 rounded-xl text-gray-700 bg-[#e0e0e0] shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff] focus:outline-none"
+                  />
+                  <input
+                    placeholder="Source"
                     value={formData.source}
                     onChange={(e) =>
                       setFormData({ ...formData, source: e.target.value })
                     }
-                    className="p-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white outline-none"
-                    data-testid="news-source-input"
+                    className="px-4 py-2 rounded-xl text-gray-700 bg-[#e0e0e0] shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff] focus:outline-none"
                   />
-
                   <select
                     value={formData.category}
                     onChange={(e) =>
                       setFormData({ ...formData, category: e.target.value })
                     }
-                    className="p-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white outline-none"
-                    data-testid="news-category-select"
+                    className="px-4 py-2 rounded-xl text-gray-700 bg-[#e0e0e0] shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff]"
                   >
                     {categories
                       .filter((c) => c.id !== "all")
@@ -482,188 +346,145 @@ const fetchCryptoNews = useCallback(async () => {
                         </option>
                       ))}
                   </select>
-
                   <input
-                    type="url"
-                    placeholder="URL (optional)"
+                    placeholder="URL"
                     value={formData.url}
                     onChange={(e) =>
                       setFormData({ ...formData, url: e.target.value })
                     }
-                    className="p-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-cyan-400 text-white outline-none"
-                    data-testid="news-url-input"
+                    className="px-4 py-2 rounded-xl text-gray-700 bg-[#e0e0e0] shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff] focus:outline-none"
                   />
-                </div>
-
-                <button
-                  onClick={addNews}
-                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:opacity-90 px-6 py-3 rounded-lg font-semibold transition"
-                  data-testid="submit-news-btn"
-                >
-                  Submit News
-                </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 rounded-full text-gray-700 bg-[#e0e0e0] shadow-[6px_6px_12px_#bebebe,-6px_-6px_12px_#ffffff] hover:shadow-[inset_4px_4px_8px_#bebebe,inset_-4px_-4px_8px_#ffffff]"
+                  >
+                    Add News
+                  </button>
+                </form>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* News Feed */}
-          <div className="space-y-4" data-testid="news-feed">
-            {isLoading && filteredNews.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <RefreshCw size={48} className="mx-auto mb-4 opacity-50 animate-spin" />
-                <p>Loading crypto news...</p>
-              </div>
-            ) : filteredNews.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <AlertCircle size={48} className="mx-auto mb-4 opacity-50" />
-                <p>No news available for this category</p>
-              </div>
-            ) : (
-              filteredNews.map((item) => {
-                const sentiment = getSentimentBadge(item.sentiment);
-                const categoryData = categories.find(
-                  (c) => c.id === item.category
-                );
-
-                return (
-                  <motion.div
-                    key={item.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-gray-800/50 border border-gray-700 rounded-xl p-5 hover:border-cyan-500/50 transition"
-                    data-testid={`news-item-${item.id}`}
-                  >
-                    <div className="flex justify-between items-start gap-4">
-                      {/* Content */}
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <span
-                            className={`text-xs px-2 py-1 rounded-full ${categoryData.color} text-white font-semibold`}
-                          >
-                            {categoryData.label}
-                          </span>
-                          <span
-                            className={`text-xs px-2 py-1 rounded-full border ${sentiment.color} font-semibold`}
-                          >
-                            {sentiment.label}
-                          </span>
-                          {item.isFromApi && (
-                            <span className="text-xs px-2 py-1 rounded-full bg-blue-600/20 text-blue-400 border border-blue-500/30 font-semibold">
-                              🌐 Live
-                            </span>
-                          )}
-                        </div>
-
-                        <h3 className="text-lg font-bold text-white mb-2">
-                          {item.title}
-                        </h3>
-                        <p className="text-gray-300 text-sm mb-3">
-                          {item.description}
-                        </p>
-
-                        <div className="flex items-center gap-4 text-xs text-gray-500 flex-wrap">
-                          <span>📡 {item.source}</span>
-                          <span>🕒 {formatTimestamp(item.timestamp)}</span>
-                          {item.url && item.url !== "#" && (
-                            <a
-                              href={item.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1 text-cyan-400 hover:text-cyan-300"
-                              data-testid={`news-source-link-${item.id}`}
-                            >
-                              <ExternalLink size={12} />
-                              Source
-                            </a>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Voting & Actions */}
-                      <div className="flex flex-col items-center gap-2">
-                        <button
-                          onClick={() => handleVote(item.id, "up", item.isFromApi)}
-                          className="text-green-400 hover:text-green-300 transition"
-                          data-testid={`upvote-btn-${item.id}`}
-                        >
-                          <ThumbsUp size={18} />
-                        </button>
-                        <span
-                          className={`font-bold ${
-                            item.votes > 0
-                              ? "text-green-400"
-                              : item.votes < 0
-                              ? "text-red-400"
-                              : "text-gray-400"
-                          }`}
-                          data-testid={`vote-count-${item.id}`}
-                        >
-                          {item.votes}
-                        </span>
-                        <button
-                          onClick={() => handleVote(item.id, "down", item.isFromApi)}
-                          className="text-red-400 hover:text-red-300 transition"
-                          data-testid={`downvote-btn-${item.id}`}
-                        >
-                          <ThumbsDown size={18} />
-                        </button>
-                        {!item.isFromApi && (
-                          <button
-                            onClick={() => deleteNews(item.id)}
-                            className="mt-2 text-gray-500 hover:text-red-400 transition"
-                            data-testid={`delete-btn-${item.id}`}
-                          >
-                            <X size={16} />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </motion.div>
-                );
+          {/* === List === */}
+          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {[
+              ...news,
+              ...apiNews.filter(
+                (n) =>
+                  filterCategory === "all" || n.category === filterCategory
+              ),
+            ]
+              .sort((a, b) => {
+                if (sortBy === "latest")
+                  return new Date(b.timestamp) - new Date(a.timestamp);
+                if (sortBy === "bullish")
+                  return (
+                    (b.sentiment === "bullish") - (a.sentiment === "bullish")
+                  );
+                return b.votes - a.votes;
               })
-            )}
-          </div>
+              .map((item) => (
+                <motion.div
+                  key={item.id}
+                  layout
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-2xl p-5 bg-[#e0e0e0] shadow-[8px_8px_16px_#bebebe,-8px_-8px_16px_#ffffff] hover:shadow-[inset_6px_6px_12px_#bebebe,inset_-6px_-6px_12px_#ffffff] transition"
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      {item.title}
+                    </h3>
+                    <span
+                      className={`px-3 py-1 text-xs rounded-full text-gray-700 shadow-[inset_2px_2px_4px_#bebebe,inset_-2px_-2px_4px_#ffffff] ${
+                        categories.find((c) => c.id === item.category)?.color
+                      }`}
+                    >
+                      {item.category}
+                    </span>
+                  </div>
 
-          {/* Stats Footer */}
-          <div className="bg-gradient-to-r from-orange-600/10 via-red-600/10 to-pink-600/10 border border-orange-500/30 rounded-xl p-4">
-            <h4 className="text-sm font-semibold text-orange-400 mb-2">
-              📊 Community Insights
-            </h4>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
-              <div>
-                <span className="text-gray-400">Total News:</span>
-                <span className="ml-2 font-semibold text-white">
-                  {allNews.length}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-400">API News:</span>
-                <span className="ml-2 font-semibold text-blue-400">
-                  {apiNews.length}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-400">Bullish:</span>
-                <span className="ml-2 font-semibold text-green-400">
-                  {allNews.filter((n) => n.sentiment === "bullish").length}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-400">Bearish:</span>
-                <span className="ml-2 font-semibold text-red-400">
-                  {allNews.filter((n) => n.sentiment === "bearish").length}
-                </span>
-              </div>
-              <div>
-                <span className="text-gray-400">Most Voted:</span>
-                <span className="ml-2 font-semibold text-yellow-400">
-                  {allNews.length > 0
-                    ? Math.max(...allNews.map((n) => n.votes))
-                    : 0}{" "}
-                  votes
-                </span>
-              </div>
-            </div>
+                  <p className="text-sm text-gray-600 mb-3 line-clamp-3">
+                    {item.description}
+                  </p>
+
+                  <div className="flex justify-between items-center text-sm text-gray-500 mb-3">
+                    <span className="flex items-center gap-1">
+                      <Sparkles
+                        size={14}
+                        className={`${
+                          item.sentiment === "bullish"
+                            ? "text-green-500"
+                            : item.sentiment === "bearish"
+                            ? "text-red-500"
+                            : "text-gray-400"
+                        }`}
+                      />
+                      {item.sentiment}
+                    </span>
+                    <span>{new Date(item.timestamp).toLocaleString()}</span>
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => {
+                          const all = [...news, ...apiNews];
+                          const target = all.find((n) => n.id === item.id);
+                          if (target) target.votes++;
+                          setNews([...news]);
+                        }}
+                        className="p-2 rounded-full bg-[#e0e0e0] shadow-[5px_5px_10px_#bebebe,-5px_-5px_10px_#ffffff] hover:shadow-[inset_4px_4px_8px_#bebebe,inset_-4px_-4px_8px_#ffffff]"
+                      >
+                        <ThumbsUp size={16} className="text-green-600" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          const all = [...news, ...apiNews];
+                          const target = all.find((n) => n.id === item.id);
+                          if (target) target.votes--;
+                          setNews([...news]);
+                        }}
+                        className="p-2 rounded-full bg-[#e0e0e0] shadow-[5px_5px_10px_#bebebe,-5px_-5px_10px_#ffffff] hover:shadow-[inset_4px_4px_8px_#bebebe,inset_-4px_-4px_8px_#ffffff]"
+                      >
+                        <ThumbsDown size={16} className="text-red-500" />
+                      </button>
+                    </div>
+
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-blue-500 text-sm hover:underline"
+                    >
+                      Read <ExternalLink size={14} />
+                    </a>
+                  </div>
+                </motion.div>
+              ))}
+          </div>
+          {/* === Stats === */}
+          <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {categories
+              .filter((c) => c.id !== "all")
+              .map((cat) => {
+                const count = [...news, ...apiNews].filter(
+                  (n) => n.category === cat.id
+                ).length;
+                return (
+                  <div
+                    key={cat.id}
+                    className="p-4 rounded-2xl text-center bg-[#e0e0e0] shadow-[8px_8px_16px_#bebebe,-8px_-8px_16px_#ffffff]"
+                  >
+                    <div className="text-gray-700 font-semibold">
+                      {cat.label}
+                    </div>
+                    <div className="text-2xl font-bold text-gray-800">
+                      {count}
+                    </div>
+                  </div>
+                );
+              })}
           </div>
         </div>
       )}
