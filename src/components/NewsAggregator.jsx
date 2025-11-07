@@ -39,7 +39,7 @@ const NewsAggregator = () => {
   });
 
   const categories = [
-    { id: "all", label: "All", color: "bg-gray-400" },
+    { id: "all", label: "All", color: "bg-gray-700" },
     { id: "defi", label: "DeFi", color: "bg-blue-400" },
     { id: "gamefi", label: "GameFi", color: "bg-purple-400" },
     { id: "layer2", label: "Layer2", color: "bg-green-400" },
