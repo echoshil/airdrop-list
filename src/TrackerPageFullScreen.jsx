@@ -75,25 +75,34 @@ const AVAILABLE_TAGS = [
   { id: "lending", label: "Lending", color: "bg-teal-300" },
 ];
 
-function TypingText({ text, speed = 80 }) {
+function TypingText({ text, speed = 100, pause = 1000 }) {
   const [displayed, setDisplayed] = React.useState("");
   const [showCursor, setShowCursor] = React.useState(true);
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
   React.useEffect(() => {
     let i = 0;
-    setDisplayed("");
-    const interval = setInterval(() => {
-      if (i < text.length) {
+    let interval;
+
+    const type = () => {
+      if (!isDeleting && i < text.length) {
         setDisplayed((prev) => prev + text.charAt(i));
         i++;
-      } else {
-        clearInterval(interval);
+      } else if (!isDeleting && i === text.length) {
+        setTimeout(() => setIsDeleting(true), pause);
+      } else if (isDeleting && i > 0) {
+        setDisplayed((prev) => prev.slice(0, -1));
+        i--;
+      } else if (isDeleting && i === 0) {
+        setIsDeleting(false);
+        i = 0;
       }
-    }, speed);
-    return () => clearInterval(interval);
-  }, [text, speed]);
+    };
 
-  // Kedipkan cursor setiap 500ms
+    interval = setInterval(type, speed);
+    return () => clearInterval(interval);
+  }, [text, speed, pause, isDeleting]);
+
   React.useEffect(() => {
     const blink = setInterval(() => {
       setShowCursor((prev) => !prev);
@@ -105,8 +114,9 @@ function TypingText({ text, speed = 80 }) {
     <span className="inline-flex items-center">
       {displayed}
       <span
-        className="ml-1 w-[8px] bg-gray-700"
+        className="ml-1 bg-gray-700"
         style={{
+          width: "6px",
           height: "1em",
           opacity: showCursor ? 1 : 0,
           transition: "opacity 0.2s ease-in-out",
@@ -672,6 +682,7 @@ function TrackerPageFullScreen({ onLogout }) {
               {activeView === "balance" && <TypingText text="💰 Balance Checker" />}
               {activeView === "multisend" && <TypingText text="🚀 Multisend Native & Tokens" />}
             </h1>
+
 
 
             <div className="flex items-center gap-2 md:gap-3 flex-wrap">
