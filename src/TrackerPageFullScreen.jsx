@@ -75,15 +75,11 @@ const AVAILABLE_TAGS = [
   { id: "lending", label: "Lending", color: "bg-teal-300" },
 ];
 
-function TypingText({ text, speed = 120, pause = 1500 }) {
+function TypingTextFixed({ icon, text, speed = 120, pause = 1500 }) {
   const [displayed, setDisplayed] = React.useState("");
   const [index, setIndex] = React.useState(0);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [showCursor, setShowCursor] = React.useState(true);
-
-  // Pisahkan emoji / ikon dari teks
-  const icon = text.charAt(0);        // contoh: 📦
-  const content = text.slice(1).trim(); // contoh: My Projects
 
   React.useEffect(() => {
     setDisplayed("");
@@ -93,13 +89,13 @@ function TypingText({ text, speed = 120, pause = 1500 }) {
 
   React.useEffect(() => {
     const timeout = setTimeout(() => {
-      if (!isDeleting && index < content.length) {
-        setDisplayed(content.slice(0, index + 1));
+      if (!isDeleting && index < text.length) {
+        setDisplayed(text.slice(0, index + 1));
         setIndex((prev) => prev + 1);
       } else if (isDeleting && index > 0) {
-        setDisplayed(content.slice(0, index - 1));
+        setDisplayed(text.slice(0, index - 1));
         setIndex((prev) => prev - 1);
-      } else if (!isDeleting && index === content.length) {
+      } else if (!isDeleting && index === text.length) {
         setTimeout(() => setIsDeleting(true), pause);
       } else if (isDeleting && index === 0) {
         setIsDeleting(false);
@@ -107,7 +103,7 @@ function TypingText({ text, speed = 120, pause = 1500 }) {
     }, isDeleting ? speed / 2 : speed);
 
     return () => clearTimeout(timeout);
-  }, [index, isDeleting, content, speed, pause]);
+  }, [index, isDeleting, text, speed, pause]);
 
   React.useEffect(() => {
     const blink = setInterval(() => setShowCursor((prev) => !prev), 500);
@@ -116,7 +112,6 @@ function TypingText({ text, speed = 120, pause = 1500 }) {
 
   return (
     <span className="inline-flex items-center whitespace-pre">
-      {/* Emoji/ikon selalu tampil duluan */}
       <span className="mr-1">{icon}</span>
       {displayed}
       <span
@@ -679,16 +674,33 @@ function TrackerPageFullScreen({ onLogout }) {
           }}
         >
           <div className="flex flex-wrap justify-between items-center gap-3 md:gap-4">
-            <h1 className="text-xl md:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 min-h-[1.5em]">
-              {activeView === "projects" && <TypingText key="projects" text="📦 My Projects" />}
-              {activeView === "trading" && <TypingText key="trading" text="⚡ DeDoo Trading Platform" />}
-              {activeView === "analytics" && <TypingText key="analytics" text="📊 Analytics Dashboard" />}
-              {activeView === "gas" && <TypingText key="gas" text="⛽ Gas Tracker" />}
-              {activeView === "roi" && <TypingText key="roi" text="💹 ROI Calculator" />}
-              {activeView === "news" && <TypingText key="news" text="📰 News Feed" />}
-              {activeView === "balance" && <TypingText key="balance" text="💰 Balance Checker" />}
-              {activeView === "multisend" && <TypingText key="multisend" text="🚀 Multisend Native & Tokens" />}
-            </h1>
+<h1 className="text-xl md:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 min-h-[1.5em]">
+  {activeView === "projects" && (
+    <TypingTextFixed key="projects" icon="📦" text="My Projects" />
+  )}
+  {activeView === "trading" && (
+    <TypingTextFixed key="trading" icon="⚡" text="DeDoo Trading Platform" />
+  )}
+  {activeView === "analytics" && (
+    <TypingTextFixed key="analytics" icon="📊" text="Analytics Dashboard" />
+  )}
+  {activeView === "gas" && (
+    <TypingTextFixed key="gas" icon="⛽" text="Gas Tracker" />
+  )}
+  {activeView === "roi" && (
+    <TypingTextFixed key="roi" icon="💹" text="ROI Calculator" />
+  )}
+  {activeView === "news" && (
+    <TypingTextFixed key="news" icon="📰" text="News Feed" />
+  )}
+  {activeView === "balance" && (
+    <TypingTextFixed key="balance" icon="💰" text="Balance Checker" />
+  )}
+  {activeView === "multisend" && (
+    <TypingTextFixed key="multisend" icon="🚀" text="Multisend Native & Tokens" />
+  )}
+</h1>
+
 
 
 
