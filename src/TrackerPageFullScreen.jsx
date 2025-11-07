@@ -81,8 +81,11 @@ function TypingText({ text, speed = 120, pause = 1500 }) {
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [showCursor, setShowCursor] = React.useState(true);
 
+  // Pisahkan emoji / ikon dari teks
+  const icon = text.charAt(0);        // contoh: 📦
+  const content = text.slice(1).trim(); // contoh: My Projects
+
   React.useEffect(() => {
-    // reset ketika teks berubah
     setDisplayed("");
     setIndex(0);
     setIsDeleting(false);
@@ -90,13 +93,13 @@ function TypingText({ text, speed = 120, pause = 1500 }) {
 
   React.useEffect(() => {
     const timeout = setTimeout(() => {
-      if (!isDeleting && index < text.length) {
-        setDisplayed(text.slice(0, index + 1));
+      if (!isDeleting && index < content.length) {
+        setDisplayed(content.slice(0, index + 1));
         setIndex((prev) => prev + 1);
       } else if (isDeleting && index > 0) {
-        setDisplayed(text.slice(0, index - 1));
+        setDisplayed(content.slice(0, index - 1));
         setIndex((prev) => prev - 1);
-      } else if (!isDeleting && index === text.length) {
+      } else if (!isDeleting && index === content.length) {
         setTimeout(() => setIsDeleting(true), pause);
       } else if (isDeleting && index === 0) {
         setIsDeleting(false);
@@ -104,7 +107,7 @@ function TypingText({ text, speed = 120, pause = 1500 }) {
     }, isDeleting ? speed / 2 : speed);
 
     return () => clearTimeout(timeout);
-  }, [index, isDeleting, text, speed, pause]);
+  }, [index, isDeleting, content, speed, pause]);
 
   React.useEffect(() => {
     const blink = setInterval(() => setShowCursor((prev) => !prev), 500);
@@ -113,6 +116,8 @@ function TypingText({ text, speed = 120, pause = 1500 }) {
 
   return (
     <span className="inline-flex items-center whitespace-pre">
+      {/* Emoji/ikon selalu tampil duluan */}
+      <span className="mr-1">{icon}</span>
       {displayed}
       <span
         className="ml-0.5 bg-gray-700"
@@ -126,6 +131,7 @@ function TypingText({ text, speed = 120, pause = 1500 }) {
     </span>
   );
 }
+
 
 
 
