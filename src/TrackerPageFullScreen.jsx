@@ -78,43 +78,47 @@ const AVAILABLE_TAGS = [
 function TypingText({ text, speed = 100, pause = 1000 }) {
   const [displayed, setDisplayed] = React.useState("");
   const [showCursor, setShowCursor] = React.useState(true);
-  const [isDeleting, setIsDeleting] = React.useState(false);
 
   React.useEffect(() => {
     let i = 0;
-    let interval;
+    let typing = true;
+    setDisplayed(""); // 🧹 bersihkan teks setiap kali text berubah
 
-    const type = () => {
-      if (!isDeleting && i < text.length) {
-        setDisplayed((prev) => prev + text.charAt(i));
-        i++;
-      } else if (!isDeleting && i === text.length) {
-        setTimeout(() => setIsDeleting(true), pause);
-      } else if (isDeleting && i > 0) {
-        setDisplayed((prev) => prev.slice(0, -1));
-        i--;
-      } else if (isDeleting && i === 0) {
-        setIsDeleting(false);
-        i = 0;
+    const interval = setInterval(() => {
+      if (typing) {
+        if (i < text.length) {
+          setDisplayed((prev) => prev + text.charAt(i));
+          i++;
+        } else {
+          typing = false;
+          setTimeout(() => {
+            typing = false;
+          }, pause);
+        }
+      } else {
+        if (i > 0) {
+          setDisplayed((prev) => prev.slice(0, -1));
+          i--;
+        } else {
+          typing = true;
+        }
       }
-    };
+    }, speed);
 
-    interval = setInterval(type, speed);
     return () => clearInterval(interval);
-  }, [text, speed, pause, isDeleting]);
+  }, [text, speed, pause]);
 
+  // cursor berkedip
   React.useEffect(() => {
-    const blink = setInterval(() => {
-      setShowCursor((prev) => !prev);
-    }, 500);
+    const blink = setInterval(() => setShowCursor((prev) => !prev), 500);
     return () => clearInterval(blink);
   }, []);
 
   return (
-    <span className="inline-flex items-center">
+    <span className="inline-flex items-center whitespace-pre">
       {displayed}
       <span
-        className="ml-1 bg-gray-700"
+        className="ml-0.5 bg-gray-700"
         style={{
           width: "6px",
           height: "1em",
@@ -673,15 +677,16 @@ function TrackerPageFullScreen({ onLogout }) {
         >
           <div className="flex flex-wrap justify-between items-center gap-3 md:gap-4">
             <h1 className="text-xl md:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 min-h-[1.5em]">
-              {activeView === "projects" && <TypingText text="📦 My Projects" />}
-              {activeView === "trading" && <TypingText text="⚡ DeDoo Trading Platform" />}
-              {activeView === "analytics" && <TypingText text="📊 Analytics Dashboard" />}
-              {activeView === "gas" && <TypingText text="⛽ Gas Tracker" />}
-              {activeView === "roi" && <TypingText text="💹 ROI Calculator" />}
-              {activeView === "news" && <TypingText text="📰 News Feed" />}
-              {activeView === "balance" && <TypingText text="💰 Balance Checker" />}
-              {activeView === "multisend" && <TypingText text="🚀 Multisend Native & Tokens" />}
+              {activeView === "projects" && <TypingText key="projects" text="📦 My Projects" />}
+              {activeView === "trading" && <TypingText key="trading" text="⚡ DeDoo Trading Platform" />}
+              {activeView === "analytics" && <TypingText key="analytics" text="📊 Analytics Dashboard" />}
+              {activeView === "gas" && <TypingText key="gas" text="⛽ Gas Tracker" />}
+              {activeView === "roi" && <TypingText key="roi" text="💹 ROI Calculator" />}
+              {activeView === "news" && <TypingText key="news" text="📰 News Feed" />}
+              {activeView === "balance" && <TypingText key="balance" text="💰 Balance Checker" />}
+              {activeView === "multisend" && <TypingText key="multisend" text="🚀 Multisend Native & Tokens" />}
             </h1>
+
 
 
 
