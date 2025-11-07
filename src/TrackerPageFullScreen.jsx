@@ -75,6 +75,49 @@ const AVAILABLE_TAGS = [
   { id: "lending", label: "Lending", color: "bg-teal-300" },
 ];
 
+function TypingText({ text, speed = 80 }) {
+  const [displayed, setDisplayed] = React.useState("");
+  const [showCursor, setShowCursor] = React.useState(true);
+
+  React.useEffect(() => {
+    let i = 0;
+    setDisplayed("");
+    const interval = setInterval(() => {
+      if (i < text.length) {
+        setDisplayed((prev) => prev + text.charAt(i));
+        i++;
+      } else {
+        clearInterval(interval);
+      }
+    }, speed);
+    return () => clearInterval(interval);
+  }, [text, speed]);
+
+  // Kedipkan cursor setiap 500ms
+  React.useEffect(() => {
+    const blink = setInterval(() => {
+      setShowCursor((prev) => !prev);
+    }, 500);
+    return () => clearInterval(blink);
+  }, []);
+
+  return (
+    <span className="inline-flex items-center">
+      {displayed}
+      <span
+        className="ml-1 w-[8px] bg-gray-700"
+        style={{
+          height: "1em",
+          opacity: showCursor ? 1 : 0,
+          transition: "opacity 0.2s ease-in-out",
+        }}
+      ></span>
+    </span>
+  );
+}
+
+
+
 function TrackerPageFullScreen({ onLogout }) {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -619,16 +662,17 @@ function TrackerPageFullScreen({ onLogout }) {
           }}
         >
           <div className="flex flex-wrap justify-between items-center gap-3 md:gap-4">
-            <h1 className="text-xl md:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600">
-              {activeView === "projects" && "📦 My Projects"}
-              {activeView === "trading" && "⚡ DeDoo Trading Platform"}
-              {activeView === "analytics" && "📊 Analytics Dashboard"}
-              {activeView === "gas" && "⛽ Gas Tracker"}
-              {activeView === "roi" && "💹 ROI Calculator"}
-              {activeView === "news" && "📰 News Feed"}
-              {activeView === "balance" && "💰 Balance Checker"}
-              {activeView === "multisend" && "🚀 Multisend Native & Tokens"}
+            <h1 className="text-xl md:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 min-h-[1.5em]">
+              {activeView === "projects" && <TypingText text="📦 My Projects" />}
+              {activeView === "trading" && <TypingText text="⚡ DeDoo Trading Platform" />}
+              {activeView === "analytics" && <TypingText text="📊 Analytics Dashboard" />}
+              {activeView === "gas" && <TypingText text="⛽ Gas Tracker" />}
+              {activeView === "roi" && <TypingText text="💹 ROI Calculator" />}
+              {activeView === "news" && <TypingText text="📰 News Feed" />}
+              {activeView === "balance" && <TypingText text="💰 Balance Checker" />}
+              {activeView === "multisend" && <TypingText text="🚀 Multisend Native & Tokens" />}
             </h1>
+
 
             <div className="flex items-center gap-2 md:gap-3 flex-wrap">
               {activeView === "projects" && (
