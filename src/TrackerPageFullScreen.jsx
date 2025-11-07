@@ -75,40 +75,37 @@ const AVAILABLE_TAGS = [
   { id: "lending", label: "Lending", color: "bg-teal-300" },
 ];
 
-function TypingText({ text, speed = 100, pause = 1000 }) {
+function TypingText({ text, speed = 120, pause = 1500 }) {
   const [displayed, setDisplayed] = React.useState("");
+  const [index, setIndex] = React.useState(0);
+  const [isDeleting, setIsDeleting] = React.useState(false);
   const [showCursor, setShowCursor] = React.useState(true);
 
   React.useEffect(() => {
-    let i = 0;
-    let typing = true;
-    setDisplayed(""); // 🧹 bersihkan teks setiap kali text berubah
+    // reset ketika teks berubah
+    setDisplayed("");
+    setIndex(0);
+    setIsDeleting(false);
+  }, [text]);
 
-    const interval = setInterval(() => {
-      if (typing) {
-        if (i < text.length) {
-          setDisplayed((prev) => prev + text.charAt(i));
-          i++;
-        } else {
-          typing = false;
-          setTimeout(() => {
-            typing = false;
-          }, pause);
-        }
-      } else {
-        if (i > 0) {
-          setDisplayed((prev) => prev.slice(0, -1));
-          i--;
-        } else {
-          typing = true;
-        }
+  React.useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (!isDeleting && index < text.length) {
+        setDisplayed(text.slice(0, index + 1));
+        setIndex((prev) => prev + 1);
+      } else if (isDeleting && index > 0) {
+        setDisplayed(text.slice(0, index - 1));
+        setIndex((prev) => prev - 1);
+      } else if (!isDeleting && index === text.length) {
+        setTimeout(() => setIsDeleting(true), pause);
+      } else if (isDeleting && index === 0) {
+        setIsDeleting(false);
       }
-    }, speed);
+    }, isDeleting ? speed / 2 : speed);
 
-    return () => clearInterval(interval);
-  }, [text, speed, pause]);
+    return () => clearTimeout(timeout);
+  }, [index, isDeleting, text, speed, pause]);
 
-  // cursor berkedip
   React.useEffect(() => {
     const blink = setInterval(() => setShowCursor((prev) => !prev), 500);
     return () => clearInterval(blink);
@@ -125,7 +122,7 @@ function TypingText({ text, speed = 100, pause = 1000 }) {
           opacity: showCursor ? 1 : 0,
           transition: "opacity 0.2s ease-in-out",
         }}
-      ></span>
+      />
     </span>
   );
 }
@@ -686,6 +683,7 @@ function TrackerPageFullScreen({ onLogout }) {
               {activeView === "balance" && <TypingText key="balance" text="💰 Balance Checker" />}
               {activeView === "multisend" && <TypingText key="multisend" text="🚀 Multisend Native & Tokens" />}
             </h1>
+
 
 
 
