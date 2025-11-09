@@ -307,8 +307,6 @@ function MultisendTool() {
             </div>
             <h1 className="text-lg font-semibold text-gray-700">Multisend Tool</h1>
           </div>
-
-          <div className="text-sm text-gray-600">Neumorphic · Light</div>
         </div>
 
         {/* Wallet Connection */}
