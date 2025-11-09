@@ -1153,8 +1153,8 @@ function TrackerPageFullScreen({ onLogout }) {
     style={{ background: 'radial-gradient(circle at center, rgba(147,197,253,0.25), transparent 70%)' }}
   ></div>
 </div>
-
-                    
+))}     {/* ✅ penutup untuk .map */}
+</div>  {/* ✅ penutup untuk flex-wrap container */}
 
               {filteredProjects.length > 3 && (
                 <div className="text-center">
