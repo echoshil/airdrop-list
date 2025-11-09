@@ -1027,213 +1027,134 @@ function TrackerPageFullScreen({ onLogout }) {
               <div className="flex flex-wrap justify-center gap-6 max-w-6xl mx-auto">
                 {displayedProjects.map((p, i) => (
                   <div
-                    key={i}
-                    className="group relative p-6 transition-all duration-300 hover:-translate-y-1 w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] max-w-sm rounded-2xl"
-                    style={{
-                      background: 'linear-gradient(145deg, #d1d6dd, #ecf0f3)',
-                      boxShadow: '10px 10px 20px rgba(163,177,198,0.6), -10px -10px 20px rgba(255,255,255,0.5)'
-                    }}
-                  >
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex-1">
-                        <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 mb-2 pr-16">
-                          {p.name}
-                        </h3>
-                      </div>
+  key={i}
+  className="group relative p-5 sm:p-6 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01] w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] max-w-sm rounded-2xl"
+  style={{
+    background: 'linear-gradient(145deg, #d1d6dd, #ecf0f3)',
+    boxShadow:
+      '10px 10px 20px rgba(163,177,198,0.6), -10px -10px 20px rgba(255,255,255,0.5)',
+  }}
+>
+  <div className="flex justify-between items-start mb-3">
+    <h3 className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 pr-10">
+      {p.name}
+    </h3>
+    <div className="flex gap-2">
+      <button
+        onClick={() => toggleDaily(p.name, p.daily)}
+        className={`p-2 rounded-lg transition-all duration-200 ${
+          p.daily === 'CHECKED' ? 'text-blue-600' : 'text-gray-500'
+        }`}
+        style={{
+          boxShadow:
+            p.daily === 'CHECKED'
+              ? 'inset 3px 3px 6px rgba(163,177,198,0.5)'
+              : '3px 3px 6px rgba(163,177,198,0.4), -3px -3px 6px rgba(255,255,255,0.6)',
+        }}
+      >
+        {p.daily === 'CHECKED' ? <CheckSquare size={16} /> : <Square size={16} />}
+      </button>
+      <button
+        onClick={() => deleteProject(p.name)}
+        className="p-2 rounded-lg text-red-600 hover:text-red-700 transition-all duration-200"
+        style={{
+          boxShadow:
+            '3px 3px 6px rgba(163,177,198,0.4), -3px -3px 6px rgba(255,255,255,0.6)',
+        }}
+      >
+        <Trash2 size={16} />
+      </button>
+    </div>
+  </div>
 
-                      <div className="flex gap-2 absolute top-4 right-4">
-                        <button
-                          onClick={() => toggleDaily(p.name, p.daily)}
-                          className={`p-2 rounded-lg transition-all duration-200 ${
-                            p.daily === "CHECKED"
-                              ? "text-blue-600"
-                              : "text-gray-500"
-                          }`}
-                          style={{
-                            boxShadow: p.daily === "CHECKED"
-                              ? 'inset 3px 3px 6px rgba(163,177,198,0.5)'
-                              : '4px 4px 8px rgba(163,177,198,0.6), -4px -4px 8px rgba(255,255,255,0.5)'
-                          }}
-                          title="Toggle Daily Check"
-                        >
-                          {p.daily === "CHECKED" ? <CheckSquare size={18} /> : <Square size={18} />}
-                        </button>
-                        <button
-                          onClick={() => deleteProject(p.name)}
-                          className="p-2 rounded-lg text-red-600 hover:text-red-700 transition-all duration-200"
-                          style={{
-                            boxShadow: '4px 4px 8px rgba(163,177,198,0.6), -4px -4px 8px rgba(255,255,255,0.5)'
-                          }}
-                          title="Hapus Project"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </div>
+  {p.tags?.length > 0 && (
+    <div className="flex flex-wrap gap-2 mb-3">
+      {p.tags.map((tagId) => {
+        const tag = AVAILABLE_TAGS.find((t) => t.id === tagId);
+        return (
+          <span
+            key={tagId}
+            className={`${tag?.color || ''} text-gray-800 text-xs px-2.5 py-0.5 rounded-full font-semibold`}
+            style={{
+              boxShadow:
+                'inset 2px 2px 4px rgba(163,177,198,0.4), inset -2px -2px 4px rgba(255,255,255,0.5)',
+            }}
+          >
+            {tag?.label}
+          </span>
+        );
+      })}
+    </div>
+  )}
 
-                    {p.tags && Array.isArray(p.tags) && p.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {p.tags.map((tagId) => {
-                          const tag = AVAILABLE_TAGS.find((t) => t.id === tagId);
-                          return tag ? (
-                            <span
-                              key={tagId}
-                              className={`${tag.color} text-gray-800 text-xs px-3 py-1 rounded-full font-semibold`}
-                              style={{
-                                boxShadow: '3px 3px 6px rgba(163,177,198,0.4), -3px -3px 6px rgba(255,255,255,0.5)'
-                              }}
-                            >
-                              {tag.label}
-                            </span>
-                          ) : null;
-                        })}
-                      </div>
-                    )}
+  {p.notes && (
+    <div className="mb-3 p-3 rounded-xl bg-gradient-to-br from-yellow-100 to-orange-100 shadow-inner">
+      <p className="flex items-start gap-2 text-sm text-gray-700">
+        <StickyNote size={14} className="mt-0.5 text-yellow-700 flex-shrink-0" />
+        <span className="italic leading-relaxed">{p.notes}</span>
+      </p>
+    </div>
+  )}
 
-                    {p.notes && (
-                      <div className="mb-4 p-3 rounded-xl bg-gradient-to-br from-yellow-100 to-orange-100"
-                        style={{
-                          boxShadow: 'inset 3px 3px 6px rgba(163,177,198,0.3), inset -3px -3px 6px rgba(255,255,255,0.5)'
-                        }}
-                      >
-                        <p className="flex items-start gap-2 text-sm text-gray-700">
-                          <StickyNote size={16} className="mt-0.5 text-yellow-700 flex-shrink-0" />
-                          <span className="italic leading-relaxed">{p.notes}</span>
-                        </p>
-                      </div>
-                    )}
+  <div className="space-y-1.5"> {/* ← Kunci: rapatkan jarak antar elemen */}
+    {p.twitter && (
+      <div className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white/30 transition-colors duration-150">
+        <Twitter size={14} className="text-blue-600" />
+        <span className="text-sm text-gray-700 font-mono truncate">{hideData ? '••••••' : p.twitter}</span>
+      </div>
+    )}
+    {p.discord && (
+      <div className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white/30 transition-colors duration-150">
+        <MessageCircle size={14} className="text-indigo-600" />
+        <span className="text-sm text-gray-700 font-mono truncate">{hideData ? '••••••' : p.discord}</span>
+      </div>
+    )}
+    {p.telegram && (
+      <div className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white/30 transition-colors duration-150">
+        <Send size={14} className="text-sky-600" />
+        <span className="text-sm text-gray-700 font-mono truncate">{hideData ? '••••••' : p.telegram}</span>
+      </div>
+    )}
+    {p.farcaster && (
+      <div className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white/30 transition-colors duration-150">
+        <Zap size={14} className="text-purple-600" />
+        <span className="text-sm text-gray-700 font-mono truncate">{hideData ? '••••••' : p.farcaster}</span>
+      </div>
+    )}
+    {p.wallet && (
+      <div className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white/30 transition-colors duration-150">
+        <Wallet size={14} className="text-yellow-700" />
+        <span className="text-xs text-gray-700 font-mono break-all">{hideData ? '••••••••••••••' : p.wallet}</span>
+      </div>
+    )}
+    {p.email && (
+      <div className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white/30 transition-colors duration-150">
+        <Mail size={14} className="text-pink-600" />
+        <span className="text-sm text-gray-700 font-mono truncate">{hideData ? '••••••' : p.email}</span>
+      </div>
+    )}
+    {p.website && (
+      <div className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white/30 transition-colors duration-150">
+        <Globe size={14} className="text-blue-600" />
+        <a
+          href={p.website}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm text-blue-600 hover:text-blue-700 underline truncate transition-colors"
+        >
+          {p.website}
+        </a>
+      </div>
+    )}
+  </div>
 
-                    <div className="border-t border-gray-300/50 my-4"></div>
+  {/* Efek glowing lembut */}
+  <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-500 blur-lg pointer-events-none"
+    style={{ background: 'radial-gradient(circle at center, rgba(147,197,253,0.25), transparent 70%)' }}
+  ></div>
+</div>
 
-                    <div className="space-y-3">
-                      {p.twitter && (
-                        <div className="flex items-center gap-3 group/item p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 rounded-lg"
-                            style={{
-                              boxShadow: '3px 3px 6px rgba(163,177,198,0.4), -3px -3px 6px rgba(255,255,255,0.5)'
-                            }}
-                          >
-                            <Twitter size={14} className="text-blue-600"/>
-                          </div>
-                          <span className="text-sm text-gray-700 font-mono truncate">{hideData ? "••••••" : p.twitter}</span>
-                        </div>
-                      )}
-
-                      {p.discord && (
-                        <div className="flex items-center gap-3 group/item p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 rounded-lg"
-                            style={{
-                              boxShadow: '3px 3px 6px rgba(163,177,198,0.4), -3px -3px 6px rgba(255,255,255,0.5)'
-                            }}
-                          >
-                            <MessageCircle size={14} className="text-indigo-600"/>
-                          </div>
-                          <span className="text-sm text-gray-700 font-mono truncate">{hideData ? "••••••" : p.discord}</span>
-                        </div>
-                      )}
-
-                      {p.telegram && (
-                        <div className="flex items-center gap-3 group/item p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 rounded-lg"
-                            style={{
-                              boxShadow: '3px 3px 6px rgba(163,177,198,0.4), -3px -3px 6px rgba(255,255,255,0.5)'
-                            }}
-                          >
-                            <Send size={14} className="text-sky-600"/>
-                          </div>
-                          <span className="text-sm text-gray-700 font-mono truncate">{hideData ? "••••••" : p.telegram}</span>
-                        </div>
-                      )}
-
-                      {p.farcaster && (
-                        <div className="flex items-center gap-3 group/item p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 rounded-lg"
-                            style={{
-                              boxShadow: '3px 3px 6px rgba(163,177,198,0.4), -3px -3px 6px rgba(255,255,255,0.5)'
-                            }}
-                          >
-                            <Zap size={14} className="text-purple-600"/>
-                          </div>
-                          <span className="text-sm text-gray-700 font-mono truncate">{hideData ? "••••••" : p.farcaster}</span>
-                        </div>
-                      )}
-
-                      {p.wallet && (
-                        <div className="flex items-center gap-3 group/item p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 rounded-lg"
-                            style={{
-                              boxShadow: '3px 3px 6px rgba(163,177,198,0.4), -3px -3px 6px rgba(255,255,255,0.5)'
-                            }}
-                          >
-                            <Wallet size={14} className="text-yellow-700"/>
-                          </div>
-                          <span className="text-xs text-gray-700 font-mono break-all">{hideData ? "••••••••••••••" : p.wallet}</span>
-                        </div>
-                      )}
-
-                      {p.email && (
-                        <div className="flex items-center gap-3 group/item p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 rounded-lg"
-                            style={{
-                              boxShadow: '3px 3px 6px rgba(163,177,198,0.4), -3px -3px 6px rgba(255,255,255,0.5)'
-                            }}
-                          >
-                            <Mail size={14} className="text-pink-600"/>
-                          </div>
-                          <span className="text-sm text-gray-700 font-mono truncate">{hideData ? "••••••" : p.email}</span>
-                        </div>
-                      )}
-
-                      {p.github && (
-                        <div className="flex items-center gap-3 group/item p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 rounded-lg"
-                            style={{
-                              boxShadow: '3px 3px 6px rgba(163,177,198,0.4), -3px -3px 6px rgba(255,255,255,0.5)'
-                            }}
-                          >
-                            <Github size={14} className="text-gray-700"/>
-                          </div>
-                          <span className="text-sm text-gray-700 font-mono truncate">{hideData ? "••••••" : p.github}</span>
-                        </div>
-                      )}
-
-                      {p.website && (
-                        <div className="flex items-center gap-3 group/item p-2 rounded-lg transition-colors">
-                          <div className="p-1.5 rounded-lg"
-                            style={{
-                              boxShadow: '3px 3px 6px rgba(163,177,198,0.4), -3px -3px 6px rgba(255,255,255,0.5)'
-                            }}
-                          >
-                            <Globe size={14} className="text-blue-600"/>
-                          </div>
-                          <a
-                            href={p.website}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-sm text-blue-600 hover:text-blue-700 underline truncate transition-colors"
-                          >
-                            {p.website}
-                          </a>
-                        </div>
-                      )}
-                    </div>
-
-                    {p.lastupdate && (
-                      <div className="mt-4 pt-3 border-t border-gray-300/30">
-                        <p className="text-xs text-gray-500 text-center">
-                          Last update: {new Date(p.lastupdate).toLocaleDateString('id-ID', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+                    
 
               {filteredProjects.length > 3 && (
                 <div className="text-center">
