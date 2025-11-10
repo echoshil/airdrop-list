@@ -577,7 +577,7 @@ function TrackerPageFullScreen({ onLogout }) {
       {/* Sidebar */}
       <div
         className={`fixed top-0 left-0 h-full bg-[#e0e5ec] z-50 transition-all duration-300 ${
-           ? "w-64" : "w-0"
+           sidebarOpen ? "w-64" : "w-0"
         } ${isMobile ? "shadow-[20px_20px_40px_rgba(163,177,198,0.5),-20px_-20px_40px_rgba(255,255,255,0.8)]" : ""}`}
         style={{
           boxShadow: sidebarOpen ? '20px 0 40px rgba(163,177,198,0.3)' : 'none'
