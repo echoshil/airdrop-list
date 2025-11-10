@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ethers } from "ethers";
 import { Wallet, ChevronDown, ChevronUp } from "lucide-react";
+import { Alchemy, Network } from "alchemy-sdk";
 
 const NETWORKS = {
   Ethereum: { rpc: "https://eth.llamarpc.com" },
@@ -26,6 +27,13 @@ const BalanceChecker = () => {
   const [quickAddresses, setQuickAddresses] = useState("");
   const [quickBalances, setQuickBalances] = useState([]);
   const [quickBalanceLoading, setQuickBalanceLoading] = useState(false);
+
+  // State untuk Auto Wallet Scanner
+  const [scannerAddress, setScannerAddress] = useState("");
+  const [tokens, setTokens] = useState([]);
+  const [scannerLoading, setScannerLoading] = useState(false);
+  const [scannerError, setScannerError] = useState("");
+  const [scannerChain, setScannerChain] = useState("eth-mainnet");
 
   const checkBalances = async () => {
     const list = quickAddresses.split(/[\n,\s]+/).filter(Boolean);
@@ -177,6 +185,63 @@ const BalanceChecker = () => {
     } finally {
       setEvmBalances(result);
       setEvmBalanceLoading(false);
+    }
+  };
+
+  // Auto Wallet Scanner Functions
+  const getAlchemy = () => {
+    const settings = {
+      apiKey: import.meta.env.VITE_ALCHEMY_API_KEY,
+      network:
+        scannerChain === "eth-mainnet"
+          ? Network.ETH_MAINNET
+          : scannerChain === "arbitrum"
+          ? Network.ARB_MAINNET
+          : scannerChain === "polygon"
+          ? Network.MATIC_MAINNET
+          : scannerChain === "base"
+          ? Network.BASE_MAINNET
+          : Network.ETH_MAINNET,
+    };
+    return new Alchemy(settings);
+  };
+
+  const fetchTokens = async () => {
+    if (!scannerAddress) {
+      setScannerError("Masukkan wallet address terlebih dahulu.");
+      return;
+    }
+    setScannerLoading(true);
+    setScannerError("");
+    setTokens([]);
+
+    try {
+      const alchemy = getAlchemy();
+      const balances = await alchemy.core.getTokenBalances(scannerAddress);
+      const nonZeroTokens = balances.tokenBalances.filter(
+        (t) => t.tokenBalance !== "0"
+      );
+
+      const metadataPromises = nonZeroTokens.map(async (token) => {
+        const metadata = await alchemy.core.getTokenMetadata(token.contractAddress);
+        const balance =
+          Number(token.tokenBalance) / Math.pow(10, metadata.decimals || 18);
+
+        return {
+          name: metadata.name || "Unknown",
+          symbol: metadata.symbol || "???",
+          logo: metadata.logo,
+          balance: balance.toFixed(4),
+        };
+      });
+
+      const results = await Promise.all(metadataPromises);
+      setTokens(results);
+    } catch (err) {
+      console.error(err);
+      setScannerError("Gagal memuat data token. Periksa address dan API key kamu.");
+    } finally {
+      setScannerLoading(false);
     }
   };
 
@@ -506,6 +571,142 @@ const BalanceChecker = () => {
               </div>
             )}
           </div>
+
+          {/* Auto Wallet Scanner */}
+          <div className="p-6 rounded-2xl"
+            style={{
+              background: '#e0e5ec',
+              boxShadow: '10px 10px 20px rgba(163,177,198,0.6), -10px -10px 20px rgba(255,255,255,0.5)'
+            }}
+          >
+            <h2 className="text-2xl font-bold mb-6 text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
+              🪙 Auto Wallet Scanner
+            </h2>
+
+            {/* Chain Selector */}
+            <div className="flex flex-wrap justify-center gap-3 mb-4">
+              {["eth-mainnet", "arbitrum", "polygon", "base"].map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setScannerChain(c)}
+                  className={`px-4 py-2 rounded-lg text-sm md:text-base transition font-medium ${
+                    scannerChain === c
+                      ? "text-white bg-gradient-to-r from-orange-400 to-pink-400"
+                      : "text-gray-600 hover:text-gray-800"
+                  }`}
+                  style={
+                    scannerChain === c
+                      ? {}
+                      : {
+                          boxShadow: '6px 6px 12px rgba(163,177,198,0.6), -6px -6px 12px rgba(255,255,255,0.5)'
+                        }
+                  }
+                >
+                  {c === "eth-mainnet"
+                    ? "Ethereum"
+                    : c.charAt(0).toUpperCase() + c.slice(1)}
+                </button>
+              ))}
+            </div>
+
+            {/* Input Section */}
+            <div className="flex flex-col sm:flex-row gap-3 mb-4">
+              <input
+                type="text"
+                placeholder="Masukkan wallet address..."
+                value={scannerAddress}
+                onChange={(e) => setScannerAddress(e.target.value)}
+                className="flex-1 bg-[#e0e5ec] text-gray-700 rounded-xl px-4 py-3"
+                style={{
+                  boxShadow: 'inset 3px 3px 6px rgba(163,177,198,0.6), inset -3px -3px 6px rgba(255,255,255,0.5)'
+                }}
+              />
+              <button
+                onClick={fetchTokens}
+                disabled={scannerLoading}
+                className={`px-6 py-3 rounded-lg font-semibold transition ${
+                  scannerLoading
+                    ? "text-gray-500 cursor-not-allowed"
+                    : "text-white bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600"
+                }`}
+                style={{
+                  boxShadow: scannerLoading
+                    ? 'inset 4px 4px 8px rgba(163,177,198,0.6)'
+                    : '8px 8px 16px rgba(163,177,198,0.6), -8px -8px 16px rgba(255,255,255,0.5)'
+                }}
+              >
+                {scannerLoading ? "⏳ Scanning..." : "🔍 Scan"}
+              </button>
+            </div>
+
+            {scannerError && (
+              <p className="text-red-500 text-sm text-center font-medium mb-4">{scannerError}</p>
+            )}
+
+            {/* Token List */}
+            {tokens.length > 0 && (
+              <div className="rounded-lg p-4 space-y-3 max-h-96 overflow-y-auto"
+                style={{
+                  background: 'linear-gradient(145deg, #d1d6dd, #ecf0f3)',
+                  boxShadow: 'inset 4px 4px 8px rgba(163,177,198,0.4), inset -4px -4px 8px rgba(255,255,255,0.5)'
+                }}
+              >
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-blue-700 font-semibold">
+                    Found {tokens.length} Token{tokens.length > 1 ? 's' : ''}
+                  </h3>
+                  <button
+                    onClick={() => setTokens([])}
+                    className="text-xs text-white px-3 py-1 rounded"
+                    style={{
+                      background: 'linear-gradient(145deg, #dc2626, #ef4444)',
+                      boxShadow: '4px 4px 8px rgba(163,177,198,0.6), -4px -4px 8px rgba(255,255,255,0.5)'
+                    }}
+                  >
+                    Clear
+                  </button>
+                </div>
+                {tokens.map((t, i) => (
+                  <div
+                    key={i}
+                    className="bg-[#e0e5ec] flex items-center justify-between px-4 py-3 rounded-2xl"
+                    style={{
+                      boxShadow: 'inset 3px 3px 6px rgba(163,177,198,0.6), inset -3px -3px 6px rgba(255,255,255,0.5)'
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      {t.logo ? (
+                        <img
+                          src={t.logo}
+                          alt={t.symbol}
+                          className="w-7 h-7 rounded-full shadow-md"
+                        />
+                      ) : (
+                        <div className="w-7 h-7 rounded-full bg-gray-300" />
+                      )}
+                      <span className="text-gray-700 font-medium text-sm">
+                        {t.name} ({t.symbol})
+                      </span>
+                    </div>
+                    <span className="text-gray-600 text-sm font-semibold">
+                      {t.balance}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!scannerLoading && tokens.length === 0 && !scannerError && (
+              <div className="text-center text-gray-500 text-sm p-4 rounded-lg"
+                style={{
+                  background: '#e0e5ec',
+                  boxShadow: 'inset 3px 3px 6px rgba(163,177,198,0.4), inset -3px -3px 6px rgba(255,255,255,0.5)'
+                }}
+              >
+                Masukkan wallet dan klik <b>Scan</b> untuk melihat token yang dimiliki.
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -513,3 +714,4 @@ const BalanceChecker = () => {
 };
 
 export default BalanceChecker;
+
