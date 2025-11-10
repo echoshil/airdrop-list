@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Alchemy, Network } from "alchemy-sdk";
+import { Wallet } from "lucide-react";
 
 const AutoWalletScanner = () => {
   const [address, setAddress] = useState("");
@@ -8,7 +9,7 @@ const AutoWalletScanner = () => {
   const [error, setError] = useState("");
   const [chain, setChain] = useState("eth-mainnet");
 
-  // Konfigurasi default (Ethereum)
+  // === Alchemy Config ===
   const getAlchemy = () => {
     const settings = {
       apiKey: import.meta.env.VITE_ALCHEMY_API_KEY,
@@ -65,78 +66,31 @@ const AutoWalletScanner = () => {
     }
   };
 
-  // 🎨 Neumorphic style helpers
-  const neu = {
-    bg: "#e9eef6",
-    surface: "#f6fbff",
-    shadowDark: "rgba(163,177,198,0.6)",
-    shadowLight: "rgba(255,255,255,0.9)",
-  };
-
-  const neuSoft = {
-    background: neu.surface,
-    boxShadow: `6px 6px 12px ${neu.shadowDark}, -6px -6px 12px ${neu.shadowLight}`,
-    borderRadius: "20px",
-  };
-
-  const neuInset = {
-    background: neu.surface,
-    boxShadow: `inset 3px 3px 6px ${neu.shadowDark}, inset -3px -3px 6px ${neu.shadowLight}`,
-  };
+  // ===== NEUMORPHIC STYLE CLASSES =====
+  const neuCard =
+    "bg-[#e0e5ec] rounded-3xl p-6 shadow-[9px_9px_16px_#b8b9be,-9px_-9px_16px_#ffffff]";
+  const neuButton =
+    "bg-[#e0e5ec] rounded-xl shadow-[3px_3px_6px_#b8b9be,-3px_-3px_6px_#ffffff] active:shadow-[inset_3px_3px_6px_#b8b9be,inset_-3px_-3px_6px_#ffffff] transition text-gray-700 font-semibold";
 
   return (
-    <div
-      style={{
-        ...neuSoft,
-        padding: "2rem",
-        maxWidth: "600px",
-        margin: "40px auto",
-        color: "#1f2937",
-      }}
-    >
-      <h2
-        style={{
-          textAlign: "center",
-          fontSize: "1.8rem",
-          fontWeight: "700",
-          marginBottom: "1rem",
-          color: "#334155",
-          textShadow: "1px 1px 2px rgba(255,255,255,0.8)",
-        }}
-      >
-        🪙 Auto Wallet Scanner
-      </h2>
+    <div className="max-w-2xl mx-auto mt-10 space-y-6">
+      {/* Header Card */}
+      <div className={`${neuCard} flex items-center justify-center gap-3`}>
+        <Wallet className="text-blue-500" size={26} />
+        <h2 className="text-2xl font-bold text-gray-700">🪙 Auto Wallet Scanner</h2>
+      </div>
 
-      {/* Pilih chain */}
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "0.5rem",
-          justifyContent: "center",
-          marginBottom: "1.5rem",
-        }}
-      >
+      {/* Chain Selector */}
+      <div className={`${neuCard} flex flex-wrap justify-center gap-3 p-4`}>
         {["eth-mainnet", "arbitrum", "polygon", "base"].map((c) => (
           <button
             key={c}
             onClick={() => setChain(c)}
-            style={{
-              padding: "6px 12px",
-              borderRadius: "12px",
-              border: "none",
-              cursor: "pointer",
-              fontSize: "0.9rem",
-              background:
-                chain === c
-                  ? "linear-gradient(145deg, #a5b4fc, #818cf8)"
-                  : neu.surface,
-              boxShadow:
-                chain === c
-                  ? "inset 2px 2px 4px rgba(163,177,198,0.6), inset -2px -2px 4px rgba(255,255,255,0.9)"
-                  : "2px 2px 5px rgba(163,177,198,0.6), -2px -2px 5px rgba(255,255,255,0.9)",
-              transition: "all 0.2s ease-in-out",
-            }}
+            className={`${neuButton} px-6 py-2 ${
+              chain === c
+                ? "text-white bg-gradient-to-r from-orange-400 to-pink-400"
+                : ""
+            }`}
           >
             {c === "eth-mainnet"
               ? "Ethereum"
@@ -145,102 +99,66 @@ const AutoWalletScanner = () => {
         ))}
       </div>
 
-      {/* Input wallet */}
-      <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap", marginBottom: "1rem" }}>
-        <input
-          type="text"
-          placeholder="Masukkan wallet address..."
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          style={{
-            flex: 1,
-            padding: "10px 14px",
-            borderRadius: "14px",
-            border: "none",
-            fontSize: "0.9rem",
-            outline: "none",
-            ...neuInset,
-          }}
-        />
-        <button
-          onClick={fetchTokens}
-          disabled={loading}
-          style={{
-            padding: "10px 20px",
-            borderRadius: "14px",
-            border: "none",
-            cursor: "pointer",
-            color: "#fff",
-            fontWeight: 600,
-            background: loading
-              ? "linear-gradient(145deg, #a1a1aa, #71717a)"
-              : "linear-gradient(145deg, #60a5fa, #3b82f6)",
-            boxShadow: "3px 3px 6px rgba(163,177,198,0.6), -3px -3px 6px rgba(255,255,255,0.9)",
-            transition: "all 0.2s ease-in-out",
-          }}
-        >
-          {loading ? "Scanning..." : "Scan"}
-        </button>
+      {/* Input Section */}
+      <div className={`${neuCard} space-y-4`}>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input
+            type="text"
+            placeholder="Masukkan wallet address..."
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            className="flex-1 bg-[#e0e5ec] text-gray-700 rounded-xl px-4 py-2 shadow-[inset_3px_3px_6px_#b8b9be,inset_-3px_-3px_6px_#ffffff] focus:outline-none text-sm"
+          />
+          <button
+            onClick={fetchTokens}
+            disabled={loading}
+            className={`${neuButton} px-5 py-2 bg-gradient-to-r from-blue-400 to-blue-500 text-white active:from-blue-600 active:to-blue-700`}
+          >
+            {loading ? "Scanning..." : "Scan"}
+          </button>
+        </div>
+
+        {error && (
+          <p className="text-red-500 text-sm text-center font-medium">{error}</p>
+        )}
       </div>
 
-      {error && (
-        <p style={{ color: "#ef4444", fontSize: "0.85rem", marginBottom: "1rem" }}>{error}</p>
-      )}
-
-      {/* Daftar token */}
+      {/* Token List */}
       {tokens.length > 0 && (
-        <div style={{ marginTop: "1.5rem", maxHeight: "320px", overflowY: "auto" }}>
-          {tokens.map((t, idx) => (
+        <div
+          className={`${neuCard} space-y-3 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300`}
+        >
+          {tokens.map((t, i) => (
             <div
-              key={idx}
-              style={{
-                ...neuSoft,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "0.8rem 1rem",
-                marginBottom: "0.8rem",
-                borderRadius: "16px",
-              }}
+              key={i}
+              className="flex items-center justify-between px-4 py-3 rounded-2xl bg-[#e0e5ec] shadow-[inset_2px_2px_5px_#b8b9be,inset_-2px_-2px_5px_#ffffff]"
             >
-              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+              <div className="flex items-center gap-3">
                 {t.logo ? (
                   <img
                     src={t.logo}
                     alt={t.symbol}
-                    style={{ width: "28px", height: "28px", borderRadius: "50%" }}
+                    className="w-7 h-7 rounded-full shadow-md"
                   />
                 ) : (
-                  <div
-                    style={{
-                      width: "28px",
-                      height: "28px",
-                      borderRadius: "50%",
-                      ...neuInset,
-                    }}
-                  />
+                  <div className="w-7 h-7 rounded-full bg-gray-300" />
                 )}
-                <span style={{ fontSize: "0.9rem", color: "#334155" }}>
+                <span className="text-gray-700 font-medium text-sm">
                   {t.name} ({t.symbol})
                 </span>
               </div>
-              <span style={{ color: "#475569", fontWeight: 600 }}>{t.balance}</span>
+              <span className="text-gray-600 text-sm font-semibold">
+                {t.balance}
+              </span>
             </div>
           ))}
         </div>
       )}
 
       {!loading && tokens.length === 0 && !error && (
-        <p
-          style={{
-            textAlign: "center",
-            color: "#94a3b8",
-            fontSize: "0.9rem",
-            marginTop: "1.5rem",
-          }}
-        >
+        <div className={`${neuCard} text-center text-gray-500 text-sm`}>
           Masukkan wallet dan klik <b>Scan</b> untuk melihat token yang dimiliki.
-        </p>
+        </div>
       )}
     </div>
   );
