@@ -652,15 +652,16 @@ function TrackerPageFullScreen({ onLogout }) {
       {!sidebarOpen && (
         <button
           onClick={() => setSidebarOpen(true)}
-          className="fixed top-3 left-3 z-50 p-2 md:p-3 rounded-xl transition text-gray-700 hover:text-gray-900"
+          className="fixed top-3 left-3 z-50 flex items-center justify-center w-10 h-10 rounded-full transition text-gray-700 hover:text-gray-900"
           style={{
-            background: '#e0e5ec',
-            boxShadow: '6px 6px 12px rgba(163,177,198,0.6), -6px -6px 12px rgba(255,255,255,0.5)'
+            background: 'linear-gradient(145deg, #d1d6dd, #ecf0f3)',
+            boxShadow: '6px 6px 12px rgba(163,177,198,0.6), -6px -6px 12px rgba(255,255,255,0.6)'
           }}
         >
           <Menu size={22} />
         </button>
       )}
+
 
 
       <div
@@ -669,7 +670,7 @@ function TrackerPageFullScreen({ onLogout }) {
         }`}
       >
         {/* Header */}
-<div className="sticky top-0 z-30 bg-[#e0e5ec] px-4 md:px-6 py-3 md:py-4 ml-10 sm:ml-0"
+<div className="sticky top-0 z-30 bg-[#e0e5ec] px-5 md:px-6 py-3 md:py-4 ml-12 sm:ml-0 rounded-b-2xl"
           style={{
             boxShadow: '0 8px 16px rgba(163,177,198,0.4)'
           }}
