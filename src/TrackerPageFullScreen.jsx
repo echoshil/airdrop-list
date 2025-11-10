@@ -160,7 +160,7 @@ function TrackerPageFullScreen({ onLogout }) {
   const [filterTag, setFilterTag] = useState("all");
   const [filterDaily, setFilterDaily] = useState("all");
 
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [, set] = useState(true);
   const [activeView, setActiveView] = useState("projects");
   const [isMobile, setIsMobile] = useState(false);
 
@@ -182,7 +182,7 @@ function TrackerPageFullScreen({ onLogout }) {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024);
       if (window.innerWidth < 1024) {
-        setSidebarOpen(false);
+        set(false);
       }
     };
     checkMobile();
@@ -577,7 +577,7 @@ function TrackerPageFullScreen({ onLogout }) {
       {/* Sidebar */}
       <div
         className={`fixed top-0 left-0 h-full bg-[#e0e5ec] z-50 transition-all duration-300 ${
-          sidebarOpen ? "w-64" : "w-0"
+           ? "w-64" : "w-0"
         } ${isMobile ? "shadow-[20px_20px_40px_rgba(163,177,198,0.5),-20px_-20px_40px_rgba(255,255,255,0.8)]" : ""}`}
         style={{
           boxShadow: sidebarOpen ? '20px 0 40px rgba(163,177,198,0.3)' : 'none'
@@ -649,16 +649,17 @@ function TrackerPageFullScreen({ onLogout }) {
         )}
       </div>
 
-      {!sidebarOpen && (
+      {isMobile && !sidebarOpen && (
         <button
           onClick={() => setSidebarOpen(true)}
-          className="fixed top-4 left-4 z-40 p-3 rounded-xl transition text-gray-700 hover:text-gray-900"
+          className="p-3 rounded-xl transition text-gray-700 hover:text-gray-900 mr-2"
           style={{
             background: '#e0e5ec',
-            boxShadow: '6px 6px 12px rgba(163,177,198,0.6), -6px -6px 12px rgba(255,255,255,0.5)'
+            boxShadow:
+              '4px 4px 8px rgba(163,177,198,0.6), -4px -4px 8px rgba(255,255,255,0.5)',
           }}
         >
-          <Menu size={24} />
+          <Menu size={22} />
         </button>
       )}
 
@@ -673,7 +674,7 @@ function TrackerPageFullScreen({ onLogout }) {
             boxShadow: '0 8px 16px rgba(163,177,198,0.4)'
           }}
         >
-          <div className="flex flex-wrap justify-between items-center gap-3 md:gap-4">
+          <div className="flex items-center gap-2 md:gap-3">
 <h1 className="text-xl md:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 min-h-[1.5em]">
   {activeView === "projects" && (
     <TypingTextFixed key="projects" icon="📦" text="My Projects" />
