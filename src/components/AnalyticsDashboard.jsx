@@ -24,7 +24,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 
-const AnalyticsDashboard = ({ projects, balances, selectedNetwork }) => {
+const AnalyticsDashboard = ({ projects, balances = [], selectedNetwork = "Ethereum" }) => {
   const [isExpanded, setIsExpanded] = useState(true);
 
   // ===== Pure Frontend Calculations =====
