@@ -66,27 +66,30 @@ const AutoWalletScanner = () => {
     }
   };
 
-  // ===== NEUMORPHIC STYLE CLASSES =====
+  // 🎨 NEUMORPHIC THEME (sama persis GasTracker)
+  const baseBg = "bg-[#e0e5ec]";
   const neuCard =
-    "bg-[#e0e5ec] rounded-3xl p-6 shadow-[9px_9px_16px_#b8b9be,-9px_-9px_16px_#ffffff]";
+    "rounded-3xl p-6 shadow-[9px_9px_16px_#b8b9be,-9px_-9px_16px_#ffffff]";
+  const neuInset =
+    "shadow-[inset_3px_3px_6px_#b8b9be,inset_-3px_-3px_6px_#ffffff]";
   const neuButton =
-    "bg-[#e0e5ec] rounded-xl shadow-[3px_3px_6px_#b8b9be,-3px_-3px_6px_#ffffff] active:shadow-[inset_3px_3px_6px_#b8b9be,inset_-3px_-3px_6px_#ffffff] transition text-gray-700 font-semibold";
+    "rounded-xl shadow-[3px_3px_6px_#b8b9be,-3px_-3px_6px_#ffffff] active:shadow-[inset_3px_3px_6px_#b8b9be,inset_-3px_-3px_6px_#ffffff] transition text-gray-700 font-semibold";
 
   return (
-    <div className="max-w-2xl mx-auto mt-10 space-y-6">
-      {/* Header Card */}
-      <div className={`${neuCard} flex items-center justify-center gap-3`}>
+    <div className={`max-w-2xl mx-auto mt-10 space-y-6 ${baseBg}`}>
+      {/* Header */}
+      <div className={`${neuCard} ${baseBg} flex items-center justify-center gap-3`}>
         <Wallet className="text-blue-500" size={26} />
         <h2 className="text-2xl font-bold text-gray-700">🪙 Auto Wallet Scanner</h2>
       </div>
 
       {/* Chain Selector */}
-      <div className={`${neuCard} flex flex-wrap justify-center gap-3 p-4`}>
+      <div className={`${neuCard} ${baseBg} flex flex-wrap justify-center gap-3 p-4`}>
         {["eth-mainnet", "arbitrum", "polygon", "base"].map((c) => (
           <button
             key={c}
             onClick={() => setChain(c)}
-            className={`${neuButton} px-6 py-2 ${
+            className={`${neuButton} ${baseBg} px-6 py-2 ${
               chain === c
                 ? "text-white bg-gradient-to-r from-orange-400 to-pink-400"
                 : ""
@@ -100,14 +103,14 @@ const AutoWalletScanner = () => {
       </div>
 
       {/* Input Section */}
-      <div className={`${neuCard} space-y-4`}>
+      <div className={`${neuCard} ${baseBg} space-y-4`}>
         <div className="flex flex-col sm:flex-row gap-3">
           <input
             type="text"
             placeholder="Masukkan wallet address..."
             value={address}
             onChange={(e) => setAddress(e.target.value)}
-            className="flex-1 bg-[#e0e5ec] text-gray-700 rounded-xl px-4 py-2 shadow-[inset_3px_3px_6px_#b8b9be,inset_-3px_-3px_6px_#ffffff] focus:outline-none text-sm"
+            className={`flex-1 ${baseBg} text-gray-700 rounded-xl px-4 py-2 ${neuInset} focus:outline-none text-sm`}
           />
           <button
             onClick={fetchTokens}
@@ -126,12 +129,12 @@ const AutoWalletScanner = () => {
       {/* Token List */}
       {tokens.length > 0 && (
         <div
-          className={`${neuCard} space-y-3 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300`}
+          className={`${neuCard} ${baseBg} space-y-3 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300`}
         >
           {tokens.map((t, i) => (
             <div
               key={i}
-              className="flex items-center justify-between px-4 py-3 rounded-2xl bg-[#e0e5ec] shadow-[inset_2px_2px_5px_#b8b9be,inset_-2px_-2px_5px_#ffffff]"
+              className={`${baseBg} flex items-center justify-between px-4 py-3 rounded-2xl ${neuInset}`}
             >
               <div className="flex items-center gap-3">
                 {t.logo ? (
@@ -156,7 +159,7 @@ const AutoWalletScanner = () => {
       )}
 
       {!loading && tokens.length === 0 && !error && (
-        <div className={`${neuCard} text-center text-gray-500 text-sm`}>
+        <div className={`${neuCard} ${baseBg} text-center text-gray-500 text-sm`}>
           Masukkan wallet dan klik <b>Scan</b> untuk melihat token yang dimiliki.
         </div>
       )}
