@@ -44,6 +44,7 @@ import ROICalculator from "./components/ROICalculator";
 import NewsAggregator from "./components/NewsAggregator";
 import MultisendTool from "./components/MultisendTool";
 import TradingPlatform from "./components/TradingPlatform";
+import AutoWalletScanner from "./components/AutoWalletScanner";
 
 const GOOGLE_SCRIPT_URL = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
 
@@ -566,6 +567,7 @@ function TrackerPageFullScreen({ onLogout }) {
     { id: "news", label: "News Feed", icon: Newspaper, color: "text-yellow-700" },
     { id: "balance", label: "Balance Checker", icon: Wallet, color: "text-indigo-600" },
     { id: "multisend", label: "Multisend", icon: Send, color: "text-pink-600" },
+    { id: "scanner", label: "Auto Scanner", icon: Wallet, color: "text-yellow-600" },
   ];
 
   return (
@@ -1464,6 +1466,12 @@ function TrackerPageFullScreen({ onLogout }) {
           {activeView === "multisend" && (
             <div className="max-w-7xl mx-auto">
               <MultisendTool />
+            </div>
+          )}
+
+          {activeView === "scanner" && (
+            <div className="max-w-7xl mx-auto">
+              <AutoWalletScanner />
             </div>
           )}
         </div>
