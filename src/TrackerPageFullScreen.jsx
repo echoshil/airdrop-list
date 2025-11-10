@@ -670,13 +670,13 @@ function TrackerPageFullScreen({ onLogout }) {
         }`}
       >
         {/* Header */}
-<div className="sticky top-0 z-30 bg-[#e0e5ec] px-5 md:px-6 py-3 md:py-4 ml-12 sm:ml-0 rounded-b-2xl"
+<div className="sticky top-0 z-30 bg-[#e0e5ec] px-5 md:px-6 py-3 md:py-4 rounded-b-2xl"
           style={{
             boxShadow: '0 8px 16px rgba(163,177,198,0.4)'
           }}
         >
           <div className="flex flex-wrap justify-between items-center gap-3 md:gap-4">
-<h1 className="text-xl md:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 min-h-[1.5em]">
+<h1 className="text-xl md:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 min-h-[1.5em] pl-12 sm:pl-0">
   {activeView === "projects" && (
     <TypingTextFixed key="projects" icon="📦" text="My Projects" />
   )}
