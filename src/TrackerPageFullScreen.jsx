@@ -649,20 +649,6 @@ function TrackerPageFullScreen({ onLogout }) {
         )}
       </div>
 
-      {isMobile && !sidebarOpen && (
-        <button
-          onClick={() => setSidebarOpen(true)}
-          className="p-3 rounded-xl transition text-gray-700 hover:text-gray-900 mr-2"
-          style={{
-            background: '#e0e5ec',
-            boxShadow:
-              '4px 4px 8px rgba(163,177,198,0.6), -4px -4px 8px rgba(255,255,255,0.5)',
-          }}
-        >
-          <Menu size={22} />
-        </button>
-      )}
-
       <div
         className={`min-h-screen transition-all duration-300 ${
           sidebarOpen && !isMobile ? "ml-64" : "ml-0"
