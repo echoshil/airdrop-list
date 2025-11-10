@@ -1,165 +1,207 @@
-import React, { useState } from 'react';
-import { ethers } from 'ethers';
+import React, { useState } from "react";
+import { Wallet, RefreshCw } from "lucide-react";
+import { ethers } from "ethers";
 
-// ✅ FIXED: Updated RPC endpoints - menggunakan public RPC yang tidak perlu API key
 const NETWORKS = {
-  Ethereum: { rpc: \"https://eth.llamarpc.com\", symbol: \"ETH\" },
-  Polygon: { rpc: \"https://polygon-rpc.com\", symbol: \"MATIC\" },
-  BSC: { rpc: \"https://bsc-dataseed.binance.org\", symbol: \"BNB\" },
-  Arbitrum: { rpc: \"https://arb1.arbitrum.io/rpc\", symbol: \"ETH\" },
-  Base: { rpc: \"https://mainnet.base.org\", symbol: \"ETH\" },
+  Ethereum: { rpc: "https://eth.llamarpc.com" },
+  Polygon: { rpc: "https://polygon-rpc.com" },
+  BSC: { rpc: "https://bsc-dataseed.binance.org" },
+  Arbitrum: { rpc: "https://arb1.arbitrum.io/rpc" },
+  Base: { rpc: "https://mainnet.base.org" },
 };
 
-// Helper function untuk test RPC connection
-async function testRpc(url) {
-  try {
-    const r = await fetch(url, {
-      method: \"POST\",
-      headers: { \"Content-Type\": \"application/json\" },
-      body: JSON.stringify({ 
-        jsonrpc: \"2.0\", 
-        id: 1, 
-        method: \"eth_blockNumber\", 
-        params: [] 
-      }),
-    });
-    if (!r.ok) throw new Error(\"HTTP \" + r.status);
-    const j = await r.json();
-    if (j.error) throw new Error(\"RPC error: \" + JSON.stringify(j.error));
-    console.log(\"✅ RPC OK:\", url, j);
-    return true;
-  } catch (err) {
-    console.error(\"❌ RPC test failed:\", url, err);
-    return false;
-  }
-}
+export default function BulkBalanceChecker() {
+  const [addresses, setAddresses] = useState("");
+  const [balances, setBalances] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [quickAddress, setQuickAddress] = useState("");
+  const [quickResult, setQuickResult] = useState(null);
 
-// Helper function untuk chunking array
-const chunk = (arr, size) => {
-  const out = [];
-  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
-  return out;
-};
+  // === Fungsi ambil balance dari banyak address ===
+  const handleBulkCheck = async () => {
+    setLoading(true);
+    const addrList = addresses
+      .split("\n")
+      .map((a) => a.trim())
+      .filter((a) => a.length > 0);
+    const result = {};
 
-// ✅ FIXED: Main function dengan improved validation dan error handling
-export const checkBalances = async (
-  addressesText, 
-  selectedNetwork = \"Ethereum\",
-  setBalanceLoading,
-  setBalances
-) => {
-  // Parse addresses - support multiple delimiters
-  const list = addressesText
-    .split(/[
-,\s]+/)
-    .map((a) => a.trim())
-    .filter(Boolean);
+    for (const netName in NETWORKS) {
+      const provider = new ethers.JsonRpcProvider(NETWORKS[netName].rpc);
+      result[netName] = [];
 
-  if (list.length === 0) {
-    alert(\"Masukkan minimal satu address!\");
-    return;
-  }
-
-  // ✅ FIXED: Validasi addresses dengan detail error
-  const invalidAddresses = [];
-  const validAddresses = [];
-  
-  list.forEach(addr => {
-    if (!ethers.isAddress(addr)) {
-      invalidAddresses.push(addr);
-    } else {
-      // Normalize ke checksum format
-      validAddresses.push(ethers.getAddress(addr));
-    }
-  });
-
-  if (invalidAddresses.length > 0) {
-    alert(`⚠️ Ditemukan ${invalidAddresses.length} address tidak valid:
-${invalidAddresses.slice(0, 5).join('
-')}${invalidAddresses.length > 5 ? '
-...' : ''}`);
-    return;
-  }
-
-  const networkConfig = NETWORKS[selectedNetwork];
-  if (!networkConfig) {
-    alert(\"Network tidak ditemukan: \" + selectedNetwork);
-    return;
-  }
-
-  setBalanceLoading(true);
-  setBalances([]);
-
-  try {
-    // Test RPC connection first
-    const rpcOk = await testRpc(networkConfig.rpc);
-    if (!rpcOk) {
-      alert(`⚠️ Koneksi ke ${selectedNetwork} RPC gagal. Coba network lain.`);
-      setBalanceLoading(false);
-      return;
-    }
-
-    // ✅ FIXED: Create provider dengan error handling
-    const provider = new ethers.JsonRpcProvider(networkConfig.rpc);
-
-    // Chunking: 5 address per batch untuk menghindari rate limit
-    const batches = chunk(validAddresses, 5);
-    const results = [];
-
-    for (let i = 0; i < batches.length; i++) {
-      const batch = batches[i];
-      console.log(`📦 Processing batch ${i + 1}/${batches.length}...`);
-
-      // Process batch dengan Promise.allSettled
-      const settled = await Promise.allSettled(
-        batch.map(async (addr) => {
-          try {
-            const balanceBN = await provider.getBalance(addr);
-            const balance = parseFloat(ethers.formatEther(balanceBN)).toFixed(6);
-            return { 
-              address: addr, 
-              balance: balance,
-              symbol: networkConfig.symbol 
-            };
-          } catch (err) {
-            console.error(`❌ Error checking ${addr}:`, err.message);
-            return { 
-              address: addr, 
-              balance: \"❌ Error\",
-              symbol: networkConfig.symbol 
-            };
-          }
-        })
-      );
-
-      // Collect results
-      settled.forEach((s) => {
-        if (s.status === \"fulfilled\") {
-          results.push(s.value);
-        } else {
-          results.push({ 
-            address: \"unknown\", 
-            balance: \"❌ Error\",
-            symbol: networkConfig.symbol 
+      for (const addr of addrList) {
+        try {
+          const balance = await provider.getBalance(addr);
+          result[netName].push({
+            address: addr,
+            balance: ethers.formatEther(balance),
+          });
+        } catch (e) {
+          result[netName].push({
+            address: addr,
+            balance: "Error",
           });
         }
-      });
-
-      // Delay antar batch untuk rate limiting
-      if (i < batches.length - 1) {
-        await new Promise((r) => setTimeout(r, 500));
       }
     }
 
-    setBalances(results);
-    console.log(`✅ Successfully checked ${results.length} addresses`);
+    setBalances(result);
+    setLoading(false);
+  };
 
-  } catch (err) {
-    console.error(\"❌ Provider error:\", err);
-    alert(`⚠️ Gagal terhubung ke ${selectedNetwork} network: ${err.message}`);
-  } finally {
-    setBalanceLoading(false);
-  }
-};
+  // === Fungsi Quick Network Checker ===
+  const handleQuickCheck = async () => {
+    if (!quickAddress) return;
+    setQuickResult(null);
+    const data = [];
 
-export default { checkBalances, NETWORKS };
+    for (const [net, val] of Object.entries(NETWORKS)) {
+      try {
+        const provider = new ethers.JsonRpcProvider(val.rpc);
+        const bal = await provider.getBalance(quickAddress);
+        data.push({ network: net, balance: ethers.formatEther(bal) });
+      } catch (e) {
+        data.push({ network: net, balance: "Error" });
+      }
+    }
+
+    setQuickResult(data);
+  };
+
+  return (
+    <div className="max-w-5xl mx-auto space-y-8">
+      {/* HEADER */}
+      <div
+        className="text-center py-6 rounded-2xl"
+        style={{
+          background: "#e3e7ee",
+          boxShadow:
+            "4px 4px 8px rgba(163,177,198,0.4), -4px -4px 8px rgba(255,255,255,0.6)",
+        }}
+      >
+        <div className="flex items-center justify-center gap-3 mb-1">
+          <Wallet className="text-indigo-600" size={28} />
+          <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600">
+            Bulk Balance Checker
+          </h2>
+        </div>
+        <p className="text-gray-600 text-sm">
+          Check EVM native & token balances across multiple networks instantly.
+        </p>
+      </div>
+
+      {/* BULK CHECKER */}
+      <div
+        className="rounded-2xl p-6 space-y-4"
+        style={{
+          background: "#e3e7ee",
+          boxShadow:
+            "4px 4px 8px rgba(163,177,198,0.5), -4px -4px 8px rgba(255,255,255,0.6)",
+        }}
+      >
+        <h3 className="font-semibold text-lg text-gray-800 mb-2">
+          🧾 EVM Native & Tokens Balance Checker
+        </h3>
+        <textarea
+          value={addresses}
+          onChange={(e) => setAddresses(e.target.value)}
+          placeholder="Paste one or more addresses, each on a new line"
+          rows={5}
+          className="w-full rounded-xl p-3 border border-gray-300 text-sm"
+        />
+        <button
+          onClick={handleBulkCheck}
+          disabled={loading}
+          className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-white font-medium bg-gradient-to-r from-indigo-500 to-purple-600 hover:scale-105 transition-transform disabled:opacity-50"
+        >
+          <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
+          {loading ? "Checking..." : "Check Balances"}
+        </button>
+
+        {/* Result Table */}
+        {Object.keys(balances).length > 0 && (
+          <div className="mt-4 space-y-4">
+            {Object.entries(balances).map(([net, list]) => (
+              <div key={net}>
+                <h4 className="font-semibold text-gray-700 mb-2">{net}</h4>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm border-collapse">
+                    <thead>
+                      <tr className="bg-gray-100">
+                        <th className="p-2 text-left">Address</th>
+                        <th className="p-2 text-left">Balance (ETH)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {list.map((item, i) => (
+                        <tr
+                          key={i}
+                          className="border-t border-gray-200 hover:bg-gray-50"
+                        >
+                          <td className="p-2 font-mono text-xs">{item.address}</td>
+                          <td className="p-2">{item.balance}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* QUICK CHECKER */}
+      <div
+        className="rounded-2xl p-6 space-y-4"
+        style={{
+          background: "#e3e7ee",
+          boxShadow:
+            "4px 4px 8px rgba(163,177,198,0.5), -4px -4px 8px rgba(255,255,255,0.6)",
+        }}
+      >
+        <h3 className="font-semibold text-lg text-gray-800 mb-2">
+          ⚡ Quick Network Balance Checker
+        </h3>
+        <input
+          value={quickAddress}
+          onChange={(e) => setQuickAddress(e.target.value)}
+          placeholder="Enter wallet address..."
+          className="w-full rounded-xl p-3 border border-gray-300 text-sm"
+        />
+        <button
+          onClick={handleQuickCheck}
+          className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-white font-medium bg-gradient-to-r from-blue-500 to-indigo-600 hover:scale-105 transition-transform"
+        >
+          <RefreshCw size={18} />
+          Check Balance
+        </button>
+
+        {quickResult && (
+          <div className="overflow-x-auto mt-3">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="p-2 text-left">Network</th>
+                  <th className="p-2 text-left">Balance (ETH)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {quickResult.map((row, i) => (
+                  <tr
+                    key={i}
+                    className="border-t border-gray-200 hover:bg-gray-50"
+                  >
+                    <td className="p-2">{row.network}</td>
+                    <td className="p-2">{row.balance}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
