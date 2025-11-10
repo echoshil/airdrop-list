@@ -669,132 +669,164 @@ function TrackerPageFullScreen({ onLogout }) {
         }`}
       >
         {/* Header */}
-        <div className="sticky top-0 z-30 bg-[#e0e5ec] px-4 md:px-6 py-3 md:py-4"
-          style={{
-            boxShadow: '0 8px 16px rgba(163,177,198,0.4)'
-          }}
-        >
-          <div className="flex items-center gap-2 md:gap-3">
-<h1 className="text-xl md:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 min-h-[1.5em]">
-  {activeView === "projects" && (
-    <TypingTextFixed key="projects" icon="📦" text="My Projects" />
-  )}
-  {activeView === "trading" && (
-    <TypingTextFixed key="trading" icon="⚡" text="DeDoo Trading Platform" />
-  )}
-  {activeView === "analytics" && (
-    <TypingTextFixed key="analytics" icon="📊" text="Analytics Dashboard" />
-  )}
-  {activeView === "gas" && (
-    <TypingTextFixed key="gas" icon="⛽" text="Gas Tracker" />
-  )}
-  {activeView === "roi" && (
-    <TypingTextFixed key="roi" icon="💹" text="ROI Calculator" />
-  )}
-  {activeView === "news" && (
-    <TypingTextFixed key="news" icon="📰" text="News Feed" />
-  )}
-  {activeView === "balance" && (
-    <TypingTextFixed key="balance" icon="💰" text="Balance Checker" />
-  )}
-  {activeView === "multisend" && (
-    <TypingTextFixed key="multisend" icon="🚀" text="Multisend Native & Tokens" />
-  )}
-</h1>
-
-
-
-
-
-
-            <div className="flex items-center gap-2 md:gap-3 flex-wrap">
-              {activeView === "projects" && (
-                <>
-                  <div className="relative">
-                    <button className="flex items-center gap-1 md:gap-2 px-2 md:px-4 py-1.5 md:py-2 rounded-xl transition text-xs md:text-sm text-gray-700"
-                      style={{
-                        boxShadow: '4px 4px 8px rgba(163,177,198,0.6), -4px -4px 8px rgba(255,255,255,0.5)'
-                      }}
-                    >
-                      <Tag size={14} />
-                      <select
-                        value={filterTag}
-                        onChange={(e) => setFilterTag(e.target.value)}
-                        className="bg-transparent text-gray-800 outline-none cursor-pointer border-none appearance-none pr-2 font-medium"
-                        style={{
-                          WebkitAppearance: 'none',
-                          MozAppearance: 'none'
-                        }}
-                      >
-                        <option value="all" className="bg-white text-gray-800">All Tags</option>
-                        {AVAILABLE_TAGS.map((tag) => (
-                          <option key={tag.id} value={tag.id} className="bg-white text-gray-800">
-                            {tag.label}
-                          </option>
-                        ))}
-                      </select>
-                    </button>
-                  </div>
-
-                  <div className="relative">
-                    <button className="flex items-center gap-1 md:gap-2 px-2 md:px-4 py-1.5 md:py-2 rounded-xl transition text-xs md:text-sm text-gray-700"
-                      style={{
-                        boxShadow: '4px 4px 8px rgba(163,177,198,0.6), -4px -4px 8px rgba(255,255,255,0.5)'
-                      }}
-                    >
-                      <CheckSquare size={14} />
-                      <select
-                        value={filterDaily}
-                        onChange={(e) => setFilterDaily(e.target.value)}
-                        className="bg-transparent text-gray-800 outline-none cursor-pointer border-none appearance-none pr-2 font-medium"
-                        style={{
-                          WebkitAppearance: 'none',
-                          MozAppearance: 'none'
-                        }}
-                      >
-                        <option value="all" className="bg-white text-gray-800">All Projects</option>
-                        <option value="checked" className="bg-white text-gray-800">✅ Daily Checked</option>
-                        <option value="unchecked" className="bg-white text-gray-800">⬜ Daily Unchecked</option>
-                      </select>
-                    </button>
-                  </div>
-
-                  <input
-                    type="text"
-                    placeholder="🔍 Search..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="px-2 md:px-3 py-1.5 md:py-2 rounded-xl bg-[#e0e5ec] text-gray-800 w-28 md:w-48 text-xs md:text-sm"
-                    style={{
-                      boxShadow: 'inset 3px 3px 6px rgba(163,177,198,0.6), inset -3px -3px 6px rgba(255,255,255,0.5)'
-                    }}
-                  />
-
-                  <button
-                    onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-                    className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1.5 md:py-2 rounded-xl text-xs md:text-sm text-gray-700"
-                    style={{
-                      boxShadow: '4px 4px 8px rgba(163,177,198,0.6), -4px -4px 8px rgba(255,255,255,0.5)'
-                    }}
-                  >
-                    <ArrowUpDown size={14} />
-                    <span className="hidden sm:inline">{sortOrder === "asc" ? "A-Z" : "Z-A"}</span>
-                  </button>
-
-                  <button
-                    onClick={() => setHideData(!hideData)}
-                    className="px-2 md:px-3 py-1.5 md:py-2 rounded-xl flex items-center gap-1 md:gap-2 text-xs md:text-sm text-gray-700"
-                    style={{
-                      boxShadow: '4px 4px 8px rgba(163,177,198,0.6), -4px -4px 8px rgba(255,255,255,0.5)'
-                    }}
-                  >
-                    {hideData ? <Eye size={16} /> : <EyeOff size={16} />}
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
+      <div
+        className="sticky top-0 z-30 bg-[#e0e5ec] px-3 md:px-6 py-3 md:py-4 flex items-center justify-between flex-wrap gap-3"
+        style={{ boxShadow: '0 8px 16px rgba(163,177,198,0.4)' }}
+      >
+        {/* Kiri: tombol menu + judul */}
+        <div className="flex items-center gap-3">
+          {isMobile && !sidebarOpen && (
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="p-3 rounded-xl transition text-gray-700 hover:text-gray-900"
+              style={{
+                background: '#e0e5ec',
+                boxShadow:
+                  '4px 4px 8px rgba(163,177,198,0.6), -4px -4px 8px rgba(255,255,255,0.5)',
+              }}
+            >
+              <Menu size={22} />
+            </button>
+          )}
+      
+          <h1 className="text-xl md:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 min-h-[1.5em]">
+            {activeView === "projects" && (
+              <TypingTextFixed key="projects" icon="📦" text="My Projects" />
+            )}
+            {activeView === "trading" && (
+              <TypingTextFixed key="trading" icon="⚡" text="DeDoo Trading Platform" />
+            )}
+            {activeView === "analytics" && (
+              <TypingTextFixed key="analytics" icon="📊" text="Analytics Dashboard" />
+            )}
+            {activeView === "gas" && (
+              <TypingTextFixed key="gas" icon="⛽" text="Gas Tracker" />
+            )}
+            {activeView === "roi" && (
+              <TypingTextFixed key="roi" icon="💹" text="ROI Calculator" />
+            )}
+            {activeView === "news" && (
+              <TypingTextFixed key="news" icon="📰" text="News Feed" />
+            )}
+            {activeView === "balance" && (
+              <TypingTextFixed key="balance" icon="💰" text="Balance Checker" />
+            )}
+            {activeView === "multisend" && (
+              <TypingTextFixed key="multisend" icon="🚀" text="Multisend Native & Tokens" />
+            )}
+          </h1>
         </div>
+      
+        {/* Kanan: filter dan tombol */}
+        <div className="flex items-center gap-2 md:gap-3 flex-wrap justify-end">
+          {activeView === "projects" && (
+            <>
+              <div className="relative">
+                <button
+                  className="flex items-center gap-1 md:gap-2 px-2 md:px-4 py-1.5 md:py-2 rounded-xl transition text-xs md:text-sm text-gray-700"
+                  style={{
+                    boxShadow:
+                      '4px 4px 8px rgba(163,177,198,0.6), -4px -4px 8px rgba(255,255,255,0.5)',
+                  }}
+                >
+                  <Tag size={14} />
+                  <select
+                    value={filterTag}
+                    onChange={(e) => setFilterTag(e.target.value)}
+                    className="bg-transparent text-gray-800 outline-none cursor-pointer border-none appearance-none pr-2 font-medium"
+                    style={{
+                      WebkitAppearance: 'none',
+                      MozAppearance: 'none',
+                    }}
+                  >
+                    <option value="all" className="bg-white text-gray-800">
+                      All Tags
+                    </option>
+                    {AVAILABLE_TAGS.map((tag) => (
+                      <option
+                        key={tag.id}
+                        value={tag.id}
+                        className="bg-white text-gray-800"
+                      >
+                        {tag.label}
+                      </option>
+                    ))}
+                  </select>
+                </button>
+              </div>
+      
+              <div className="relative">
+                <button
+                  className="flex items-center gap-1 md:gap-2 px-2 md:px-4 py-1.5 md:py-2 rounded-xl transition text-xs md:text-sm text-gray-700"
+                  style={{
+                    boxShadow:
+                      '4px 4px 8px rgba(163,177,198,0.6), -4px -4px 8px rgba(255,255,255,0.5)',
+                  }}
+                >
+                  <CheckSquare size={14} />
+                  <select
+                    value={filterDaily}
+                    onChange={(e) => setFilterDaily(e.target.value)}
+                    className="bg-transparent text-gray-800 outline-none cursor-pointer border-none appearance-none pr-2 font-medium"
+                    style={{
+                      WebkitAppearance: 'none',
+                      MozAppearance: 'none',
+                    }}
+                  >
+                    <option value="all" className="bg-white text-gray-800">
+                      All Projects
+                    </option>
+                    <option value="checked" className="bg-white text-gray-800">
+                      ✅ Daily Checked
+                    </option>
+                    <option value="unchecked" className="bg-white text-gray-800">
+                      ⬜ Daily Unchecked
+                    </option>
+                  </select>
+                </button>
+              </div>
+      
+              <input
+                type="text"
+                placeholder="🔍 Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="px-2 md:px-3 py-1.5 md:py-2 rounded-xl bg-[#e0e5ec] text-gray-800 w-28 md:w-48 text-xs md:text-sm"
+                style={{
+                  boxShadow:
+                    'inset 3px 3px 6px rgba(163,177,198,0.6), inset -3px -3px 6px rgba(255,255,255,0.5)',
+                }}
+              />
+      
+              <button
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1.5 md:py-2 rounded-xl text-xs md:text-sm text-gray-700"
+                style={{
+                  boxShadow:
+                    '4px 4px 8px rgba(163,177,198,0.6), -4px -4px 8px rgba(255,255,255,0.5)',
+                }}
+              >
+                <ArrowUpDown size={14} />
+                <span className="hidden sm:inline">
+                  {sortOrder === 'asc' ? 'A-Z' : 'Z-A'}
+                </span>
+              </button>
+      
+              <button
+                onClick={() => setHideData(!hideData)}
+                className="px-2 md:px-3 py-1.5 md:py-2 rounded-xl flex items-center gap-1 md:gap-2 text-xs md:text-sm text-gray-700"
+                style={{
+                  boxShadow:
+                    '4px 4px 8px rgba(163,177,198,0.6), -4px -4px 8px rgba(255,255,255,0.5)',
+                }}
+              >
+                {hideData ? <Eye size={16} /> : <EyeOff size={16} />}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
 
         <div className="p-4 md:p-6">
           {activeView === "trading" && (
