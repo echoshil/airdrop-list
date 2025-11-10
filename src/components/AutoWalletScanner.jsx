@@ -65,21 +65,78 @@ const AutoWalletScanner = () => {
     }
   };
 
+  // 🎨 Neumorphic style helpers
+  const neu = {
+    bg: "#e9eef6",
+    surface: "#f6fbff",
+    shadowDark: "rgba(163,177,198,0.6)",
+    shadowLight: "rgba(255,255,255,0.9)",
+  };
+
+  const neuSoft = {
+    background: neu.surface,
+    boxShadow: `6px 6px 12px ${neu.shadowDark}, -6px -6px 12px ${neu.shadowLight}`,
+    borderRadius: "20px",
+  };
+
+  const neuInset = {
+    background: neu.surface,
+    boxShadow: `inset 3px 3px 6px ${neu.shadowDark}, inset -3px -3px 6px ${neu.shadowLight}`,
+  };
+
   return (
-    <div className="bg-gray-900 text-white rounded-2xl p-6 shadow-lg max-w-2xl mx-auto mt-6">
-      <h2 className="text-2xl font-semibold mb-4 text-center">
+    <div
+      style={{
+        ...neuSoft,
+        padding: "2rem",
+        maxWidth: "600px",
+        margin: "40px auto",
+        color: "#1f2937",
+      }}
+    >
+      <h2
+        style={{
+          textAlign: "center",
+          fontSize: "1.8rem",
+          fontWeight: "700",
+          marginBottom: "1rem",
+          color: "#334155",
+          textShadow: "1px 1px 2px rgba(255,255,255,0.8)",
+        }}
+      >
         🪙 Auto Wallet Scanner
       </h2>
 
       {/* Pilih chain */}
-      <div className="flex flex-wrap gap-2 mb-4 justify-center">
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "0.5rem",
+          justifyContent: "center",
+          marginBottom: "1.5rem",
+        }}
+      >
         {["eth-mainnet", "arbitrum", "polygon", "base"].map((c) => (
           <button
             key={c}
             onClick={() => setChain(c)}
-            className={`px-3 py-1 rounded-md text-sm ${
-              chain === c ? "bg-blue-600" : "bg-gray-800 hover:bg-gray-700"
-            }`}
+            style={{
+              padding: "6px 12px",
+              borderRadius: "12px",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "0.9rem",
+              background:
+                chain === c
+                  ? "linear-gradient(145deg, #a5b4fc, #818cf8)"
+                  : neu.surface,
+              boxShadow:
+                chain === c
+                  ? "inset 2px 2px 4px rgba(163,177,198,0.6), inset -2px -2px 4px rgba(255,255,255,0.9)"
+                  : "2px 2px 5px rgba(163,177,198,0.6), -2px -2px 5px rgba(255,255,255,0.9)",
+              transition: "all 0.2s ease-in-out",
+            }}
           >
             {c === "eth-mainnet"
               ? "Ethereum"
@@ -89,55 +146,99 @@ const AutoWalletScanner = () => {
       </div>
 
       {/* Input wallet */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+      <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap", marginBottom: "1rem" }}>
         <input
           type="text"
           placeholder="Masukkan wallet address..."
           value={address}
           onChange={(e) => setAddress(e.target.value)}
-          className="flex-1 p-2 rounded-md bg-gray-800 border border-gray-700 text-sm"
+          style={{
+            flex: 1,
+            padding: "10px 14px",
+            borderRadius: "14px",
+            border: "none",
+            fontSize: "0.9rem",
+            outline: "none",
+            ...neuInset,
+          }}
         />
         <button
           onClick={fetchTokens}
           disabled={loading}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-white"
+          style={{
+            padding: "10px 20px",
+            borderRadius: "14px",
+            border: "none",
+            cursor: "pointer",
+            color: "#fff",
+            fontWeight: 600,
+            background: loading
+              ? "linear-gradient(145deg, #a1a1aa, #71717a)"
+              : "linear-gradient(145deg, #60a5fa, #3b82f6)",
+            boxShadow: "3px 3px 6px rgba(163,177,198,0.6), -3px -3px 6px rgba(255,255,255,0.9)",
+            transition: "all 0.2s ease-in-out",
+          }}
         >
           {loading ? "Scanning..." : "Scan"}
         </button>
       </div>
 
-      {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
+      {error && (
+        <p style={{ color: "#ef4444", fontSize: "0.85rem", marginBottom: "1rem" }}>{error}</p>
+      )}
 
       {/* Daftar token */}
       {tokens.length > 0 && (
-        <div className="mt-4 space-y-3 max-h-80 overflow-y-auto">
+        <div style={{ marginTop: "1.5rem", maxHeight: "320px", overflowY: "auto" }}>
           {tokens.map((t, idx) => (
             <div
               key={idx}
-              className="flex items-center bg-gray-800 p-3 rounded-lg justify-between"
+              style={{
+                ...neuSoft,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "0.8rem 1rem",
+                marginBottom: "0.8rem",
+                borderRadius: "16px",
+              }}
             >
-              <div className="flex items-center gap-2">
+              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
                 {t.logo ? (
                   <img
                     src={t.logo}
                     alt={t.symbol}
-                    className="w-6 h-6 rounded-full"
+                    style={{ width: "28px", height: "28px", borderRadius: "50%" }}
                   />
                 ) : (
-                  <div className="w-6 h-6 rounded-full bg-gray-700" />
+                  <div
+                    style={{
+                      width: "28px",
+                      height: "28px",
+                      borderRadius: "50%",
+                      ...neuInset,
+                    }}
+                  />
                 )}
-                <span className="text-sm">
+                <span style={{ fontSize: "0.9rem", color: "#334155" }}>
                   {t.name} ({t.symbol})
                 </span>
               </div>
-              <span className="text-gray-300 text-sm">{t.balance}</span>
+              <span style={{ color: "#475569", fontWeight: 600 }}>{t.balance}</span>
             </div>
           ))}
         </div>
       )}
 
       {!loading && tokens.length === 0 && !error && (
-        <p className="text-gray-400 text-center mt-6 text-sm">
+        <p
+          style={{
+            textAlign: "center",
+            color: "#94a3b8",
+            fontSize: "0.9rem",
+            marginTop: "1.5rem",
+          }}
+        >
           Masukkan wallet dan klik <b>Scan</b> untuk melihat token yang dimiliki.
         </p>
       )}
