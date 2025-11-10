@@ -43,7 +43,7 @@ import GasTracker from "./components/GasTracker";
 import ROICalculator from "./components/ROICalculator";
 import NewsAggregator from "./components/NewsAggregator";
 import MultisendTool from "./components/MultisendTool";
-import TradingPlatform from "./components/TradingPlatform"; // ✅ trading dipisah
+import TradingPlatform from "./components/TradingPlatform";
 
 const GOOGLE_SCRIPT_URL = import.meta.env.VITE_GOOGLE_SCRIPT_URL;
 
